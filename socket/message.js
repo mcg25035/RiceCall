@@ -1,16 +1,14 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { v4: uuidv4 } = require('uuid');
-const { QuickDB } = require('quick.db');
-const db = new QuickDB();
 // Utils
 const utils = require('../utils');
-const {
-  standardizedError: StandardizedError,
-  logger: Logger,
-  get: Get,
-  set: Set,
-  func: Func,
-} = utils;
+const { Logger, Func } = utils;
+
+// Database
+const DB = require('../db');
+
+// StandardizedError
+const StandardizedError = require('../standardizedError');
 
 const messageHandler = {
   sendMessage: async (io, socket, data) => {
@@ -41,14 +39,11 @@ const messageHandler = {
       const operatorId = await Func.validate.socket(socket);
 
       // Get data
-      const operator = await Get.user(operatorId);
-      const user = await Get.user(userId);
-      const server = await Get.server(serverId);
-      const channel = await Get.channel(channelId);
-      const operatorMember = await Get.member(operator.id, server.id);
+      const channel = await DB.get.channel(channelId);
+      const operatorMember = await DB.get.member(operatorId, serverId);
 
       // Validate operation
-      if (operator.id !== user.id) {
+      if (operatorId !== userId) {
         throw new StandardizedError(
           '無法傳送非自己的訊息',
           'ValidationError',
@@ -65,34 +60,33 @@ const messageHandler = {
       }
 
       // Create new message
-      const messageId = uuidv4();
-      await Set.message(messageId, {
+      const message = {
         ...newMessage,
-        senderId: user.id,
-        receiverId: server.id,
-        channelId: channel.id,
+        ...(await DB.get.member(userId, serverId)),
+        ...(await DB.get.user(userId)),
+        senderId: userId,
+        serverId: serverId,
+        channelId: channelId,
         timestamp: Date.now().valueOf(),
-      });
+      };
 
       // Update member
-      const member_update = {
+      const updatedMember = {
         lastMessageTime: Date.now().valueOf(),
       };
-      await Set.member(operatorMember.id, member_update);
+      await DB.set.member(operatorId, serverId, updatedMember);
+
+      // Play sound
+      io.to(`channel_${channelId}`).emit('playSound', 'recieveChannelMessage');
 
       // Emit updated data (to the operator)
-      io.to(socket.id).emit('memberUpdate', member_update);
+      io.to(socket.id).emit('memberUpdate', updatedMember);
 
       // Emit updated data (to all users in the channel)
-      io.to(`channel_${channel.id}`).emit('channelUpdate', {
-        messages: [
-          ...(await Get.channelMessages(channel.id)),
-          ...(await Get.channelInfoMessages(channel.id)),
-        ],
-      });
+      io.to(`channel_${channelId}`).emit('onMessage', message);
 
       new Logger('Message').success(
-        `User(${operator.id}) sent ${newMessage.content} to channel(${channel.id})`,
+        `User(${operatorId}) sent ${newMessage.content} to channel(${channelId})`,
       );
     } catch (error) {
       if (!(error instanceof StandardizedError)) {
@@ -119,7 +113,7 @@ const messageHandler = {
       // data = {
       //   userId: string,
       //   targetId: string,
-      //   message: {
+      //   directMessage: {
       //     ...
       //   }
       // };
@@ -141,24 +135,21 @@ const messageHandler = {
       const operatorId = await Func.validate.socket(socket);
 
       // Get data
-      const operator = await Get.user(operatorId);
-      const user = await Get.user(userId);
-      const target = await Get.user(targetId);
       let userSocket;
       io.sockets.sockets.forEach((_socket) => {
-        if (_socket.userId === user.id) {
+        if (_socket.userId === userId) {
           userSocket = _socket;
         }
       });
       let targetSocket;
       io.sockets.sockets.forEach((_socket) => {
-        if (_socket.userId === target.id) {
+        if (_socket.userId === targetId) {
           targetSocket = _socket;
         }
       });
 
       // Validate operation
-      if (operator.id !== user.id) {
+      if (operatorId !== userId) {
         throw new StandardizedError(
           '無法傳送非自己的私訊',
           'ValidationError',
@@ -169,26 +160,23 @@ const messageHandler = {
       }
 
       // Create new message
-      const directMessageId = uuidv4();
-      await Set.directMessage(directMessageId, {
+      const directMessage = {
         ...newDirectMessage,
-        userId: user.id,
-        targetId: target.id,
+        ...(await DB.get.user(userId)),
+        senderId: userId,
+        user1Id: userId.localeCompare(targetId) < 0 ? userId : targetId,
+        user2Id: userId.localeCompare(targetId) < 0 ? targetId : userId,
         timestamp: Date.now().valueOf(),
-      });
+      };
 
-      // Emit updated data (to all users in the friend)
-      io.to(userSocket.id).emit(
-        'directMessage',
-        await Get.directMessages(user.id, target.id),
-      );
-      io.to(targetSocket.id).emit(
-        'directMessage',
-        await Get.directMessages(user.id, target.id),
-      );
+      // Emit updated data (to user and target *if online*)
+      io.to(userSocket.id).emit('onDirectMessage', directMessage);
+      if (targetSocket) {
+        io.to(targetSocket.id).emit('onDirectMessage', directMessage);
+      }
 
       new Logger('Message').success(
-        `User(${user.id}) sent ${newDirectMessage.content} to User(${target.id})`,
+        `User(${userId}) sent ${newDirectMessage.content} to User(${targetId})`,
       );
     } catch (error) {
       if (!(error instanceof StandardizedError)) {

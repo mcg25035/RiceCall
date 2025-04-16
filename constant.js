@@ -8,7 +8,7 @@ const XP_SYSTEM = {
   BASE_REQUIRE_XP: 25, // Base XP required for level up
   BASE_XP: 1, // Base XP gained per update
   GROWTH_RATE: 1.06, // XP requirement increases by 6% per level
-  INTERVAL_MS: 1 * 60 * 1000, // 1 minutes in milliseconds
+  INTERVAL_MS: 60 * 60 * 1000, // 1 hours in milliseconds
 };
 
 const CLEANUP_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
@@ -22,7 +22,7 @@ const MIME_TYPES = {
 };
 
 const PORT = process.env.PORT || 4500;
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:4500';
 const CONTENT_TYPE_JSON = { 'Content-Type': 'application/json' };
 
 const UPLOADS_PATH = 'uploads';

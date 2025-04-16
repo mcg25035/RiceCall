@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 // Utils
 const utils = require('../utils');
-const {
-  standardizedError: StandardizedError,
-  logger: Logger,
-  func: Func,
-} = utils;
+const { Logger, Func } = utils;
+
+// Database
+const DB = require('../db');
+
+// StandardizedError
+const StandardizedError = require('../standardizedError');
 
 const rtcHandler = {
   offer: async (io, socket, data) => {
@@ -30,10 +32,11 @@ const rtcHandler = {
       }
 
       // Validate socket
-      await Func.validate.socket(socket);
+      const operatorId = await Func.validate.socket(socket);
 
       socket.to(to).emit('RTCOffer', {
         from: socket.id,
+        userId: operatorId,
         offer: offer,
       });
 
@@ -82,10 +85,11 @@ const rtcHandler = {
       }
 
       // Validate socket
-      await Func.validate.socket(socket);
+      const operatorId = await Func.validate.socket(socket);
 
       socket.to(to).emit('RTCAnswer', {
         from: socket.id,
+        userId: operatorId,
         answer: answer,
       });
 
@@ -134,10 +138,11 @@ const rtcHandler = {
       }
 
       // Validate socket
-      await Func.validate.socket(socket);
+      const operatorId = await Func.validate.socket(socket);
 
       socket.to(to).emit('RTCIceCandidate', {
         from: socket.id,
+        userId: operatorId,
         candidate: candidate,
       });
 
@@ -183,10 +188,13 @@ const rtcHandler = {
       }
 
       // Validate socket
-      await Func.validate.socket(socket);
+      const operatorId = await Func.validate.socket(socket);
 
       // Emit RTC join event (to all users)
-      socket.to(`channel_${channelId}`).emit('RTCJoin', socket.id);
+      socket.to(`channel_${channelId}`).emit('RTCJoin', {
+        from: socket.id,
+        userId: operatorId,
+      });
 
       // new Logger('RTC').success(
       //   `User(socket-id: ${socket.id}) joined RTC channel(${channelId})`,
@@ -230,10 +238,13 @@ const rtcHandler = {
       }
 
       // Validate socket
-      await Func.validate.socket(socket);
+      const operatorId = await Func.validate.socket(socket);
 
       // Emit RTC leave event (to all users)
-      socket.to(`channel_${channelId}`).emit('RTCLeave', socket.id);
+      socket.to(`channel_${channelId}`).emit('RTCLeave', {
+        from: socket.id,
+        userId: operatorId,
+      });
 
       // new Logger('RTC').success(
       //   `User(socket-id: ${socket.id}) left RTC channel(${channelId})`,

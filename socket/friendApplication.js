@@ -1,15 +1,13 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { QuickDB } = require('quick.db');
-const db = new QuickDB();
 // Utils
 const utils = require('../utils');
-const {
-  standardizedError: StandardizedError,
-  logger: Logger,
-  get: Get,
-  set: Set,
-  func: Func,
-} = utils;
+const { Logger, Func } = utils;
+
+// Database
+const DB = require('../db');
+
+// StandardizedError
+const StandardizedError = require('../standardizedError');
 
 const friendApplicationHandler = {
   createFriendApplication: async (io, socket, data) => {
@@ -41,9 +39,6 @@ const friendApplicationHandler = {
       const operatorId = await Func.validate.socket(socket);
 
       // Get data
-      const operator = await Get.user(operatorId);
-      const sender = await Get.user(senderId);
-      const receiver = await Get.user(receiverId);
       let receiverSocket;
       io.sockets.sockets.forEach((_socket) => {
         if (_socket.userId === receiverId) {
@@ -52,7 +47,7 @@ const friendApplicationHandler = {
       });
 
       // Validate operation
-      if (operator.id !== sender.id) {
+      if (operatorId !== senderId) {
         throw new StandardizedError(
           '無法創建非自己的好友申請',
           'ValidationError',
@@ -61,7 +56,7 @@ const friendApplicationHandler = {
           403,
         );
       }
-      if (sender.id === receiver.id) {
+      if (senderId === receiverId) {
         throw new StandardizedError(
           '無法發送好友申請給自己',
           'ValidationError',
@@ -72,23 +67,21 @@ const friendApplicationHandler = {
       }
 
       // Create friend application
-      const applicationId = `fa_${senderId}-${receiverId}`;
-      await Set.friendApplication(applicationId, {
+      await DB.set.friendApplication(senderId, receiverId, {
         ...newApplication,
-        senderId: senderId,
-        receiverId: receiverId,
         createdAt: Date.now(),
       });
 
       // Emit updated data (to the receiver)
       if (receiverSocket) {
-        io.to(receiverSocket.id).emit('userUpdate', {
-          friendApplications: await Get.userFriendApplications(receiverId),
-        });
+        io.to(receiverSocket.id).emit(
+          'userFriendApplicationsUpdate',
+          await DB.get.userFriendApplications(receiverId),
+        );
       }
 
       new Logger('FriendApplication').success(
-        `Friend application(${applicationId}) of User(${senderId}) and User(${receiverId}) created by User(${operator.id})`,
+        `Friend application(${senderId}-${receiverId}) of User(${senderId}) and User(${receiverId}) created by User(${operatorId})`,
       );
     } catch (error) {
       if (!(error instanceof StandardizedError)) {
@@ -143,10 +136,6 @@ const friendApplicationHandler = {
       const operatorId = await Func.validate.socket(socket);
 
       // Get data
-      const operator = await Get.user(operatorId);
-      const sender = await Get.user(senderId);
-      const receiver = await Get.user(receiverId);
-      const application = await Get.friendApplication(senderId, receiverId);
       let receiverSocket;
       io.sockets.sockets.forEach((_socket) => {
         if (_socket.userId === receiverId) {
@@ -155,7 +144,7 @@ const friendApplicationHandler = {
       });
 
       // Validate operation
-      if (operator.id !== sender.id && operator.id !== receiver.id) {
+      if (operatorId !== senderId && operatorId !== receiverId) {
         throw new StandardizedError(
           '無法修改非自己的好友申請',
           'ValidationError',
@@ -164,25 +153,20 @@ const friendApplicationHandler = {
           403,
         );
       }
-      if (application.applicationStatus !== 'pending') {
-        throw new StandardizedError(
-          '無法修改已經被處理過的申請',
-          'ValidationError',
-          'UPDATEFRIENDAPPLICATION',
-          'APPLICATION_ALREADY_PROCESSED',
+
+      // Update friend application
+      await DB.set.friendApplication(senderId, receiverId, editedApplication);
+
+      // Emit updated data (to the receiver)
+      if (receiverSocket) {
+        io.to(receiverSocket.id).emit(
+          'userFriendApplicationsUpdate',
+          await DB.get.userFriendApplications(receiverId),
         );
       }
 
-      // Update friend application
-      await Set.friendApplication(application.id, editedApplication);
-
-      // Emit updated data (to the receiver)
-      io.to(receiverSocket.id).emit('userUpdate', {
-        friendApplications: await Get.userFriendApplications(receiver.id),
-      });
-
       new Logger('FriendApplication').success(
-        `Friend application(${application.id}) of User(${sender.id}) and User(${receiver.id}) updated by User(${operator.id})`,
+        `Friend application(${senderId}-${receiverId}) of User(${senderId}) and User(${receiverId}) updated by User(${operatorId})`,
       );
     } catch (error) {
       if (!(error instanceof StandardizedError)) {
@@ -226,13 +210,15 @@ const friendApplicationHandler = {
       const operatorId = await Func.validate.socket(socket);
 
       // Get data
-      const operator = await Get.user(operatorId);
-      const sender = await Get.user(senderId);
-      const receiver = await Get.user(receiverId);
-      const application = await Get.friendApplication(senderId, receiverId);
+      let receiverSocket;
+      io.sockets.sockets.forEach((_socket) => {
+        if (_socket.userId === receiverId) {
+          receiverSocket = _socket;
+        }
+      });
 
       // Validate operation
-      if (operator.id !== sender.id && operator.id !== receiver.id) {
+      if (operatorId !== senderId && operatorId !== receiverId) {
         throw new StandardizedError(
           '無法刪除非自己的好友申請',
           'ValidationError',
@@ -241,19 +227,20 @@ const friendApplicationHandler = {
           403,
         );
       }
-      if (application.applicationStatus !== 'pending') {
-        throw new StandardizedError(
-          '無法刪除已經被處理過的申請',
-          'ValidationError',
-          'DELETEFRIENDAPPLICATION',
-          'APPLICATION_ALREADY_PROCESSED',
+
+      // Delete friend application
+      await DB.delete.friendApplication(senderId, receiverId);
+
+      // Emit updated data (to the receiver)
+      if (receiverSocket) {
+        io.to(receiverSocket.id).emit(
+          'userFriendApplicationsUpdate',
+          await DB.get.userFriendApplications(receiverId),
         );
       }
 
-      await db.delete(`friendApplications.${application.id}`);
-
       new Logger('FriendApplication').success(
-        `Friend application(${application.id}) of User(${sender.id}) and User(${receiver.id}) deleted by User(${operator.id})`,
+        `Friend application(${senderId}-${receiverId}) of User(${senderId}) and User(${receiverId}) deleted by User(${operatorId})`,
       );
     } catch (error) {
       if (!(error instanceof StandardizedError)) {

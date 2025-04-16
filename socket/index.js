@@ -1,8 +1,13 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { v4: uuidv4 } = require('uuid');
+
 // Utils
 const utils = require('../utils');
-const { standardizedError: StandardizedError, map: Map, jwt: JWT } = utils;
+const { Session, JWT } = utils;
+
+// StandardizedError
+const StandardizedError = require('../standardizedError');
+
 // Handlers
 const userHandler = require('./user');
 const serverHandler = require('./server');
@@ -63,8 +68,7 @@ module.exports = (io) => {
       socket.sessionId = sessionId;
 
       // Save maps
-      Map.createUserIdSessionIdMap(userId, socket.sessionId);
-      Map.createUserIdSocketIdMap(userId, socket.id);
+      Session.createUserIdSessionIdMap(userId, sessionId);
 
       return next();
     } catch (error) {
@@ -122,6 +126,9 @@ module.exports = (io) => {
     );
     socket.on('updateChannel', async (data) =>
       channelHandler.updateChannel(io, socket, data),
+    );
+    socket.on('updateChannels', async (data) =>
+      channelHandler.updateChannels(io, socket, data),
     );
     socket.on('deleteChannel', async (data) =>
       channelHandler.deleteChannel(io, socket, data),
@@ -189,5 +196,9 @@ module.exports = (io) => {
     socket.on('RTCIceCandidate', async (data) =>
       rtcHandler.candidate(io, socket, data),
     );
+    // Echo
+    socket.on('ping', async () => {
+      socket.emit('pong');
+    });
   });
 };

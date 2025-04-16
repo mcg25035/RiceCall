@@ -1,24 +1,16 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const standardizedError = require('./standardizedError');
-const logger = require('./logger');
-const get = require('./get');
-const set = require('./set');
+const Logger = require('./logger');
 const func = require('./func');
 const xp = require('./xp');
-const map = require('./map');
+const session = require('./session');
 const jwt = require('./jwt');
 const clean = require('./clean');
-const specialUsers = require('./specialUsers');
 
 module.exports = {
-  standardizedError,
-  logger,
-  get,
-  set,
-  func,
-  xp,
-  map,
-  jwt,
-  clean,
-  specialUsers,
+  Logger,
+  Func: func,
+  Xp: xp,
+  Session: session,
+  JWT: jwt,
+  Clean: clean,
 };

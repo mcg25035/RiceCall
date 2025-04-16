@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 // Utils
 const utils = require('../utils');
-const {
-  standardizedError: StandardizedError,
-  logger: Logger,
-  get: Get,
-  set: Set,
-  func: Func,
-} = utils;
+const { Logger, Func } = utils;
+
+// Database
+const DB = require('../db');
+
+// StandardizedError
+const StandardizedError = require('../standardizedError');
 
 const memberHandler = {
   createMember: async (io, socket, data) => {
@@ -37,10 +37,8 @@ const memberHandler = {
       const operatorId = await Func.validate.socket(socket);
 
       // Get data
-      const operator = await Get.user(operatorId);
-      const user = await Get.user(userId);
-      const server = await Get.server(serverId);
-      const operatorMember = await Get.member(operator.id, server.id);
+      const server = await DB.get.server(serverId);
+      const operatorMember = await DB.get.member(operatorId, serverId);
 
       if (!user || !server){
         throw new StandardizedError(
@@ -52,8 +50,8 @@ const memberHandler = {
         );
       }
 
-      if (operator.id === user.id) {
-        if (newMember.permissionLevel !== 1 && server.ownerId != operator.id) {
+      if (operatorId === userId) {
+        if (newMember.permissionLevel !== 1 && server.ownerId !== operatorId) {
           throw new StandardizedError(
             '必須是遊客',
             'ValidationError',
@@ -62,7 +60,7 @@ const memberHandler = {
             403,
           );
         }
-        if (newMember.permissionLevel !== 6 && server.ownerId === operator.id) {
+        if (newMember.permissionLevel !== 6 && server.ownerId === operatorId) {
           throw new StandardizedError(
             '必須是群組創建者',
             'ValidationError',
@@ -86,7 +84,7 @@ const memberHandler = {
             '無法新增權限高於自己的成員',
             'ValidationError',
             'CREATEMEMBER',
-            'PERMISSION_TOO_HIGH',
+            'PERMISSION_DENIED',
             403,
           );
         }
@@ -102,21 +100,23 @@ const memberHandler = {
       }
 
       // Create member
-      const memberId = `mb_${userId}-${serverId}`;
-      const member = await Set.member(memberId, {
+      await DB.set.member(userId, serverId, {
         ...newMember,
-        userId: user.id,
-        serverId: server.id,
         createdAt: Date.now(),
       });
 
       // Emit updated data (to all users in the server)
-      io.to(`server_${server.id}`).emit('serverUpdate', {
-        members: await Get.serverMembers(server.id),
-      });
+      io.to(`server_${serverId}`).emit(
+        'serverMembersUpdate',
+        await DB.get.serverMembers(serverId),
+      );
+      io.to(`server_${serverId}`).emit(
+        'serverActiveMembersUpdate',
+        await DB.get.serverUsers(serverId),
+      );
 
       new Logger('Member').success(
-        `Member(${member.id}) of User(${user.id}) in Server(${server.id}) created by User(${operator.id})`,
+        `Member(${userId}-${serverId}) of User(${userId}) in Server(${serverId}) created by User(${operatorId})`,
       );
     } catch (error) {
       if (!(error instanceof StandardizedError)) {
@@ -165,11 +165,14 @@ const memberHandler = {
       const operatorId = await Func.validate.socket(socket);
 
       // Get data
-      const operator = await Get.user(operatorId);
-      const user = await Get.user(userId);
-      const server = await Get.server(serverId);
-      const member = await Get.member(userId, serverId);
-      const operatorMember = await Get.member(operator.id, server.id);
+      const operatorMember = await DB.get.member(operatorId, serverId);
+      const userMember = await DB.get.member(userId, serverId);
+      let userSocket;
+      io.sockets.sockets.forEach((_socket) => {
+        if (_socket.userId === userId) {
+          userSocket = _socket;
+        }
+      });
 
       if (!user || !server || !member){
         throw new StandardizedError(
@@ -191,7 +194,7 @@ const memberHandler = {
         );
       }
 
-      if (operator.id === user.id) {
+      if (operatorId === userId) {
         if (editedMember.permissionLevel) {
           throw new StandardizedError(
             '無法更改自己的權限',
@@ -211,7 +214,7 @@ const memberHandler = {
             403,
           );
         }
-        if (member.permissionLevel > 5) {
+        if (userMember.permissionLevel > 5) {
           throw new StandardizedError(
             '無法更改群創建者的權限',
             'ValidationError',
@@ -221,12 +224,12 @@ const memberHandler = {
           );
         }
         if (
-          member.permissionLevel === 1 &&
+          userMember.permissionLevel === 1 &&
           editedMember.permissionLevel &&
           !operatorMember.permissionLevel > 5
         ) {
           throw new StandardizedError(
-            '你沒有足夠的權限更改非會員使用者的權限',
+            '你沒有足夠的權限更改遊客的權限',
             'ValidationError',
             'UPDATEMEMBER',
             'PERMISSION_DENIED',
@@ -238,7 +241,7 @@ const memberHandler = {
           !operatorMember.permissionLevel > 5
         ) {
           throw new StandardizedError(
-            '無法更改會員為非會員',
+            '你沒有足夠的權限更改會員至遊客',
             'ValidationError',
             'UPDATEMEMBER',
             'PERMISSION_DENIED',
@@ -256,10 +259,10 @@ const memberHandler = {
         }
         if (editedMember.permissionLevel >= operatorMember.permissionLevel) {
           throw new StandardizedError(
-            '無法設置高於自己的權限',
+            '無法更改高於自己權限的成員',
             'ValidationError',
             'UPDATEMEMBER',
-            'PERMISSION_TOO_HIGH',
+            'PERMISSION_DENIED',
             403,
           );
         }
@@ -275,15 +278,25 @@ const memberHandler = {
       }
 
       // Update member
-      await Set.member(member.id, editedMember);
+      await DB.set.member(userId, serverId, editedMember);
 
-      // Emit updated data to all users in the server
-      io.to(`server_${server.id}`).emit('serverUpdate', {
-        members: await Get.serverMembers(server.id),
-      });
+      // Emit updated data (to all users in the server)
+      io.to(`server_${serverId}`).emit(
+        'serverMembersUpdate',
+        await DB.get.serverMembers(serverId),
+      );
+      io.to(`server_${serverId}`).emit(
+        'serverActiveMembersUpdate',
+        await DB.get.serverUsers(serverId),
+      );
+
+      // Emit updated data (to the user *if the user is in the server*)
+      if (Array.from(userSocket.rooms).includes(`server_${serverId}`)) {
+        io.to(userSocket.id).emit('memberUpdate', editedMember);
+      }
 
       new Logger('Member').success(
-        `Member(${member.id}) of User(${user.id}) in Server(${server.id}) updated by User(${operator.id})`,
+        `Member(${userId}-${serverId}) of User(${userId}) in Server(${serverId}) updated by User(${operatorId})`,
       );
     } catch (error) {
       if (!(error instanceof StandardizedError)) {

@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { QuickDB } = require('quick.db');
-const db = new QuickDB();
 const fs = require('fs').promises;
 const path = require('path');
+
 // Constants
 const {
   UPLOADS_DIR,
@@ -11,8 +10,10 @@ const {
   SERVER_AVATAR_DIR,
   USER_AVATAR_DIR,
 } = require('../constant');
+
 // Utils
 const Logger = require('./logger');
+const DB = require('../db');
 
 const clean = {
   setup: async () => {
@@ -46,8 +47,8 @@ const cleanAvatars = async (TYPE) => {
     const files = await fs.readdir(DIR);
     const data =
       TYPE === 'server'
-        ? (await db.get('servers')) || {}
-        : (await db.get('users')) || {};
+        ? (await DB.get.all('servers')) || {}
+        : (await DB.get.all('users')) || {};
     const avatarMap = {};
 
     Object.values(data).forEach((item) => {
