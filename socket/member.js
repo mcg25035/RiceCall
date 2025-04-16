@@ -39,12 +39,13 @@ const memberHandler = {
       // Get data
       const server = await DB.get.server(serverId);
       const operatorMember = await DB.get.member(operatorId, serverId);
+      const user = await DB.get.user(userId);
 
-      if (!user || !server){
+      if (!user || !server) {
         throw new StandardizedError(
           'user 或 server 不存在',
           'ValidationError',
-          'UPDATEMEMBER',
+          'CREATEMEMBER',
           'DATA_INVALID',
           401,
         );
@@ -167,6 +168,8 @@ const memberHandler = {
       // Get data
       const operatorMember = await DB.get.member(operatorId, serverId);
       const userMember = await DB.get.member(userId, serverId);
+      const user = await DB.get.user(userId);
+      const server = await DB.get.server(serverId);
       let userSocket;
       io.sockets.sockets.forEach((_socket) => {
         if (_socket.userId === userId) {
@@ -174,7 +177,7 @@ const memberHandler = {
         }
       });
 
-      if (!user || !server || !member){
+      if (!user || !server || !userMember) {
         throw new StandardizedError(
           'user 或 server 或 member 不存在',
           'ValidationError',

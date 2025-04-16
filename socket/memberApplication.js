@@ -127,6 +127,7 @@ const memberApplicationHandler = {
 
       // Get data
       const operatorMember = await DB.get.member(operatorId, serverId);
+      const application = await DB.get.memberApplication(userId, serverId);
 
       if (!application) {
         throw new StandardizedError(
@@ -207,6 +208,7 @@ const memberApplicationHandler = {
 
       // Get data
       const operatorMember = await DB.get.member(operatorId, serverId);
+      const application = await DB.get.memberApplication(userId, serverId);
 
       if (!application) {
         throw new StandardizedError(
