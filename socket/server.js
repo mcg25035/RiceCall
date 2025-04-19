@@ -109,15 +109,6 @@ const serverHandler = {
           );
           return;
         }
-        if (user.currentServerId === serverId) {
-          throw new StandardizedError(
-            '你已經在該群組中',
-            'ValidationError',
-            'CONNECTSERVER',
-            'ALREADY_IN_SERVER',
-            403,
-          );
-        }
       } else {
         throw new StandardizedError(
           '無法移動其他用戶的群組',

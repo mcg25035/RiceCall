@@ -104,15 +104,6 @@ const channelHandler = {
               403,
             );
           }
-          if (user.currentChannelId === channelId) {
-            throw new StandardizedError(
-              '你已經在該頻道中',
-              'ValidationError',
-              'CONNECTCHANNEL',
-              'ALREADY_IN_CHANNEL',
-              403,
-            );
-          }
         } else {
           if (operatorMember.permissionLevel < 5) {
             throw new StandardizedError(
@@ -159,15 +150,6 @@ const channelHandler = {
               'ValidationError',
               'CONNECTCHANNEL',
               'PERMISSION_DENIED',
-              403,
-            );
-          }
-          if (user.currentChannelId === channelId) {
-            throw new StandardizedError(
-              '用戶已經在該頻道中',
-              'ValidationError',
-              'CONNECTCHANNEL',
-              'ALREADY_IN_CHANNEL',
               403,
             );
           }
