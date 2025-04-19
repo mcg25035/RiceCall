@@ -59,7 +59,7 @@ const Database = {
   set: {
     account: async (account, data) => {
       try {
-        if (!account || !data) return;
+        if (!account || !data) return false;
         const ALLOWED_FIELDS = ['password', 'user_id'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -86,6 +86,7 @@ const Database = {
             [account, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -102,7 +103,7 @@ const Database = {
 
     user: async (userId, data) => {
       try {
-        if (!userId || !data) return;
+        if (!userId || !data) return false;
         const ALLOWED_FIELDS = [
           'id',
           'name',
@@ -150,6 +151,7 @@ const Database = {
             [userId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -166,7 +168,7 @@ const Database = {
 
     badge: async (badgeId, data) => {
       try {
-        if (!badgeId || !data) return;
+        if (!badgeId || !data) return false;
         const ALLOWED_FIELDS = ['name', 'description', 'image'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -193,6 +195,7 @@ const Database = {
             [badgeId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -209,7 +212,7 @@ const Database = {
 
     userBadge: async (userId, badgeId, data) => {
       try {
-        if (!userId || !badgeId || !data) return;
+        if (!userId || !badgeId || !data) return false;
         const ALLOWED_FIELDS = ['user_id', 'badge_id', 'order', 'created_at'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -237,6 +240,7 @@ const Database = {
             [userId, badgeId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -253,7 +257,7 @@ const Database = {
 
     userServer: async (userId, serverId, data) => {
       try {
-        if (!userId || !serverId || !data) return;
+        if (!userId || !serverId || !data) return false;
         const ALLOWED_FIELDS = [
           'recent',
           'owned',
@@ -288,6 +292,7 @@ const Database = {
             [userId, serverId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -304,7 +309,7 @@ const Database = {
 
     server: async (serverId, data) => {
       try {
-        if (!serverId || !data) return;
+        if (!serverId || !data) return false;
         const ALLOWED_FIELDS = [
           'name',
           'avatar',
@@ -349,6 +354,7 @@ const Database = {
             [serverId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -365,7 +371,7 @@ const Database = {
 
     channel: async (channelId, data) => {
       try {
-        if (!channelId || !data) return;
+        if (!channelId || !data) return false;
         const ALLOWED_FIELDS = [
           'name',
           'order',
@@ -413,6 +419,7 @@ const Database = {
             [channelId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -429,7 +436,7 @@ const Database = {
 
     friendGroup: async (friendGroupId, data) => {
       try {
-        if (!friendGroupId || !data) return;
+        if (!friendGroupId || !data) return false;
         const ALLOWED_FIELDS = ['name', 'order', 'user_id', 'created_at'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -456,6 +463,7 @@ const Database = {
             [friendGroupId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -472,7 +480,7 @@ const Database = {
 
     friend: async (userId, targetId, data) => {
       try {
-        if (!userId || !targetId || !data) return;
+        if (!userId || !targetId || !data) return false;
         const ALLOWED_FIELDS = ['is_blocked', 'friend_group_id', 'created_at'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -500,6 +508,7 @@ const Database = {
             [userId, targetId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -516,7 +525,7 @@ const Database = {
 
     friendApplication: async (senderId, receiverId, data) => {
       try {
-        if (!senderId || !receiverId || !data) return;
+        if (!senderId || !receiverId || !data) return false;
         const ALLOWED_FIELDS = ['description', 'created_at'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -544,6 +553,7 @@ const Database = {
             [senderId, receiverId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -560,7 +570,7 @@ const Database = {
 
     member: async (userId, serverId, data) => {
       try {
-        if (!userId || !serverId || !data) return;
+        if (!userId || !serverId || !data) return false;
         const ALLOWED_FIELDS = [
           'nickname',
           'contribution',
@@ -596,6 +606,7 @@ const Database = {
             [userId, serverId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -612,7 +623,7 @@ const Database = {
 
     memberApplication: async (userId, serverId, data) => {
       try {
-        if (!userId || !serverId || !data) return;
+        if (!userId || !serverId || !data) return false;
         const ALLOWED_FIELDS = ['description', 'created_at'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -640,6 +651,7 @@ const Database = {
             [userId, serverId, ...values],
           );
         }
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1399,11 +1411,13 @@ const Database = {
   delete: {
     user: async (userId) => {
       try {
+        if (!userId) return false;
         await query(
           `DELETE FROM users 
           WHERE users.user_id = ?`,
           [userId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1420,11 +1434,13 @@ const Database = {
 
     badge: async (badgeId) => {
       try {
+        if (!badgeId) return false;
         await query(
           `DELETE FROM badges 
           WHERE badges.badge_id = ?`,
           [badgeId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1441,12 +1457,14 @@ const Database = {
 
     userBadge: async (userId, badgeId) => {
       try {
+        if (!userId || !badgeId) return false;
         await query(
           `DELETE FROM user_badges 
           WHERE user_badges.user_id = ?
           AND user_badges.badge_id = ?`,
           [userId, badgeId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1463,12 +1481,14 @@ const Database = {
 
     userServer: async (userId, serverId) => {
       try {
+        if (!userId || !serverId) return false;
         await query(
           `DELETE FROM user_servers 
           WHERE user_servers.user_id = ?
           AND user_servers.server_id = ?`,
           [userId, serverId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1485,11 +1505,13 @@ const Database = {
 
     server: async (serverId) => {
       try {
+        if (!serverId) return false;
         await query(
           `DELETE FROM servers 
           WHERE servers.server_id = ?`,
           [serverId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1506,11 +1528,13 @@ const Database = {
 
     channel: async (channelId) => {
       try {
+        if (!channelId) return false;
         await query(
           `DELETE FROM channels 
           WHERE channels.channel_id = ?`,
           [channelId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1527,11 +1551,13 @@ const Database = {
 
     friendGroup: async (friendGroupId) => {
       try {
+        if (!friendGroupId) return false;
         await query(
           `DELETE FROM friend_groups 
           WHERE friend_groups.friend_group_id = ?`,
           [friendGroupId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1548,12 +1574,14 @@ const Database = {
 
     member: async (userId, serverId) => {
       try {
+        if (!userId || !serverId) return false;
         await query(
           `DELETE FROM members 
           WHERE members.user_id = ?
           AND members.server_id = ?`,
           [userId, serverId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1570,12 +1598,14 @@ const Database = {
 
     memberApplication: async (userId, serverId) => {
       try {
+        if (!userId || !serverId) return false;
         await query(
           `DELETE FROM member_applications 
           WHERE member_applications.user_id = ?
           AND member_applications.server_id = ?`,
           [userId, serverId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1592,12 +1622,14 @@ const Database = {
 
     friend: async (userId, targetId) => {
       try {
+        if (!userId || !targetId) return false;
         await query(
           `DELETE FROM friends 
           WHERE friends.user_id = ?
           AND friends.target_id = ?`,
           [userId, targetId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1614,12 +1646,14 @@ const Database = {
 
     friendApplication: async (senderId, receiverId) => {
       try {
+        if (!senderId || !receiverId) return false;
         await query(
           `DELETE FROM friend_applications 
           WHERE friend_applications.sender_id = ?
           AND friend_applications.receiver_id = ?`,
           [senderId, receiverId],
         );
+        return true;
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
