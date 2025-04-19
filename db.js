@@ -51,17 +51,6 @@ function validateData(data, allowedFields) {
       401,
     );
   }
-  // for (const key of keys) {
-  //   if (!allowedFields.includes(key)) {
-  //     throw new StandardizedError(
-  //       `Invalid field: ${key}`,
-  //       'AccessDatabaseError',
-  //       'SET',
-  //       'DATA_INVALID',
-  //       401,
-  //     );
-  //   }
-  // }
   return { keys, values };
 }
 
@@ -70,6 +59,7 @@ const Database = {
   set: {
     account: async (account, data) => {
       try {
+        if (!account || !data) return;
         const ALLOWED_FIELDS = ['password', 'user_id'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -112,6 +102,7 @@ const Database = {
 
     user: async (userId, data) => {
       try {
+        if (!userId || !data) return;
         const ALLOWED_FIELDS = [
           'id',
           'name',
@@ -175,6 +166,7 @@ const Database = {
 
     badge: async (badgeId, data) => {
       try {
+        if (!badgeId || !data) return;
         const ALLOWED_FIELDS = ['name', 'description', 'image'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -217,6 +209,7 @@ const Database = {
 
     userBadge: async (userId, badgeId, data) => {
       try {
+        if (!userId || !badgeId || !data) return;
         const ALLOWED_FIELDS = ['user_id', 'badge_id', 'order', 'created_at'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -260,6 +253,7 @@ const Database = {
 
     userServer: async (userId, serverId, data) => {
       try {
+        if (!userId || !serverId || !data) return;
         const ALLOWED_FIELDS = [
           'recent',
           'owned',
@@ -310,6 +304,7 @@ const Database = {
 
     server: async (serverId, data) => {
       try {
+        if (!serverId || !data) return;
         const ALLOWED_FIELDS = [
           'name',
           'avatar',
@@ -370,6 +365,7 @@ const Database = {
 
     channel: async (channelId, data) => {
       try {
+        if (!channelId || !data) return;
         const ALLOWED_FIELDS = [
           'name',
           'order',
@@ -433,6 +429,7 @@ const Database = {
 
     friendGroup: async (friendGroupId, data) => {
       try {
+        if (!friendGroupId || !data) return;
         const ALLOWED_FIELDS = ['name', 'order', 'user_id', 'created_at'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -475,6 +472,7 @@ const Database = {
 
     friend: async (userId, targetId, data) => {
       try {
+        if (!userId || !targetId || !data) return;
         const ALLOWED_FIELDS = ['is_blocked', 'friend_group_id', 'created_at'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -518,6 +516,7 @@ const Database = {
 
     friendApplication: async (senderId, receiverId, data) => {
       try {
+        if (!senderId || !receiverId || !data) return;
         const ALLOWED_FIELDS = ['description', 'created_at'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -561,6 +560,7 @@ const Database = {
 
     member: async (userId, serverId, data) => {
       try {
+        if (!userId || !serverId || !data) return;
         const ALLOWED_FIELDS = [
           'nickname',
           'contribution',
@@ -612,6 +612,7 @@ const Database = {
 
     memberApplication: async (userId, serverId, data) => {
       try {
+        if (!userId || !serverId || !data) return;
         const ALLOWED_FIELDS = ['description', 'created_at'];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);
         const exists = await query(
@@ -652,103 +653,6 @@ const Database = {
         throw error;
       }
     },
-
-    message: async (messageId, data) => {
-      try {
-        const ALLOWED_FIELDS = [
-          'content',
-          'type',
-          'sender_id',
-          'server_id',
-          'channel_id',
-          'timestamp',
-        ];
-        const { keys, values } = validateData(data, ALLOWED_FIELDS);
-        const exists = await query(
-          `SELECT * 
-          FROM messages 
-          WHERE message_id = ?`,
-          [messageId],
-        );
-        if (exists.length) {
-          // If the message exists, update it
-          await query(
-            `UPDATE messages SET ${keys
-              .map((k) => `\`${k}\` = ?`)
-              .join(', ')} WHERE message_id = ?`,
-            [...values, messageId],
-          );
-        } else {
-          // If the message does not exist, create it
-          await query(
-            `INSERT INTO messages (message_id, ${keys
-              .map((k) => `\`${k}\``)
-              .join(', ')}) 
-            VALUES (?, ${keys.map(() => '?').join(', ')})`,
-            [messageId, ...values],
-          );
-        }
-      } catch (error) {
-        if (!(error instanceof StandardizedError)) {
-          error = new StandardizedError(
-            `設置 message.${messageId} 時發生無法預期的錯誤: ${error.message}`,
-            'AccessDatabaseError',
-            'SET',
-            'DATABASE_ERROR',
-            500,
-          );
-        }
-        throw error;
-      }
-    },
-
-    directMessage: async (directMessageId, data) => {
-      try {
-        const ALLOWED_FIELDS = [
-          'content',
-          'sender_id',
-          'user1_id',
-          'user2_id',
-          'timestamp',
-        ];
-        const { keys, values } = validateData(data, ALLOWED_FIELDS);
-        const exists = await query(
-          `SELECT * 
-          FROM direct_messages 
-          WHERE direct_message_id = ?`,
-          [directMessageId],
-        );
-        if (exists.length) {
-          // If the directMessage exists, update it
-          await query(
-            `UPDATE direct_messages SET ${keys
-              .map((k) => `\`${k}\` = ?`)
-              .join(', ')} WHERE direct_message_id = ?`,
-            [...values, directMessageId],
-          );
-        } else {
-          // If the directMessage does not exist, create it
-          await query(
-            `INSERT INTO direct_messages (direct_message_id, ${keys
-              .map((k) => `\`${k}\``)
-              .join(', ')}) 
-            VALUES (?, ${keys.map(() => '?').join(', ')})`,
-            [directMessageId, ...values],
-          );
-        }
-      } catch (error) {
-        if (!(error instanceof StandardizedError)) {
-          error = new StandardizedError(
-            `設置 directMessage.${directMessageId} 時發生無法預期的錯誤: ${error.message}`,
-            'AccessDatabaseError',
-            'SET',
-            'DATABASE_ERROR',
-            500,
-          );
-        }
-        throw error;
-      }
-    },
   },
 
   get: {
@@ -779,14 +683,15 @@ const Database = {
       try {
         if (!account) return null;
         const res = await query(
-          `SELECT *
+          `SELECT 
+          accounts.*
           FROM accounts
           WHERE accounts.account = ?`,
           [account],
         );
         const data = res[0];
         if (!data) return null;
-        return data;
+        return convertToCamelCase(data);
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -805,7 +710,8 @@ const Database = {
       try {
         if (!querys) return null;
         const res = await query(
-          `SELECT accounts.user_id 
+          `SELECT 
+          accounts.user_id 
           FROM accounts
           WHERE accounts.account = ?`,
           [querys],
@@ -831,7 +737,8 @@ const Database = {
       try {
         if (!userId) return null;
         const datas = await query(
-          `SELECT *
+          `SELECT 
+          users.*
           FROM users
           WHERE users.user_id = ?`,
           [userId],
@@ -857,14 +764,25 @@ const Database = {
       try {
         if (!userId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          friend_groups.created_at AS friend_group_created_at,
+          friend_groups.*,
+          users.created_at AS user_created_at,
+          users.*
           FROM friend_groups
+          INNER JOIN users
+          ON friend_groups.user_id = users.user_id
           WHERE friend_groups.user_id = ?
           ORDER BY friend_groups.\`order\`, friend_groups.created_at DESC`,
           [userId],
         );
         if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
+        return datas.map((data) => {
+          data.created_at = data.friend_group_created_at;
+          delete data.friend_group_created_at;
+          delete data.user_created_at;
+          return convertToCamelCase(data);
+        });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -883,9 +801,11 @@ const Database = {
       try {
         if (!userId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          user_badges.*,
+          badges.*
           FROM user_badges
-          LEFT JOIN badges
+          INNER JOIN badges
           ON user_badges.badge_id = badges.badge_id
           WHERE user_badges.user_id = ?
           ORDER BY badges.\`order\`, badges.created_at DESC`,
@@ -911,16 +831,29 @@ const Database = {
       try {
         if (!userId) return null;
         const datas = await query(
-          `SELECT *
+          `SELECT 
+          user_servers.*,
+          servers.created_at AS server_created_at,
+          servers.*
+          members.created_at AS member_created_at,
+          members.*
           FROM user_servers
-          LEFT JOIN servers
+          INNER JOIN servers
           ON user_servers.server_id = servers.server_id
+          INNER JOIN members
+          ON user_servers.server_id = members.server_id
+          AND user_servers.user_id = members.user_id
           WHERE user_servers.user_id = ?
           ORDER BY user_servers.timestamp DESC`,
           [userId],
         );
         if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
+        return datas.map((data) => {
+          data.created_at = data.member_created_at;
+          delete data.server_created_at;
+          delete data.member_created_at;
+          return convertToCamelCase(data);
+        });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -935,48 +868,35 @@ const Database = {
       }
     },
 
-    userMembers: async (userId) => {
-      try {
-        if (!userId) return null;
-        const datas = await query(
-          `SELECT members.created_at AS created_at, members.*, servers.* 
-          FROM members 
-          LEFT JOIN servers
-          ON members.server_id = servers.server_id
-          WHERE members.user_id = ?
-          ORDER BY members.created_at DESC`,
-          [userId],
-        );
-        if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
-      } catch (error) {
-        if (!(error instanceof StandardizedError)) {
-          error = new StandardizedError(
-            `查詢 userMembers.${userId} 時發生無法預期的錯誤: ${error.message}`,
-            'AccessDatabaseError',
-            'GET',
-            'DATABASE_ERROR',
-            500,
-          );
-        }
-        throw error;
-      }
-    },
-
     userFriends: async (userId) => {
       try {
         if (!userId) return null;
         const datas = await query(
-          `SELECT friends.created_at AS created_at, friends.*, users.*
+          `SELECT 
+          friends.user_id AS friend_user_id,
+          friends.created_at AS friend_created_at, 
+          friends.*, 
+          users.user_id AS user_user_id,
+          users.created_at AS user_created_at,
+          users.*
           FROM friends 
-          LEFT JOIN users
+          INNER JOIN users
           ON friends.target_id = users.user_id
           WHERE friends.user_id = ?
           ORDER BY friends.created_at DESC`,
           [userId],
         );
         if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
+        return datas.map((data) => {
+          data.created_at = data.friend_created_at;
+          delete data.friend_created_at;
+          delete data.user_created_at;
+          data.user_id = data.friend_user_id;
+          delete data.friend_user_id;
+          data.target_id = data.user_user_id;
+          delete data.user_user_id;
+          return convertToCamelCase(data);
+        });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -995,16 +915,25 @@ const Database = {
       try {
         if (!userId) return null;
         const datas = await query(
-          `SELECT friend_applications.created_at AS created_at, friend_applications.*, users.*
+          `SELECT 
+          friend_applications.created_at AS friend_application_created_at,
+          friend_applications.*,
+          users.created_at AS user_created_at,
+          users.*
           FROM friend_applications 
-          LEFT JOIN users 
+          INNER JOIN users 
           ON friend_applications.sender_id = users.user_id
           WHERE friend_applications.receiver_id = ?
           ORDER BY friend_applications.created_at DESC`,
           [userId],
         );
         if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
+        return datas.map((data) => {
+          data.created_at = data.friend_application_created_at;
+          delete data.friend_application_created_at;
+          delete data.user_created_at;
+          return convertToCamelCase(data);
+        });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1023,11 +952,11 @@ const Database = {
       try {
         if (!querys) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          servers.*
           FROM servers 
           WHERE servers.name LIKE ? OR servers.display_id = ?
-          ORDER BY servers.created_at DESC
-          LIMIT 10`,
+          ORDER BY servers.created_at DESC`,
           [`%${querys}%`, `${querys}`],
         );
         if (!datas) return null;
@@ -1050,7 +979,8 @@ const Database = {
       try {
         if (!serverId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          servers.*
           FROM servers 
           WHERE servers.server_id = ?`,
           [serverId],
@@ -1076,7 +1006,8 @@ const Database = {
       try {
         if (!serverId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          channels.*
           FROM channels
           WHERE channels.server_id = ?
           ORDER BY channels.\`order\`, channels.created_at DESC`,
@@ -1102,16 +1033,25 @@ const Database = {
       try {
         if (!serverId) return null;
         const datas = await query(
-          `SELECT members.created_at AS created_at, members.*, users.* 
+          `SELECT 
+          members.created_at AS member_created_at,
+          members.*, 
+          users.created_at AS user_created_at,
+          users.*
           FROM members 
-          LEFT JOIN users 
+          INNER JOIN users 
           ON members.user_id = users.user_id  
           WHERE members.server_id = ?
           ORDER BY members.created_at DESC`,
           [serverId],
         );
         if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
+        return datas.map((data) => {
+          data.created_at = data.member_created_at;
+          delete data.member_created_at;
+          delete data.user_created_at;
+          return convertToCamelCase(data);
+        });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1130,16 +1070,25 @@ const Database = {
       try {
         if (!serverId) return null;
         const datas = await query(
-          `SELECT member_applications.created_at AS created_at, member_applications.*, users.* 
+          `SELECT 
+          member_applications.created_at AS member_application_created_at,
+          member_applications.*,
+          users.created_at AS user_created_at,
+          users.*
           FROM member_applications 
-          LEFT JOIN users 
+          INNER JOIN users 
           ON member_applications.user_id = users.user_id
           WHERE member_applications.server_id = ?
           ORDER BY member_applications.created_at DESC`,
           [serverId],
         );
         if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
+        return datas.map((data) => {
+          data.created_at = data.member_application_created_at;
+          delete data.member_application_created_at;
+          delete data.user_created_at;
+          return convertToCamelCase(data);
+        });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1158,7 +1107,8 @@ const Database = {
       try {
         if (!categoryId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          categories.*
           FROM categories 
           WHERE categories.category_id = ?
           ORDER BY categories.\`order\`, categories.created_at DESC`,
@@ -1185,7 +1135,8 @@ const Database = {
       try {
         if (!channelId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          channels.*
           FROM channels 
           WHERE channels.channel_id = ?
           ORDER BY channels.\`order\`, channels.created_at DESC`,
@@ -1212,7 +1163,8 @@ const Database = {
       try {
         if (!channelId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          channels.*
           FROM channels 
           WHERE channels.category_id = ?
           ORDER BY channels.\`order\`, channels.created_at DESC`,
@@ -1238,7 +1190,8 @@ const Database = {
       try {
         if (!channelId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          users.*
           FROM users
           WHERE users.current_channel_id = ?
           ORDER BY users.created_at DESC`,
@@ -1260,40 +1213,14 @@ const Database = {
       }
     },
 
-    channelInfoMessages: async (channelId) => {
-      try {
-        const datas = await query(
-          `SELECT * 
-          FROM messages 
-          WHERE messages.channel_id = ?
-          AND messages.type = 'info'
-          ORDER BY messages.timestamp DESC`,
-          [channelId],
-        );
-        if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
-      } catch (error) {
-        if (!(error instanceof StandardizedError)) {
-          error = new StandardizedError(
-            `查詢 channelInfoMessages.${channelId} 時發生無法預期的錯誤: ${error.message}`,
-            'AccessDatabaseError',
-            'GET',
-            'DATABASE_ERROR',
-            500,
-          );
-        }
-        throw error;
-      }
-    },
-
     friendGroup: async (friendGroupId) => {
       try {
         if (!friendGroupId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          friend_groups.*
           FROM friend_groups 
-          WHERE friend_groups.friend_group_id = ?
-          ORDER BY friend_groups.\`order\`, friend_groups.created_at DESC`,
+          WHERE friend_groups.friend_group_id = ?`,
           [friendGroupId],
         );
         const data = datas[0];
@@ -1317,14 +1244,31 @@ const Database = {
       try {
         if (!friendGroupId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT
+          friends.user_id AS friend_user_id,
+          friends.created_at AS friend_created_at,
+          friends.*,
+          users.user_id AS user_user_id,
+          users.created_at AS user_created_at,
+          users.*
           FROM friends 
+          INNER JOIN users 
+          ON friends.target_id = users.user_id
           WHERE friends.friend_group_id = ?
           ORDER BY friends.created_at DESC`,
           [friendGroupId],
         );
         if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
+        return datas.map((data) => {
+          data.created_at = data.friend_created_at;
+          delete data.friend_created_at;
+          delete data.user_created_at;
+          data.user_id = data.friend_user_id;
+          delete data.friend_user_id;
+          data.target_id = data.user_user_id;
+          delete data.user_user_id;
+          return convertToCamelCase(data);
+        });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1343,11 +1287,11 @@ const Database = {
       try {
         if (!userId || !serverId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          members.*
           FROM members 
           WHERE members.user_id = ?
-          AND members.server_id = ?
-          ORDER BY members.created_at DESC`,
+          AND members.server_id = ?`,
           [userId, serverId],
         );
         const data = datas[0];
@@ -1371,11 +1315,11 @@ const Database = {
       try {
         if (!userId || !serverId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          member_applications.*
           FROM member_applications 
           WHERE member_applications.user_id = ?
-          AND member_applications.server_id = ?
-          ORDER BY member_applications.created_at DESC`,
+          AND member_applications.server_id = ?`,
           [userId, serverId],
         );
         const data = datas[0];
@@ -1399,11 +1343,11 @@ const Database = {
       try {
         if (!userId || !targetId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          friends.*
           FROM friends 
           WHERE friends.user_id = ?
-          AND friends.target_id = ?
-          ORDER BY friends.created_at DESC`,
+          AND friends.target_id = ?`,
           [userId, targetId],
         );
         const data = datas[0];
@@ -1427,11 +1371,11 @@ const Database = {
       try {
         if (!senderId || !receiverId) return null;
         const datas = await query(
-          `SELECT * 
+          `SELECT 
+          friend_applications.*
           FROM friend_applications 
           WHERE friend_applications.sender_id = ?
-          AND friend_applications.receiver_id = ?
-          ORDER BY friend_applications.created_at DESC`,
+          AND friend_applications.receiver_id = ?`,
           [senderId, receiverId],
         );
         const data = datas[0];
@@ -1680,51 +1624,6 @@ const Database = {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
             `刪除 friendApplication.${senderId}-${receiverId} 時發生無法預期的錯誤: ${error.message}`,
-            'AccessDatabaseError',
-            'DELETE',
-            'DATABASE_ERROR',
-            500,
-          );
-        }
-        throw error;
-      }
-    },
-
-    message: async (messageId) => {
-      try {
-        await query(
-          `DELETE FROM messages 
-          WHERE messages.message_id = ?`,
-          [messageId],
-        );
-      } catch (error) {
-        if (!(error instanceof StandardizedError)) {
-          error = new StandardizedError(
-            `刪除 message.${messageId} 時發生無法預期的錯誤: ${error.message}`,
-            'AccessDatabaseError',
-            'DELETE',
-            'DATABASE_ERROR',
-            500,
-          );
-        }
-        throw error;
-      }
-    },
-
-    directMessage: async (userId, targetId) => {
-      try {
-        const userId1 = userId.localeCompare(targetId) < 0 ? userId : targetId;
-        const userId2 = userId.localeCompare(targetId) < 0 ? targetId : userId;
-        await query(
-          `DELETE FROM direct_messages 
-          WHERE direct_messages.user1_id = ?
-          AND direct_messages.user2_id = ?`,
-          [userId1, userId2],
-        );
-      } catch (error) {
-        if (!(error instanceof StandardizedError)) {
-          error = new StandardizedError(
-            `刪除 directMessage.${userId}-${targetId} 時發生無法預期的錯誤: ${error.message}`,
             'AccessDatabaseError',
             'DELETE',
             'DATABASE_ERROR',
