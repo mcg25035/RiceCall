@@ -848,7 +848,7 @@ const Database = {
           servers.created_at AS server_created_at,
           servers.*,
           members.created_at AS member_created_at,
-          members.*,
+          members.*
           FROM user_servers
           INNER JOIN servers
           ON user_servers.server_id = servers.server_id
