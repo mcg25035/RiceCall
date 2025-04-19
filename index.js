@@ -32,46 +32,6 @@ const {
   // BACKUP_DIR,
 } = require('./constant');
 
-// const DB_PATH = path.join(__dirname, './json.sqlite');
-
-// const backupDatabase = async () => {
-//   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-//   const backupFileName = `json_backup_${timestamp}.sqlite`;
-//   const backupFilePath = path.join(BACKUP_DIR, backupFileName);
-
-//   try {
-//     await fs.copyFile(DB_PATH, backupFilePath);
-//     console.log(`備份成功: ${backupFilePath}`);
-//   } catch (err) {
-//     console.error('備份失敗:', err);
-//   }
-
-//   try {
-//     const files = await fs.readdir(BACKUP_DIR);
-//     const now = Date.now();
-//     const expirationTime = 8 * 60 * 60 * 1000;
-
-//     await Promise.all(
-//       files.map(async (file) => {
-//         const filePath = path.join(BACKUP_DIR, file);
-//         const stats = await fs.stat(filePath);
-//         const fileAge = now - stats.mtimeMs;
-
-//         if (fileAge > expirationTime) {
-//           await fs.unlink(filePath);
-//           console.log(`刪除過期備份: ${filePath}`);
-//         }
-//       }),
-//     );
-//   } catch (err) {
-//     console.error('刪除過期備份文件時發生錯誤:', err);
-//   }
-// };
-
-// const BACKUP_INTERVAL_MS = 60 * 60 * 1000;
-
-// setInterval(backupDatabase, BACKUP_INTERVAL_MS);
-
 // Send Error/Success Response
 const sendError = (res, statusCode, message) => {
   res.writeHead(statusCode, CONTENT_TYPE_JSON);
@@ -140,7 +100,7 @@ const server = http.createServer((req, res) => {
             401,
           );
         }
-        const userId = accountData.user_id;
+        const userId = accountData.userId;
         if (!userId) {
           throw new StandardizedError(
             '用戶不存在',
