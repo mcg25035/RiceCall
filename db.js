@@ -1072,35 +1072,6 @@ const Database = {
       }
     },
 
-    serverUsers: async (serverId) => {
-      try {
-        if (!serverId) return null;
-        const datas = await query(
-          `SELECT members.created_at AS created_at, members.*, users.* 
-          FROM members 
-          LEFT JOIN users 
-          ON members.user_id = users.user_id
-          AND members.server_id = ?
-          WHERE users.current_server_id = ?
-          ORDER BY members.created_at DESC`,
-          [serverId, serverId],
-        );
-        if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
-      } catch (error) {
-        if (!(error instanceof StandardizedError)) {
-          error = new StandardizedError(
-            `查詢 serverUsers.${serverId} 時發生無法預期的錯誤: ${error.message}`,
-            'AccessDatabaseError',
-            'GET',
-            'DATABASE_ERROR',
-            500,
-          );
-        }
-        throw error;
-      }
-    },
-
     serverChannels: async (serverId) => {
       try {
         if (!serverId) return null;

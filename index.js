@@ -516,41 +516,6 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    if (req.url == '/refresh/serverActiveMembers') {
-      req.on('end', async () => {
-        try {
-          const data = JSON.parse(body);
-          const { serverId } = data;
-          if (!serverId) {
-            throw new StandardizedError(
-              '無效的資料',
-              'ValidationError',
-              'REFRESHSERVERACTIVEMEMBERS',
-              'DATA_INVALID',
-              400,
-            );
-          }
-          sendSuccess(res, {
-            message: 'success',
-            data: await DB.get.serverUsers(serverId),
-          });
-        } catch (error) {
-          if (!(error instanceof StandardizedError)) {
-            error = new StandardizedError(
-              `刷新資料時發生預期外的錯誤: ${error.message}`,
-              'ServerError',
-              'REFRESHSERVERACTIVEMEMBERS',
-              'EXCEPTION_ERROR',
-              500,
-            );
-          }
-          sendError(res, error.status_code, error.error_message);
-          new Logger('Server').error(`Refresh error: ${error.error_message}`);
-        }
-      });
-      return;
-    }
-
     if (req.url == '/refresh/serverMembers') {
       req.on('end', async () => {
         try {
