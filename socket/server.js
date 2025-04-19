@@ -109,6 +109,15 @@ const serverHandler = {
           );
           return;
         }
+        if (user.currentServerId === serverId) {
+          throw new StandardizedError(
+            '你已經在該群組中',
+            'ValidationError',
+            'CONNECTSERVER',
+            'ALREADY_IN_SERVER',
+            403,
+          );
+        }
       } else {
         throw new StandardizedError(
           '無法移動其他用戶的群組',
@@ -164,6 +173,10 @@ const serverHandler = {
       // Emit data (only to the user)
       io.to(userSocket.id).emit('userUpdate', updatedUser);
       io.to(userSocket.id).emit('serverUpdate', await DB.get.server(serverId));
+      io.to(userSocket.id).emit(
+        'memberUpdate',
+        await DB.get.member(userId, serverId),
+      );
       io.to(userSocket.id).emit(
         'userServersUpdate',
         await DB.get.userServers(userId),
@@ -283,6 +296,7 @@ const serverHandler = {
       // Emit data (only to the user)
       io.to(userSocket.id).emit('userUpdate', updatedUser);
       io.to(userSocket.id).emit('serverUpdate', null);
+      io.to(userSocket.id).emit('memberUpdate', null);
 
       new Logger('Server').success(
         `User(${userId}) disconnected from server(${serverId}) by User(${operatorId})`,
@@ -368,6 +382,7 @@ const serverHandler = {
         member: {
           permissionLevel: 6,
         },
+        createdAt: Date.now(),
       });
 
       // Create channel (lobby)

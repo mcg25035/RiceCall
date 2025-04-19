@@ -162,8 +162,8 @@ const userHandler = {
 
         // Emit updated data (to all users in the server)
         io.to(`server_${serverId}`).emit(
-          'serverActiveMembersUpdate',
-          await DB.get.serverUsers(serverId),
+          'serverMembersUpdate',
+          await DB.get.serverMembers(serverId),
         );
       }
 

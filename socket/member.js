@@ -112,8 +112,8 @@ const memberHandler = {
         await DB.get.serverMembers(serverId),
       );
       io.to(`server_${serverId}`).emit(
-        'serverActiveMembersUpdate',
-        await DB.get.serverUsers(serverId),
+        'serverMembersUpdate',
+        await DB.get.serverMembers(serverId),
       );
 
       new Logger('Member').success(
@@ -289,12 +289,15 @@ const memberHandler = {
         await DB.get.serverMembers(serverId),
       );
       io.to(`server_${serverId}`).emit(
-        'serverActiveMembersUpdate',
-        await DB.get.serverUsers(serverId),
+        'serverMembersUpdate',
+        await DB.get.serverMembers(serverId),
       );
 
       // Emit updated data (to the user *if the user is in the server*)
-      if (Array.from(userSocket.rooms).includes(`server_${serverId}`)) {
+      if (
+        userSocket &&
+        Array.from(userSocket.rooms).includes(`server_${serverId}`)
+      ) {
         io.to(userSocket.id).emit('memberUpdate', editedMember);
       }
 

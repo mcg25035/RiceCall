@@ -69,7 +69,7 @@ const channelHandler = {
             (server.visibility === 'private' ||
               channel.visibility === 'member') &&
             operatorMember.permissionLevel < 2
-          )
+          ) {
             throw new StandardizedError(
               '你需要成為該群組的會員才能加入該頻道',
               'ValidationError',
@@ -77,12 +77,12 @@ const channelHandler = {
               'PERMISSION_DENIED',
               403,
             );
-
+          }
           if (
             channel.password &&
             password !== channel.password &&
             operatorMember.permissionLevel < 3
-          )
+          ) {
             throw new StandardizedError(
               '你需要輸入正確的密碼才能加入該頻道',
               'ValidationError',
@@ -90,8 +90,9 @@ const channelHandler = {
               'PASSWORD_INCORRECT',
               403,
             );
+          }
           if (
-            channel.userLimit > 0 &&
+            channel.userLimit &&
             channelUsers.length >= channel.userLimit &&
             operatorMember.permissionLevel < 5
           ) {
@@ -103,8 +104,26 @@ const channelHandler = {
               403,
             );
           }
+          if (user.currentChannelId === channelId) {
+            throw new StandardizedError(
+              '你已經在該頻道中',
+              'ValidationError',
+              'CONNECTCHANNEL',
+              'ALREADY_IN_CHANNEL',
+              403,
+            );
+          }
         } else {
-          if (channel.visibility === 'readonly')
+          if (operatorMember.permissionLevel < 5) {
+            throw new StandardizedError(
+              '你沒有足夠的權限移動其他用戶',
+              'ValidationError',
+              'CONNECTCHANNEL',
+              'PERMISSION_DENIED',
+              403,
+            );
+          }
+          if (channel.visibility === 'readonly') {
             throw new StandardizedError(
               '該頻道為唯獨頻道',
               'ValidationError',
@@ -112,19 +131,11 @@ const channelHandler = {
               'CHANNEL_IS_READONLY',
               403,
             );
-          if (operatorMember.permissionLevel < 5)
-            throw new StandardizedError(
-              '你沒有足夠的權限移動其他用戶到該頻道',
-              'ValidationError',
-              'CONNECTCHANNEL',
-              'PERMISSION_DENIED',
-              403,
-            );
+          }
           if (
-            (server.visibility === 'private' ||
-              channel.visibility === 'member') &&
-            operatorMember.permissionLevel < 2
-          )
+            server.visibility === 'private' ||
+            channel.visibility === 'member'
+          ) {
             throw new StandardizedError(
               '你沒有足夠的權限移動其他用戶到該頻道',
               'ValidationError',
@@ -132,10 +143,8 @@ const channelHandler = {
               'PERMISSION_DENIED',
               403,
             );
-          if (
-            channel.visibility === 'private' &&
-            operatorMember.permissionLevel < 3
-          )
+          }
+          if (channel.visibility === 'private') {
             throw new StandardizedError(
               '你沒有足夠的權限移動其他用戶到該頻道',
               'ValidationError',
@@ -143,6 +152,25 @@ const channelHandler = {
               'PERMISSION_DENIED',
               403,
             );
+          }
+          if (user.currentServerId !== serverId) {
+            throw new StandardizedError(
+              '用戶不在該語音群中',
+              'ValidationError',
+              'CONNECTCHANNEL',
+              'PERMISSION_DENIED',
+              403,
+            );
+          }
+          if (user.currentChannelId === channelId) {
+            throw new StandardizedError(
+              '用戶已經在該頻道中',
+              'ValidationError',
+              'CONNECTCHANNEL',
+              'ALREADY_IN_CHANNEL',
+              403,
+            );
+          }
         }
       }
 
@@ -186,15 +214,11 @@ const channelHandler = {
         'channelUpdate',
         await DB.get.channel(channelId),
       );
-      io.to(userSocket.id).emit(
-        'memberUpdate',
-        await DB.get.member(userId, serverId),
-      );
 
       // Emit updated data (to all users in the server)
       io.to(`server_${serverId}`).emit(
-        'serverActiveMembersUpdate',
-        await DB.get.serverUsers(serverId),
+        'serverMembersUpdate',
+        await DB.get.serverMembers(serverId),
       );
 
       new Logger('Channel').success(
@@ -299,8 +323,8 @@ const channelHandler = {
 
       // Emit updated data (to all users in the server)
       io.to(`server_${channel.serverId}`).emit(
-        'serverActiveMembersUpdate',
-        await DB.get.serverUsers(channel.serverId),
+        'serverMembersUpdate',
+        await DB.get.serverMembers(channel.serverId),
       );
 
       new Logger('Channel').success(
@@ -393,7 +417,7 @@ const channelHandler = {
             ? ch.categoryId === newChannel.categoryId
             : !ch.categoryId,
         ).length,
-        createdAt: Date.now().valueOf(),
+        createdAt: Date.now(),
       });
 
       // Emit updated data (to all users in the server)
@@ -872,7 +896,6 @@ const channelHandler = {
       const channel = await DB.get.channel(channelId);
       const channelUsers = await DB.get.channelUsers(channelId);
       const channelChildren = await DB.get.channelChildren(channelId);
-      const channelMessages = await DB.get.channelMessages(channelId);
 
       // Validate operation
       if (operatorMember.permissionLevel < 5) {
@@ -919,14 +942,6 @@ const channelHandler = {
                 channelId: server.lobbyId,
                 serverId: serverId,
               }),
-          ),
-        );
-      }
-
-      if (channelMessages.length) {
-        await Promise.all(
-          channelMessages.map(
-            async (message) => await DB.delete.message(message.messageId),
           ),
         );
       }

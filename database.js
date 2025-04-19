@@ -25,6 +25,7 @@ async function query(sql, params) {
 }
 
 module.exports = {
+  database: dbConfig.database,
   pool,
   query,
 };

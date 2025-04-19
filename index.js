@@ -2,6 +2,7 @@
 const http = require('http');
 const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcrypt');
 
 const fs = require('fs').promises;
 const path = require('path');
@@ -31,46 +32,6 @@ const {
   USER_AVATAR_DIR,
   // BACKUP_DIR,
 } = require('./constant');
-
-// const DB_PATH = path.join(__dirname, './json.sqlite');
-
-// const backupDatabase = async () => {
-//   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-//   const backupFileName = `json_backup_${timestamp}.sqlite`;
-//   const backupFilePath = path.join(BACKUP_DIR, backupFileName);
-
-//   try {
-//     await fs.copyFile(DB_PATH, backupFilePath);
-//     console.log(`備份成功: ${backupFilePath}`);
-//   } catch (err) {
-//     console.error('備份失敗:', err);
-//   }
-
-//   try {
-//     const files = await fs.readdir(BACKUP_DIR);
-//     const now = Date.now();
-//     const expirationTime = 8 * 60 * 60 * 1000;
-
-//     await Promise.all(
-//       files.map(async (file) => {
-//         const filePath = path.join(BACKUP_DIR, file);
-//         const stats = await fs.stat(filePath);
-//         const fileAge = now - stats.mtimeMs;
-
-//         if (fileAge > expirationTime) {
-//           await fs.unlink(filePath);
-//           console.log(`刪除過期備份: ${filePath}`);
-//         }
-//       }),
-//     );
-//   } catch (err) {
-//     console.error('刪除過期備份文件時發生錯誤:', err);
-//   }
-// };
-
-// const BACKUP_INTERVAL_MS = 60 * 60 * 1000;
-
-// setInterval(backupDatabase, BACKUP_INTERVAL_MS);
 
 // Send Error/Success Response
 const sendError = (res, statusCode, message) => {
@@ -131,7 +92,9 @@ const server = http.createServer((req, res) => {
             401,
           );
         }
-        if (password !== accountData.password) {
+
+        const isPasswordVerified = await bcrypt.compare(password, accountData.password);
+        if (!isPasswordVerified) {
           throw new StandardizedError(
             '帳號或密碼錯誤',
             'ValidationError',
@@ -140,7 +103,7 @@ const server = http.createServer((req, res) => {
             401,
           );
         }
-        const userId = accountData.user_id;
+        const userId = accountData.userId;
         if (!userId) {
           throw new StandardizedError(
             '用戶不存在',
@@ -237,9 +200,10 @@ const server = http.createServer((req, res) => {
           createdAt: Date.now(),
         });
 
+        var hashed_password = await bcrypt.hash(password, 10);
         // Create account password list
         await DB.set.account(account, {
-          password,
+          hashed_password,
           userId: userId,
         });
 
@@ -516,41 +480,6 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    if (req.url == '/refresh/serverActiveMembers') {
-      req.on('end', async () => {
-        try {
-          const data = JSON.parse(body);
-          const { serverId } = data;
-          if (!serverId) {
-            throw new StandardizedError(
-              '無效的資料',
-              'ValidationError',
-              'REFRESHSERVERACTIVEMEMBERS',
-              'DATA_INVALID',
-              400,
-            );
-          }
-          sendSuccess(res, {
-            message: 'success',
-            data: await DB.get.serverUsers(serverId),
-          });
-        } catch (error) {
-          if (!(error instanceof StandardizedError)) {
-            error = new StandardizedError(
-              `刷新資料時發生預期外的錯誤: ${error.message}`,
-              'ServerError',
-              'REFRESHSERVERACTIVEMEMBERS',
-              'EXCEPTION_ERROR',
-              500,
-            );
-          }
-          sendError(res, error.status_code, error.error_message);
-          new Logger('Server').error(`Refresh error: ${error.error_message}`);
-        }
-      });
-      return;
-    }
-
     if (req.url == '/refresh/serverMembers') {
       req.on('end', async () => {
         try {
@@ -644,41 +573,6 @@ const server = http.createServer((req, res) => {
               `刷新資料時發生預期外的錯誤: ${error.message}`,
               'ServerError',
               'REFRESHCHANNEL',
-              'EXCEPTION_ERROR',
-              500,
-            );
-          }
-          sendError(res, error.status_code, error.error_message);
-          new Logger('Server').error(`Refresh error: ${error.error_message}`);
-        }
-      });
-      return;
-    }
-
-    if (req.url == '/refresh/channelMessages') {
-      req.on('end', async () => {
-        try {
-          const data = JSON.parse(body);
-          const { channelId } = data;
-          if (!channelId) {
-            throw new StandardizedError(
-              '無效的資料',
-              'ValidationError',
-              'REFRESHCHANNELMESSAGES',
-              'DATA_INVALID',
-              400,
-            );
-          }
-          sendSuccess(res, {
-            message: 'success',
-            data: await DB.get.channelMessages(channelId),
-          });
-        } catch (error) {
-          if (!(error instanceof StandardizedError)) {
-            error = new StandardizedError(
-              `刷新資料時發生預期外的錯誤: ${error.message}`,
-              'ServerError',
-              'REFRESHCHANNELMESSAGES',
               'EXCEPTION_ERROR',
               500,
             );
@@ -859,39 +753,6 @@ const server = http.createServer((req, res) => {
         }
       });
       return;
-    }
-
-    if (req.url == '/refresh/directMessage') {
-      req.on('end', async () => {
-        try {
-          const data = JSON.parse(body);
-          const { userId, targetId } = data;
-          if (!userId || !targetId) {
-            throw new StandardizedError(
-              '無效的資料',
-              'ValidationError',
-              'REFRESHDIRECTMESSAGE',
-              'DATA_INVALID',
-            );
-          }
-          sendSuccess(res, {
-            message: 'success',
-            data: await DB.get.directMessages(userId, targetId),
-          });
-        } catch (error) {
-          if (!(error instanceof StandardizedError)) {
-            error = new StandardizedError(
-              `刷新資料時發生預期外的錯誤: ${error.message}`,
-              'ServerError',
-              'REFRESHDIRECTMESSAGE',
-              'EXCEPTION_ERROR',
-              500,
-            );
-          }
-          sendError(res, error.status_code, error.error_message);
-          new Logger('Server').error(`Refresh error: ${error.error_message}`);
-        }
-      });
     }
     return;
   }
