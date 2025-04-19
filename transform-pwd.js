@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const query = require('./database');
+const { query } = require('./database');
 
 const main = async () => {
   let accounts = await query(`SELECT * FROM accounts`, []);
