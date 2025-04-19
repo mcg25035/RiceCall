@@ -200,6 +200,13 @@ describe('伺服器 Socket 處理器', () => {
       // 條件：有效的伺服器和用戶ID，用戶有權限加入該伺服器
       DB.get.member.mockResolvedValue(mockMember);
 
+      // 修改 mockUser 的 currentServerId，使其與要連接的 serverId 不同
+      const modifiedUser = {
+        ...mockUser,
+        currentServerId: 'different-server-id',
+      };
+      DB.get.user.mockResolvedValue(modifiedUser);
+
       await serverHandler.connectServer(mockIo, mockSocket, {
         userId: 'user-id-123',
         serverId: 'server-id-123',
@@ -287,6 +294,13 @@ describe('伺服器 Socket 處理器', () => {
     it('應該為沒有成員關係的用戶創建新的成員資格', async () => {
       // 條件：用戶沒有現有的成員關係
       DB.get.member.mockResolvedValue(null);
+
+      // 修改 mockUser 的 currentServerId，使其與要連接的 serverId 不同
+      const modifiedUser = {
+        ...mockUser,
+        currentServerId: 'different-server-id',
+      };
+      DB.get.user.mockResolvedValue(modifiedUser);
 
       await serverHandler.connectServer(mockIo, mockSocket, {
         userId: 'user-id-123',
