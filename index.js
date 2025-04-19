@@ -2,6 +2,7 @@
 const http = require('http');
 const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcrypt');
 
 const fs = require('fs').promises;
 const path = require('path');
@@ -91,7 +92,9 @@ const server = http.createServer((req, res) => {
             401,
           );
         }
-        if (password !== accountData.password) {
+
+        const isPasswordVerified = await bcrypt.compare(password, accountData.password);
+        if (!isPasswordVerified) {
           throw new StandardizedError(
             '帳號或密碼錯誤',
             'ValidationError',
@@ -197,9 +200,10 @@ const server = http.createServer((req, res) => {
           createdAt: Date.now(),
         });
 
+        var hashed_password = await bcrypt.hash(password, 10);
         // Create account password list
         await DB.set.account(account, {
-          password,
+          hashed_password,
           userId: userId,
         });
 
