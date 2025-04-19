@@ -85,15 +85,17 @@ const server = http.createServer((req, res) => {
         const accountData = await DB.get.account(account);
         if (!accountData) {
           throw new StandardizedError(
-            '找不到此帳號',
+            '帳號或密碼錯誤',
             'ValidationError',
             'LOGIN',
             'INVALID_ACCOUNT_OR_PASSWORD',
             401,
           );
         }
-
-        const isPasswordVerified = await bcrypt.compare(password, accountData.password);
+        const isPasswordVerified = await bcrypt.compare(
+          password,
+          accountData.password,
+        );
         if (!isPasswordVerified) {
           throw new StandardizedError(
             '帳號或密碼錯誤',
@@ -200,10 +202,10 @@ const server = http.createServer((req, res) => {
           createdAt: Date.now(),
         });
 
-        var hashed_password = await bcrypt.hash(password, 10);
+        var hashedPassword = await bcrypt.hash(password, 10);
         // Create account password list
         await DB.set.account(account, {
-          hashed_password,
+          password: hashedPassword,
           userId: userId,
         });
 

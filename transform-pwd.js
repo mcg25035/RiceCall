@@ -9,16 +9,16 @@ const main = async () => {
       'utf-8',
     );
 
-    var hashed_password = await bcrypt.hash(decodedStr, 10);
+    var hashedPassword = await bcrypt.hash(decodedStr, 10);
 
     console.log('帳號: ', account.account);
     console.log('原始密碼: ', account.password);
     console.log('解碼後: ', decodedStr);
-    console.log('雜湊後: ', hashed_password);
+    console.log('雜湊後: ', hashedPassword);
     console.log('--------------------------------');
 
     await query(`UPDATE accounts SET password = ? WHERE account = ?`, [
-      hashed_password,
+      hashedPassword,
       account.account,
     ]);
   }
