@@ -777,24 +777,14 @@ const Database = {
         if (!userId) return null;
         const datas = await query(
           `SELECT 
-          friend_groups.created_at AS friend_group_created_at,
-          friend_groups.*,
-          users.created_at AS user_created_at,
-          users.*
+          friend_groups.*
           FROM friend_groups
-          INNER JOIN users
-          ON friend_groups.user_id = users.user_id
           WHERE friend_groups.user_id = ?
           ORDER BY friend_groups.\`order\`, friend_groups.created_at DESC`,
           [userId],
         );
         if (!datas) return null;
-        return datas.map((data) => {
-          data.created_at = data.friend_group_created_at;
-          delete data.friend_group_created_at;
-          delete data.user_created_at;
-          return convertToCamelCase(data);
-        });
+        return datas.map((data) => convertToCamelCase(data));
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
