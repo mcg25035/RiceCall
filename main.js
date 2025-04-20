@@ -809,7 +809,12 @@ app.whenReady().then(() => {
 
 // 防止多開
 if (!app.requestSingleInstanceLock()) {
-  app.quit();
+  const hasDeepLink = process.argv.find((arg) => arg.startsWith('ricecall://'));
+  if (hasDeepLink) {
+    // 如果是 deeplink 啟動，則退出新實例
+    console.log('防止多開');
+    app.quit();
+  }
 } else {
   app.on('second-instance', (event, argv) => {
     const url = argv.find((arg) => arg.startsWith('ricecall://'));
