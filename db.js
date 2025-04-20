@@ -786,7 +786,7 @@ const Database = {
           INNER JOIN badges
           ON user_badges.badge_id = badges.badge_id
           WHERE user_badges.user_id = ?
-          ORDER BY badges.\`order\`, badges.created_at DESC`,
+          ORDER BY user_badges.\`order\`, user_badges.created_at DESC`,
           [userId],
         );
         if (!datas) return null;
