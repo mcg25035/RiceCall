@@ -52,20 +52,6 @@ const transformBadge = async () => {
   console.log('badge 轉換完成');
 };
 
-const transformUserBadge = async () => {
-  const userBadges = await db.get('userBadges');
-
-  for (const [key, userBadge] of Object.entries(userBadges)) {
-    const { userId, badgeId, id, ...rest } = userBadge;
-
-    await DB.set.userBadge(userId, badgeId, {
-      ...rest,
-    });
-  }
-
-  console.log('userBadge 轉換完成');
-};
-
 const transformUserServer = async () => {
   const userServers = await db.get('userServers');
 

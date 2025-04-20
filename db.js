@@ -757,38 +757,14 @@ const Database = {
         );
         const data = datas[0];
         if (!data) return null;
-        return convertToCamelCase(data);
+        return {
+          ...convertToCamelCase(data),
+          badges: await Database.get.userBadges(userId),
+        };
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
             `查詢 users.${userId} 時發生無法預期的錯誤: ${error.message}`,
-            'AccessDatabaseError',
-            'GET',
-            'DATABASE_ERROR',
-            500,
-          );
-        }
-        throw error;
-      }
-    },
-
-    userFriendGroups: async (userId) => {
-      try {
-        if (!userId) return null;
-        const datas = await query(
-          `SELECT 
-          friend_groups.*
-          FROM friend_groups
-          WHERE friend_groups.user_id = ?
-          ORDER BY friend_groups.\`order\`, friend_groups.created_at DESC`,
-          [userId],
-        );
-        if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
-      } catch (error) {
-        if (!(error instanceof StandardizedError)) {
-          error = new StandardizedError(
-            `查詢 userFriendGroups.${userId} 時發生無法預期的錯誤: ${error.message}`,
             'AccessDatabaseError',
             'GET',
             'DATABASE_ERROR',
@@ -819,6 +795,33 @@ const Database = {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
             `查詢 userBadges.${userId} 時發生無法預期的錯誤: ${error.message}`,
+            'AccessDatabaseError',
+            'GET',
+            'DATABASE_ERROR',
+            500,
+          );
+        }
+        throw error;
+      }
+    },
+
+    userFriendGroups: async (userId) => {
+      try {
+        if (!userId) return null;
+        const datas = await query(
+          `SELECT 
+          friend_groups.*
+          FROM friend_groups
+          WHERE friend_groups.user_id = ?
+          ORDER BY friend_groups.\`order\`, friend_groups.created_at DESC`,
+          [userId],
+        );
+        if (!datas) return null;
+        return datas.map((data) => convertToCamelCase(data));
+      } catch (error) {
+        if (!(error instanceof StandardizedError)) {
+          error = new StandardizedError(
+            `查詢 userFriendGroups.${userId} 時發生無法預期的錯誤: ${error.message}`,
             'AccessDatabaseError',
             'GET',
             'DATABASE_ERROR',
