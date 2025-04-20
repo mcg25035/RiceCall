@@ -76,6 +76,7 @@ const ContextMenuProvider = ({ children }: ContextMenuProviderProps) => {
   }, [isVisible, userInfo]);
 
   const showContextMenu = (x: number, y: number, items: ContextMenuItem[]) => {
+    if (userInfo) closeUserInfoBlock();
     setContent(
       <ContextMenu
         x={x}
@@ -88,6 +89,7 @@ const ContextMenuProvider = ({ children }: ContextMenuProviderProps) => {
   };
 
   const showUserInfoBlock = (x: number, y: number, member: ServerMember) => {
+    if (isVisible) closeContextMenu();
     setUserInfo({ x, y, member });
   };
 
