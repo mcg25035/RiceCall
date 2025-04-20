@@ -757,10 +757,8 @@ const Database = {
         );
         const data = datas[0];
         if (!data) return null;
-        return {
-          ...convertToCamelCase(data),
-          badges: await Database.get.userBadges(userId),
-        };
+        const badges = await Database.get.userBadges(userId);
+        return convertToCamelCase({ ...data, badges: [] });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -900,7 +898,7 @@ const Database = {
           delete data.friend_user_id;
           data.target_id = data.user_user_id;
           delete data.user_user_id;
-          return convertToCamelCase(data);
+          return convertToCamelCase({ ...data, badges: [] });
         });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
@@ -1055,7 +1053,7 @@ const Database = {
           data.created_at = data.member_created_at;
           delete data.member_created_at;
           delete data.user_created_at;
-          return convertToCamelCase(data);
+          return convertToCamelCase({ ...data, badges: [] });
         });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
@@ -1203,7 +1201,7 @@ const Database = {
           [channelId],
         );
         if (!datas) return null;
-        return datas.map((data) => convertToCamelCase(data));
+        return datas.map((data) => convertToCamelCase({ ...data, badges: [] }));
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
           error = new StandardizedError(
@@ -1272,7 +1270,7 @@ const Database = {
           delete data.friend_user_id;
           data.target_id = data.user_user_id;
           delete data.user_user_id;
-          return convertToCamelCase(data);
+          return convertToCamelCase({ ...data, badges: [] });
         });
       } catch (error) {
         if (!(error instanceof StandardizedError)) {
