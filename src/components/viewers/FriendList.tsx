@@ -98,7 +98,7 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
               },
               {
                 id: 'delete',
-                label: lang.tr.delete,
+                label: lang.tr.friendDeleteGroup,
                 show: friendGroupId !== '',
                 onClick: () => handleDeleteFriendGroup(friendGroupId, userId),
               },
