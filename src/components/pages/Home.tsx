@@ -317,7 +317,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             <div className={homePage['forwardBtn']} />
             <div className={homePage['searchBar']} ref={searchRef}>
               <input
-                type="search"
                 placeholder={lang.tr.searchPlaceholder}
                 className={homePage['searchInput']}
                 value={searchQuery}
@@ -337,14 +336,23 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
                 }}
                 onFocus={() => setShowDropdown(true)}
               />
-
+              {searchQuery ? (
+                <button
+                  className={homePage['searchInputClear']}
+                  onClick={() => setSearchQuery('')}
+                />
+              ) : (
+                <i className={homePage['searchInputIcon']} />
+              )}
               {showDropdown && hasResults && (
                 <div className={homePage['searchDropdown']}>
                   {exactMatch && (
-                    <div className={homePage['dropdownHeaderText']}>
-                      {lang.tr.quickEnterServer}
-                      {exactMatch.displayId}
-                    </div>
+                    <>
+                      <div className={homePage['dropdownHeaderText']}>
+                        {lang.tr.quickEnterServer} {exactMatch.displayId}
+                      </div>
+                      <div className={homePage['dropdownSplit']}></div>
+                    </>
                   )}
 
                   {personalResults.length > 0 && (
