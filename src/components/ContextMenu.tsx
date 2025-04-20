@@ -28,6 +28,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   const [subMenu, setSubMenu] = useState<React.ReactNode>(null);
   const [menuX, setMenuX] = useState(x);
   const [menuY, setMenuY] = useState(y);
+  const isSetting = items[0]?.icon;
 
   // Effect
   useEffect(() => {
@@ -72,7 +73,9 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   return (
     <div
       ref={menuRef}
-      className={`context-menu-container ${contextMenu['contextMenu']}`}
+      className={`context-menu-container ${
+        isSetting ? contextMenu[isSetting] : ''
+      } ${contextMenu['contextMenu']}`}
       style={{ top: menuY, left: menuX }}
     >
       {items

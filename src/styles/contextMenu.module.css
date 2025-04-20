@@ -8,7 +8,7 @@
   border: 1px solid #ccc;
   border-radius: 5px;
   box-shadow: 0 1px 1px #00000080;
-  min-width: 130px;
+  min-width: 120px;
 }
 
 .contextMenu.hidden {
@@ -115,4 +115,13 @@
 
 .contextMenu .option.hasSubmenu:hover .contextMenu {
   display: flex;
+}
+
+.setting,
+.setting .hasSubmenu .contextMenu {
+  min-width: 90px;
+}
+
+.setting .option:not(.hasSubmenu .option) {
+  justify-content: flex-start;
 }
