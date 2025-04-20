@@ -117,7 +117,10 @@
   display: flex;
 }
 
-.setting,
+.setting {
+  min-width: auto !important;
+}
+
 .setting .hasSubmenu .contextMenu {
   min-width: 90px;
 }
