@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // CSS
 import styles from '@/styles/pages/server.module.css';
@@ -17,6 +17,7 @@ import {
   Category,
   ContextMenuItem,
   Permission,
+  UserFriend,
 } from '@/types';
 
 // Providers
@@ -31,6 +32,7 @@ import BadgeViewer from '@/components/viewers/Badge';
 
 // Services
 import ipcService from '@/services/ipc.service';
+import refreshService from '@/services/refresh.service';
 
 interface CategoryTabProps {
   userId: User['userId'];
@@ -224,6 +226,7 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
                 permissionLevel={permissionLevel}
                 expanded={expanded}
                 setExpanded={setExpanded}
+                userFriends={[]}
               />
             ))}
         </div>
@@ -243,6 +246,7 @@ interface ChannelTabProps {
   permissionLevel: number;
   expanded: Record<string, boolean>;
   setExpanded: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  userFriends: UserFriend[];
 }
 
 const ChannelTab: React.FC<ChannelTabProps> = React.memo(
@@ -255,6 +259,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
     permissionLevel,
     expanded,
     setExpanded,
+    userFriends,
   }) => {
     // Hooks
     const lang = useLanguage();
@@ -469,6 +474,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
                 userId={userId}
                 channelMember={channelMember}
                 permissionLevel={permissionLevel}
+                userFriends={userFriends}
               />
             ))}
         </div>
@@ -483,10 +489,11 @@ interface UserTabProps {
   userId: User['userId'];
   channelMember: ServerMember;
   permissionLevel: number;
+  userFriends: UserFriend[];
 }
 
 const UserTab: React.FC<UserTabProps> = React.memo(
-  ({ userId, channelMember, permissionLevel }) => {
+  ({ userId, channelMember, permissionLevel, userFriends }) => {
     // Hooks
     const lang = useLanguage();
     const contextMenu = useContextMenu();
@@ -539,6 +546,9 @@ const UserTab: React.FC<UserTabProps> = React.memo(
       permissionLevel > 4 &&
       !isCurrentUser &&
       channelMemberPermission < permissionLevel;
+    const isFriend = userFriends.some(
+      (friend) => friend.targetId === channelMemberUserId,
+    );
 
     // Handlers
     const handleOpenEditNickname = (
@@ -649,7 +659,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
               id: 'apply-friend',
               label: lang.tr.addFriend,
               onClick: () => handleOpenApplyFriend(userId, channelMemberUserId),
-              show: !isCurrentUser,
+              show: !isCurrentUser && !isFriend,
             },
             {
               id: 'mute',
@@ -817,10 +827,14 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
     const { handleSetCategoryExpanded, handleSetChannelExpanded } =
       useExpandedContext();
 
+    // Ref
+    const userFriendsRefreshed = useRef(false);
+
     // States
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
     const [view, setView] = useState<'all' | 'current'>('all');
     const [latency, setLatency] = useState<string>('0');
+    const [userFriends, setUserFriends] = useState<UserFriend[]>([]);
 
     // Variables
     const connectStatus = 4 - Math.floor(Number(latency) / 50);
@@ -928,6 +942,26 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
         clearPong();
       };
     }, [socket]);
+
+    useEffect(() => {
+      userFriendsRefreshed.current = false;
+    }, [currentChannel.channelId]);
+
+    useEffect(() => {
+      if (!userId || userFriendsRefreshed.current) return;
+      const refresh = async () => {
+        userFriendsRefreshed.current = true;
+        Promise.all([
+          refreshService.userFriends({
+            userId: userId,
+          }),
+        ]).then(([userFriends]) => {
+          if (!userFriends?.length) return;
+          setUserFriends(userFriends);
+        });
+      };
+      refresh();
+    }, [userId, currentChannel.channelId]);
 
     return (
       <>
@@ -1104,6 +1138,7 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
                 permissionLevel={permissionLevel}
                 expanded={{ [currentChannelId]: true }}
                 setExpanded={() => {}}
+                userFriends={userFriends}
               />
             ) : (
               serverChannels
@@ -1138,6 +1173,7 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
                       permissionLevel={permissionLevel}
                       expanded={expanded}
                       setExpanded={setExpanded}
+                      userFriends={userFriends}
                     />
                   ),
                 )
