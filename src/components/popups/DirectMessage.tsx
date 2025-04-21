@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 // Types
-import { User, DirectMessage, SocketServerEvent } from '@/types';
+import { User, DirectMessage, SocketServerEvent, Badge } from '@/types';
 
 // Providers
 import { useLanguage } from '@/providers/Language';
@@ -11,6 +11,7 @@ import { useSocket } from '@/providers/Socket';
 
 // Components
 import MessageViewer from '@/components/viewers/Message';
+import BadgeViewer from '@/components/viewers/Badge';
 
 // Services
 import refreshService from '@/services/refresh.service';
@@ -59,6 +60,7 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
       useState<string>();
     const [targetCurrentServerId, setTargetCurrentServerId] =
       useState<string>();
+    const [targetBadges, setTargetBadges] = useState<Badge[]>([]);
     const [directMessages, setDirectMessages] = useState<DirectMessage[]>([]);
     const [messageInput, setMessageInput] = useState<string>('');
     const [isComposing, setIsComposing] = useState<boolean>(false);
@@ -86,6 +88,7 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
       setTargetSignature(data.signature);
       setTargetVip(data.vip);
       setTargetCurrentServerId(data.currentServerId);
+      setTargetBadges(data.badges);
     };
 
     const handleUserUpdate = (data: User | null) => {
@@ -205,11 +208,16 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
                   ${vip[`vip-big-${targetVip}`]}`}
                 />
               )}
-              <div
-                className={`
+              <div className={directMessage['userStateBox']}>
+                <div
+                  title={`等級：${targetGrade}`}
+                  className={`
                     ${grade['grade']}
                     ${grade[`lv-${targetGrade}`]}`}
-              />
+                />
+                <div className={directMessage['userFriendSplit']} />
+                <BadgeViewer badges={targetBadges} maxDisplay={13} />
+              </div>
             </div>
             <div className={directMessage['userBox']}>
               <div
