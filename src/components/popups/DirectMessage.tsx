@@ -215,7 +215,11 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
                     ${grade['grade']}
                     ${grade[`lv-${targetGrade}`]}`}
                 />
-                <div className={directMessage['userFriendSplit']} />
+                {targetBadges.length > 0 ? (
+                  <div className={directMessage['userFriendSplit']} />
+                ) : (
+                  ''
+                )}
                 <BadgeViewer badges={targetBadges} maxDisplay={13} />
               </div>
             </div>
