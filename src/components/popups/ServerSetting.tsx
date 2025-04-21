@@ -982,6 +982,15 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                             onContextMenu={(e) => {
                               contextMenu.showContextMenu(e.pageX, e.pageY, [
                                 {
+                                  id: 'view-profile',
+                                  label: lang.tr.viewProfile,
+                                  onClick: () =>
+                                    handleOpenUserInfo(
+                                      userId,
+                                      applicationUserId,
+                                    ),
+                                },
+                                {
                                   id: 'accept',
                                   label: lang.tr.acceptApplication,
                                   onClick: () => {
