@@ -32,51 +32,42 @@ const BadgeInfoCard: React.FC<BadgeInfoCardProps> = React.memo(
 
     // Effect
     useEffect(() => {
-      const tryPosition = () => {
+      const positionCard = () => {
         if (!cardRef.current) return;
-
         const cardWidth = cardRef.current.offsetWidth;
         const cardHeight = cardRef.current.offsetHeight;
-
-        if (cardHeight === 0 || cardWidth === 0) {
-          requestAnimationFrame(tryPosition);
+        if (!cardWidth || !cardHeight) {
+          requestAnimationFrame(positionCard);
           return;
         }
-
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
-
-        let newCardX = rect.left;
-        let newCardY = preferBelow ? rect.bottom : rect.top - cardHeight;
-
-        if (preferBelow) {
-          if (newCardY + cardHeight > windowHeight) {
-            newCardY = rect.top - cardHeight;
-            if (newCardY < 0) newCardY = 20;
+        let x = rect.left;
+        let y: number;
+        if (!preferBelow) {
+          y = rect.bottom;
+          if (y + cardHeight > windowHeight) {
+            y = rect.top - cardHeight;
           }
         } else {
-          if (newCardY < 0) {
-            newCardY = rect.bottom;
-            if (newCardY + cardHeight > windowHeight) {
-              newCardY = windowHeight - cardHeight - 20;
-            }
+          y = rect.top - cardHeight;
+          if (y < 0) {
+            y = rect.bottom;
           }
         }
-
-        if (newCardX + cardWidth > windowWidth) {
-          newCardX = windowWidth - cardWidth - 15;
+        if (x + cardWidth > windowWidth) {
+          x = windowWidth - cardWidth - 8;
         }
-
-        if (newCardY < 0) {
-          newCardY = 20;
+        if (x < 8) x = 8;
+        if (y + cardHeight > windowHeight) {
+          y = windowHeight - cardHeight - 8;
         }
-
-        setCardX(newCardX);
-        setCardY(newCardY);
+        if (y < 8) y = 8;
+        setCardX(x);
+        setCardY(y);
         setReady(true);
       };
-
-      requestAnimationFrame(tryPosition);
+      requestAnimationFrame(positionCard);
     }, [rect, preferBelow]);
 
     return (

@@ -638,122 +638,128 @@ const UserTab: React.FC<UserTabProps> = React.memo(
           contextMenu.showUserInfoBlock(e.pageX, e.pageY, channelMember);
         }}
         onContextMenu={(e) => {
-          contextMenu.showContextMenu(e.pageX, e.pageY, [
-            {
-              id: 'direct-message',
-              label: lang.tr.directMessage,
-              onClick: () =>
-                handleOpenDirectMessage(
-                  userId,
-                  channelMemberUserId,
-                  channelMemberName,
-                ),
-              show: !isCurrentUser,
-            },
-            {
-              id: 'view-profile',
-              label: lang.tr.viewProfile,
-              onClick: () => handleOpenUserInfo(userId, channelMemberUserId),
-            },
-            {
-              id: 'apply-friend',
-              label: lang.tr.addFriend,
-              onClick: () => handleOpenApplyFriend(userId, channelMemberUserId),
-              show: !isCurrentUser && !isFriend,
-            },
-            {
-              id: 'mute',
-              label: lang.tr.mute,
-              onClick: () => webRTC.handleMute(channelMemberUserId),
-              show: !isMutedByUser && !isCurrentUser,
-            },
-            {
-              id: 'unmute',
-              label: lang.tr.unmute,
-              onClick: () => webRTC.handleUnmute(channelMemberUserId),
-              show: isMutedByUser && !isCurrentUser,
-            },
-            {
-              id: 'edit-nickname',
-              label: lang.tr.editNickname,
-              onClick: () =>
-                handleOpenEditNickname(
-                  channelMemberUserId,
-                  channelMemberServerId,
-                ),
-              show: canEditNickname,
-            },
-            {
-              id: 'separator',
-              label: '',
-              show: canManageMember,
-            },
-            {
-              id: 'kick',
-              label: lang.tr.kick,
-              show: canKick,
-              onClick: () =>
-                handleKickUser(channelMemberUserId, channelMemberServerId),
-            },
-            {
-              id: 'member-management',
-              label: lang.tr.memberManagement,
-              show: canManageMember,
-              icon: 'submenu',
-              hasSubmenu: true,
-              submenuItems: [
-                {
-                  id: 'set-channel-admin',
-                  label: lang.tr.setChannelAdmin,
-                  show: canChangeToChannelAdmin,
-                  onClick: () =>
-                    handleUpdateMember(
-                      { permissionLevel: 3 },
-                      channelMemberUserId,
-                      channelMemberServerId,
-                    ),
-                },
-                removeLevelToMember(lang.tr.removeChannelAdmin, 3),
+          contextMenu.showContextMenu(
+            e.pageX,
+            e.pageY,
+            [
+              {
+                id: 'direct-message',
+                label: lang.tr.directMessage,
+                onClick: () =>
+                  handleOpenDirectMessage(
+                    userId,
+                    channelMemberUserId,
+                    channelMemberName,
+                  ),
+                show: !isCurrentUser,
+              },
+              {
+                id: 'view-profile',
+                label: lang.tr.viewProfile,
+                onClick: () => handleOpenUserInfo(userId, channelMemberUserId),
+              },
+              {
+                id: 'apply-friend',
+                label: lang.tr.addFriend,
+                onClick: () =>
+                  handleOpenApplyFriend(userId, channelMemberUserId),
+                show: !isCurrentUser && !isFriend,
+              },
+              {
+                id: 'mute',
+                label: lang.tr.mute,
+                onClick: () => webRTC.handleMute(channelMemberUserId),
+                show: !isMutedByUser && !isCurrentUser,
+              },
+              {
+                id: 'unmute',
+                label: lang.tr.unmute,
+                onClick: () => webRTC.handleUnmute(channelMemberUserId),
+                show: isMutedByUser && !isCurrentUser,
+              },
+              {
+                id: 'edit-nickname',
+                label: lang.tr.editNickname,
+                onClick: () =>
+                  handleOpenEditNickname(
+                    channelMemberUserId,
+                    channelMemberServerId,
+                  ),
+                show: canEditNickname,
+              },
+              {
+                id: 'separator',
+                label: '',
+                show: canManageMember,
+              },
+              {
+                id: 'kick',
+                label: lang.tr.kick,
+                show: canKick,
+                onClick: () =>
+                  handleKickUser(channelMemberUserId, channelMemberServerId),
+              },
+              {
+                id: 'member-management',
+                label: lang.tr.memberManagement,
+                show: canManageMember,
+                icon: 'submenu',
+                hasSubmenu: true,
+                submenuItems: [
+                  {
+                    id: 'set-channel-admin',
+                    label: lang.tr.setChannelAdmin,
+                    show: canChangeToChannelAdmin,
+                    onClick: () =>
+                      handleUpdateMember(
+                        { permissionLevel: 3 },
+                        channelMemberUserId,
+                        channelMemberServerId,
+                      ),
+                  },
+                  removeLevelToMember(lang.tr.removeChannelAdmin, 3),
 
-                {
-                  id: 'set-category-admin',
-                  label: lang.tr.setCategoryAdmin,
-                  show: canChangeToCategoryAdmin,
-                  onClick: () =>
-                    handleUpdateMember(
-                      { permissionLevel: 4 },
-                      channelMemberUserId,
-                      channelMemberServerId,
-                    ),
-                },
-                removeLevelToMember(lang.tr.removeCategoryAdmin, 4),
+                  {
+                    id: 'set-category-admin',
+                    label: lang.tr.setCategoryAdmin,
+                    show: canChangeToCategoryAdmin,
+                    onClick: () =>
+                      handleUpdateMember(
+                        { permissionLevel: 4 },
+                        channelMemberUserId,
+                        channelMemberServerId,
+                      ),
+                  },
+                  removeLevelToMember(lang.tr.removeCategoryAdmin, 4),
 
-                {
-                  id: 'set-admin',
-                  label: lang.tr.setAdmin,
-                  show: canChangeToAdmin,
-                  onClick: () =>
-                    handleUpdateMember(
-                      { permissionLevel: 5 },
-                      channelMemberUserId,
-                      channelMemberServerId,
-                    ),
-                },
-                removeLevelToMember(lang.tr.removeAdmin, 5),
-                {
-                  id: 'set-guest',
-                  label: lang.tr.setGuest,
-                  show: canChangeToGuest,
-                  onClick: () =>
-                    handleUpdateMember(
-                      { permissionLevel: 1 },
-                      channelMemberUserId,
-                      channelMemberServerId,
-                    ),
-                },
-              ],
-            },
-          ]);
+                  {
+                    id: 'set-admin',
+                    label: lang.tr.setAdmin,
+                    show: canChangeToAdmin,
+                    onClick: () =>
+                      handleUpdateMember(
+                        { permissionLevel: 5 },
+                        channelMemberUserId,
+                        channelMemberServerId,
+                      ),
+                  },
+                  removeLevelToMember(lang.tr.removeAdmin, 5),
+                  {
+                    id: 'set-guest',
+                    label: lang.tr.setGuest,
+                    show: canChangeToGuest,
+                    onClick: () =>
+                      handleUpdateMember(
+                        { permissionLevel: 1 },
+                        channelMemberUserId,
+                        channelMemberServerId,
+                      ),
+                  },
+                ],
+              },
+            ],
+            e.currentTarget as HTMLElement,
+          );
         }}
       >
         <div

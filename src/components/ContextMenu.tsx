@@ -41,7 +41,11 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
       windowHeight = window.innerHeight;
     let newMenuX = x,
       newMenuY = y;
-    if (target) {
+    if (
+      target &&
+      (target.classList[0].includes('setting') ||
+        target.classList[0].includes('menu'))
+    ) {
       const rect = target.getBoundingClientRect();
       newMenuX = rect.left;
       newMenuY = rect.bottom;
