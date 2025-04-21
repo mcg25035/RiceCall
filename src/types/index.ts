@@ -29,6 +29,7 @@ export interface Translation {
   quickEnterServer: string;
   relatedSearch: string;
   searchResult: string;
+  searchEmpty: string;
   recentVisits: string;
   myGroups: string;
   favoriteGroups: string;

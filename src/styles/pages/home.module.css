@@ -81,6 +81,14 @@
   right: 5px;
 }
 
+.searchInput:focus {
+  border: 1px solid #999999;
+}
+
+.searchInput:focus::placeholder {
+  color: transparent;
+}
+
 .searchInputClear {
   background-color: #fff;
   background-image: url(../../../public/channel/searchCancel.png);
@@ -399,8 +407,15 @@
   align-items: center;
 }
 
-.dropdownItem:hover {
+.dropdownItem:not(.inputEmptyItem):hover {
   background-color: #f5f5f5;
+}
+
+.inputEmptyItem {
+  font-size: 12px;
+  height: 35px;
+  padding: 5px 10px;
+  color: #888;
 }
 
 .loadingWrapper {

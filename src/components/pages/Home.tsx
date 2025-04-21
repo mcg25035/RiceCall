@@ -157,6 +157,10 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       });
       setShowDropdown(false);
       setSearchQuery('');
+      setExactMatch(null);
+      setPersonalResults([]);
+      setRelatedResults([]);
+
       setIsLoading(true);
       setLoadingGroupID(serverDisplayId);
     };
@@ -222,6 +226,14 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       ) {
         setShowDropdown(false);
       }
+    };
+
+    const handleClearSearchState = () => {
+      setSearchQuery('');
+      setExactMatch(null);
+      setPersonalResults([]);
+      setRelatedResults([]);
+      setShowDropdown(false);
     };
 
     // Effects
@@ -323,8 +335,15 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
                 onChange={(e) => {
                   const value = e.target.value;
                   setSearchQuery(value);
-                  handleSearchServer(value);
                   setShowDropdown(true);
+                  if (value.trim() === '') {
+                    setExactMatch(null);
+                    setPersonalResults([]);
+                    setRelatedResults([]);
+                    return;
+                  }
+
+                  handleSearchServer(value);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && exactMatch) {
@@ -339,60 +358,69 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
               {searchQuery ? (
                 <button
                   className={homePage['searchInputClear']}
-                  onClick={() => setSearchQuery('')}
+                  onClick={handleClearSearchState}
                 />
               ) : (
                 <i className={homePage['searchInputIcon']} />
               )}
-              {showDropdown && hasResults && (
+              {showDropdown && (
                 <div className={homePage['searchDropdown']}>
-                  {exactMatch && (
+                  {hasResults && (
                     <>
-                      <div className={homePage['dropdownHeaderText']}>
-                        {lang.tr.quickEnterServer} {exactMatch.displayId}
-                      </div>
-                      <div className={homePage['dropdownSplit']}></div>
+                      {exactMatch && (
+                        <>
+                          <div className={homePage['dropdownHeaderText']}>
+                            {lang.tr.quickEnterServer} {exactMatch.displayId}
+                          </div>
+                          <div className={homePage['dropdownSplit']}></div>
+                        </>
+                      )}
+                      {personalResults.length > 0 && (
+                        <>
+                          <div className={homePage['dropdownHeader']}>
+                            <div>{lang.tr.personalExclusive}</div>
+                          </div>
+                          {personalResults.map((server) => (
+                            <SearchResultItem
+                              key={server.serverId}
+                              server={server}
+                              onClick={() =>
+                                handleConnectServer(
+                                  server.serverId,
+                                  server.displayId,
+                                )
+                              }
+                            />
+                          ))}
+                        </>
+                      )}
+                      {relatedResults.length > 0 && (
+                        <>
+                          <div className={homePage['dropdownHeader']}>
+                            <div>{lang.tr.relatedSearch}</div>
+                          </div>
+                          {relatedResults.map((server) => (
+                            <SearchResultItem
+                              key={server.serverId}
+                              server={server}
+                              onClick={() =>
+                                handleConnectServer(
+                                  server.serverId,
+                                  server.displayId,
+                                )
+                              }
+                            />
+                          ))}
+                        </>
+                      )}
                     </>
                   )}
-
-                  {personalResults.length > 0 && (
-                    <>
-                      <div className={homePage['dropdownHeader']}>
-                        <div>{lang.tr.personalExclusive}</div>
-                      </div>
-                      {personalResults.map((server) => (
-                        <SearchResultItem
-                          key={server.serverId}
-                          server={server}
-                          onClick={() =>
-                            handleConnectServer(
-                              server.serverId,
-                              server.displayId,
-                            )
-                          }
-                        />
-                      ))}
-                    </>
-                  )}
-
-                  {relatedResults.length > 0 && (
-                    <>
-                      <div className={homePage['dropdownHeader']}>
-                        <div>{lang.tr.relatedSearch}</div>
-                      </div>
-                      {relatedResults.map((server) => (
-                        <SearchResultItem
-                          key={server.serverId}
-                          server={server}
-                          onClick={() =>
-                            handleConnectServer(
-                              server.serverId,
-                              server.displayId,
-                            )
-                          }
-                        />
-                      ))}
-                    </>
+                  {!hasResults && searchQuery === '' && (
+                    <div
+                      className={`${homePage['dropdownItem']} ${homePage['inputEmptyItem']}`}
+                    >
+                      {lang.tr.searchEmpty}
+                    </div>
                   )}
                 </div>
               )}
