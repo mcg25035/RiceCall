@@ -30,8 +30,8 @@
 .badgeAvatarBox .badgeImage {
   display: flex;
   align-items: center;
-  min-height: 75px;
-  min-width: 75px;
+  height: 80px;
+  width: 80px;
   justify-content: center;
   background-size: contain;
   background-repeat: no-repeat;
