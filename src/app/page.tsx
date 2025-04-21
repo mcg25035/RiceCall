@@ -212,77 +212,82 @@ const Header: React.FC<HeaderProps> = React.memo(
           <div
             className={header['menu']}
             onClick={(e) =>
-              contextMenu.showContextMenu(e.clientX, e.clientY, [
-                {
-                  id: 'system-setting',
-                  label: lang.tr.systemSettings,
-                  icon: 'setting',
-                  onClick: () => handleOpenSystemSetting(),
-                },
-                // {
-                //   id: 'message-history',
-                //   label: lang.tr.messageHistory,
-                //   icon: 'message',
-                //   onClick: () => {},
-                // },
-                // {
-                //   id: 'change-theme',
-                //   label: lang.tr.changeTheme,
-                //   icon: 'skin',
-                //   onClick: () => {},
-                // },
-                {
-                  id: 'feedback',
-                  label: lang.tr.feedback,
-                  icon: 'feedback',
-                  onClick: () => {
-                    window.open(
-                      'https://forms.gle/AkBTqsZm9NGr5aH46',
-                      '_blank',
-                    );
+              contextMenu.showContextMenu(
+                e.clientX,
+                e.clientY,
+                [
+                  {
+                    id: 'system-setting',
+                    label: lang.tr.systemSettings,
+                    icon: 'setting',
+                    onClick: () => handleOpenSystemSetting(),
                   },
-                },
-                {
-                  id: 'language-select',
-                  label: lang.tr.languageSelect,
-                  icon: 'submenu',
-                  hasSubmenu: true,
-                  submenuItems: [
-                    {
-                      id: 'language-select-tw',
-                      label: '繁體中文',
-                      onClick: () => handleLanguageChange('tw'),
+                  // {
+                  //   id: 'message-history',
+                  //   label: lang.tr.messageHistory,
+                  //   icon: 'message',
+                  //   onClick: () => {},
+                  // },
+                  // {
+                  //   id: 'change-theme',
+                  //   label: lang.tr.changeTheme,
+                  //   icon: 'skin',
+                  //   onClick: () => {},
+                  // },
+                  {
+                    id: 'feedback',
+                    label: lang.tr.feedback,
+                    icon: 'feedback',
+                    onClick: () => {
+                      window.open(
+                        'https://forms.gle/AkBTqsZm9NGr5aH46',
+                        '_blank',
+                      );
                     },
-                    {
-                      id: 'language-select-cn',
-                      label: '簡體中文',
-                      onClick: () => handleLanguageChange('cn'),
-                    },
-                    {
-                      id: 'language-select-en',
-                      label: 'English',
-                      onClick: () => handleLanguageChange('en'),
-                    },
-                    {
-                      id: 'language-select-jp',
-                      label: '日本語',
-                      onClick: () => handleLanguageChange('jp'),
-                    },
-                  ],
-                },
-                {
-                  id: 'logout',
-                  label: lang.tr.logout,
-                  icon: 'logout',
-                  onClick: () => handleLogout(),
-                },
-                {
-                  id: 'exit',
-                  label: lang.tr.exit,
-                  icon: 'exit',
-                  onClick: () => handleClose(),
-                },
-              ])
+                  },
+                  {
+                    id: 'language-select',
+                    label: lang.tr.languageSelect,
+                    icon: 'submenu',
+                    hasSubmenu: true,
+                    submenuItems: [
+                      {
+                        id: 'language-select-tw',
+                        label: '繁體中文',
+                        onClick: () => handleLanguageChange('tw'),
+                      },
+                      {
+                        id: 'language-select-cn',
+                        label: '簡體中文',
+                        onClick: () => handleLanguageChange('cn'),
+                      },
+                      {
+                        id: 'language-select-en',
+                        label: 'English',
+                        onClick: () => handleLanguageChange('en'),
+                      },
+                      {
+                        id: 'language-select-jp',
+                        label: '日本語',
+                        onClick: () => handleLanguageChange('jp'),
+                      },
+                    ],
+                  },
+                  {
+                    id: 'logout',
+                    label: lang.tr.logout,
+                    icon: 'logout',
+                    onClick: () => handleLogout(),
+                  },
+                  {
+                    id: 'exit',
+                    label: lang.tr.exit,
+                    icon: 'exit',
+                    onClick: () => handleClose(),
+                  },
+                ],
+                e.currentTarget as HTMLElement,
+              )
             }
           />
           <div

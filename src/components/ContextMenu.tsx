@@ -10,6 +10,7 @@ interface ContextMenuProps {
   x: number;
   y: number;
   items: ContextMenuItem[];
+  target?: HTMLElement;
   onClose: () => void;
   side?: 'left' | 'right';
 }
@@ -19,6 +20,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   y,
   items,
   side = 'right',
+  target,
   onClose,
 }) => {
   // Ref
@@ -32,43 +34,28 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
   // Effect
   useEffect(() => {
-    if (menuRef.current) {
-      const menuWidth = menuRef.current.offsetWidth;
-      const menuHeight = menuRef.current.offsetHeight;
-      const windowWidth = window.innerWidth;
-      const windowHeight = window.innerHeight;
-
-      let newMenuX = x;
-      let newMenuY = y;
-
-      if (side === 'left') {
-        newMenuX = x - menuWidth;
-        newMenuY = y;
-
-        if (x < 20 + menuWidth) {
-          newMenuX = 20;
-        }
-
-        if (y > windowHeight - menuHeight - 20) {
-          newMenuY = windowHeight - menuHeight - 20;
-        }
-      } else {
-        newMenuX = x;
-        newMenuY = y;
-
-        if (x + menuWidth > windowWidth - 20) {
-          newMenuX = windowWidth - menuWidth - 20;
-        }
-
-        if (y > windowHeight - menuHeight - 20) {
-          newMenuY = windowHeight - menuHeight - 20;
-        }
+    if (!menuRef.current) return;
+    const menuWidth = menuRef.current.offsetWidth,
+      menuHeight = menuRef.current.offsetHeight,
+      windowWidth = window.innerWidth,
+      windowHeight = window.innerHeight;
+    let newMenuX = x,
+      newMenuY = y;
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      newMenuX = rect.left;
+      newMenuY = rect.bottom;
+      if (newMenuY + menuHeight > windowHeight) {
+        newMenuY = rect.top - menuHeight;
       }
-
-      setMenuX(newMenuX);
-      setMenuY(newMenuY);
+    } else if (side === 'left') {
+      newMenuX = x - menuWidth;
     }
-  }, [x, y, side, menuRef]);
+    newMenuX = Math.max(8, Math.min(newMenuX, windowWidth - menuWidth - 8));
+    newMenuY = Math.max(8, Math.min(newMenuY, windowHeight - menuHeight - 8));
+    setMenuX(newMenuX);
+    setMenuY(newMenuY);
+  }, [x, y, target, side]);
 
   return (
     <div

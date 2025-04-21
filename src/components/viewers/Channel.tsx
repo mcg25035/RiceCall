@@ -1058,6 +1058,7 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
                     //   onClick: () => handleAddFavoriteServer(serverId),
                     // },
                   ].filter(Boolean) as ContextMenuItem[],
+                  e.currentTarget as HTMLElement,
                 );
               }}
             />
