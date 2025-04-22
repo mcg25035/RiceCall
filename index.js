@@ -45,7 +45,7 @@ const sendSuccess = (res, data) => {
 };
 
 // HTTP Server
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, PATCH');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -982,6 +982,107 @@ const server = http.createServer((req, res) => {
         );
       }
     });
+    return;
+  }
+
+  // 添加活动相关的API路由
+  if (req.method === 'GET' && req.url.startsWith('/api/events')) {
+    // 解析URL参数
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const active = url.searchParams.get('active');
+    const serverId = url.searchParams.get('serverId');
+    const channelId = url.searchParams.get('channelId');
+
+    const isActive =
+      active === 'true' ? true : active === 'false' ? false : undefined;
+    try {
+      // 获取活动列表
+      const events = await DB.get.events({
+        active: isActive,
+        serverId,
+        channelId,
+      });
+
+      sendSuccess(res, {
+        message: 'success',
+        data: events,
+      });
+    } catch (error) {
+      if (!(error instanceof StandardizedError)) {
+        error = new StandardizedError(
+          `獲取活動列表時發生預期外的錯誤: ${error.message}`,
+          'ServerError',
+          'GET_EVENTS',
+          'SERVER_ERROR',
+          500,
+        );
+      }
+      sendError(res, error.status_code, error.error_message);
+      new Logger('Server').error(`Get events error: ${error.error_message}`);
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && req.url.startsWith('/api/events/')) {
+    const eventId = req.url.split('/').pop();
+    try {
+      // 获取活动详情
+      const event = await DB.get.event(eventId);
+
+      if (!event) {
+        throw new StandardizedError(
+          '活動不存在',
+          'ValidationError',
+          'GET_EVENT',
+          'EVENT_NOT_FOUND',
+          404,
+        );
+      }
+
+      sendSuccess(res, {
+        message: 'success',
+        data: event,
+      });
+    } catch (error) {
+      if (!(error instanceof StandardizedError)) {
+        error = new StandardizedError(
+          `獲取活動詳情時發生預期外的錯誤: ${error.message}`,
+          'ServerError',
+          'GET_EVENT',
+          'SERVER_ERROR',
+          500,
+        );
+      }
+      sendError(res, error.status_code, error.error_message);
+      new Logger('Server').error(`Get event error: ${error.error_message}`);
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && req.url.startsWith('/api/events/users/')) {
+    const userId = req.url.split('/').pop();
+    try {
+      const events = await DB.get.userEvents(userId);
+
+      sendSuccess(res, {
+        message: 'success',
+        data: events,
+      });
+    } catch (error) {
+      if (!(error instanceof StandardizedError)) {
+        error = new StandardizedError(
+          `獲取用戶活動時發生預期外的錯誤: ${error.message}`,
+          'ServerError',
+          'GET_USER_EVENTS',
+          'SERVER_ERROR',
+          500,
+        );
+      }
+      sendError(res, error.status_code, error.error_message);
+      new Logger('Server').error(
+        `Get user events error: ${error.error_message}`,
+      );
+    }
     return;
   }
 
