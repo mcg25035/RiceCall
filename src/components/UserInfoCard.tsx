@@ -7,7 +7,7 @@ import vip from '@/styles/vip.module.css';
 import permission from '@/styles/permission.module.css';
 
 // Components
-import BadgeViewer from '@/components/viewers/Badge';
+import BadgeListViewer from '@/components/viewers/BadgeList';
 
 // Types
 import type { ServerMember } from '@/types';
@@ -178,7 +178,7 @@ const UserInfoCard: React.FC<UserInfoCardProps> = React.memo(
 
         {/* Badges Section */}
         <div className={userInfoCard['footer']}>
-          <BadgeViewer badges={memberBadges} maxDisplay={13} />
+          <BadgeListViewer badges={memberBadges} maxDisplay={13} />
         </div>
       </div>
     );

@@ -9,7 +9,7 @@ import vip from '@/styles/vip.module.css';
 import { PopupType, User, FriendGroup, UserFriend, Server } from '@/types';
 
 // Components
-import BadgeViewer from '@/components/viewers/Badge';
+import BadgeListViewer from '@/components/viewers/BadgeList';
 
 // Providers
 import { useContextMenu } from '@/providers/ContextMenu';
@@ -304,7 +304,7 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
             <div
               className={`${grade['grade']} ${grade[`lv-${friendGrade}`]}`}
             />
-            <BadgeViewer badges={friendBadges} maxDisplay={5} />
+            <BadgeListViewer badges={friendBadges} maxDisplay={5} />
           </div>
           {friendServerName ? (
             <div className={styles['container']}>

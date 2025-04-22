@@ -10,7 +10,7 @@ import markdown from '@/styles/viewers/markdown.module.css';
 // Components
 import MarkdownViewer from '@/components/viewers/Markdown';
 import MessageViewer from '@/components/viewers/Message';
-import ChannelViewer from '@/components/viewers/Channel';
+import ChannelListViewer from '@/components/viewers/ChannelList';
 import MessageInputBox from '@/components/MessageInputBox';
 
 // Types
@@ -269,7 +269,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
             className={styles['sidebar']}
             style={{ width: `${sidebarWidth}px` }}
           >
-            <ChannelViewer
+            <ChannelListViewer
               member={member}
               server={server}
               currentChannel={channel}

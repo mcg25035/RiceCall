@@ -8,7 +8,7 @@ import vip from '@/styles/vip.module.css';
 
 // Components
 import FriendListViewer from '@/components/viewers/FriendList';
-import BadgeViewer from '@/components/viewers/Badge';
+import BadgeListViewer from '@/components/viewers/BadgeList';
 
 // Types
 import { FriendGroup, SocketServerEvent, User, UserFriend } from '@/types';
@@ -185,7 +185,7 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
             <div
               className={`${friendPage['container']} ${friendPage['myBadges']}`}
             >
-              <BadgeViewer badges={userBadges} maxDisplay={5} />
+              <BadgeListViewer badges={userBadges} maxDisplay={5} />
             </div>
           </div>
           <div className={friendPage['signatureBox']}>

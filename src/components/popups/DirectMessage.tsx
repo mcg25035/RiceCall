@@ -11,7 +11,7 @@ import { useSocket } from '@/providers/Socket';
 
 // Components
 import MessageViewer from '@/components/viewers/Message';
-import BadgeViewer from '@/components/viewers/Badge';
+import BadgeListViewer from '@/components/viewers/BadgeList';
 
 // Services
 import refreshService from '@/services/refresh.service';
@@ -220,7 +220,7 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
                 ) : (
                   ''
                 )}
-                <BadgeViewer badges={targetBadges} maxDisplay={13} />
+                <BadgeListViewer badges={targetBadges} maxDisplay={13} />
               </div>
             </div>
             <div className={directMessage['userBox']}>

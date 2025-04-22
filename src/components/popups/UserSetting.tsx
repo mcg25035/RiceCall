@@ -11,7 +11,7 @@ import type { Badge, Server, User, UserServer } from '@/types';
 import { PopupType } from '@/types';
 
 // Components
-import BadgeViewer from '@/components/viewers/Badge';
+import BadgeListViewer from '@/components/viewers/BadgeList';
 
 // Providers
 import { useSocket } from '@/providers/Socket';
@@ -368,7 +368,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                   {'最近獲得' /** BADGE TITLE **/}
                 </div>
                 <div className={setting['badgeViewer']}>
-                  <BadgeViewer badges={userBadges} maxDisplay={13} />
+                  <BadgeListViewer badges={userBadges} maxDisplay={13} />
                 </div>
               </div>
             </>

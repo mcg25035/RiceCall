@@ -319,10 +319,6 @@ const RootPageComponent = () => {
   const [server, setServer] = useState<Server>(createDefault.server());
   const [channel, setChannel] = useState<Channel>(createDefault.channel());
 
-  // Variables
-  const { userId, name: userName, status: userStatus } = user;
-  const { serverId, name: serverName } = server;
-
   // Handlers
   const handleUserUpdate = (data: Partial<User> | null) => {
     if (!data) data = createDefault.user();

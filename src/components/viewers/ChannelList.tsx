@@ -26,7 +26,7 @@ import { useExpandedContext } from '@/providers/Expanded';
 import { useWebRTC } from '@/providers/WebRTC';
 
 // Components
-import BadgeViewer from '@/components/viewers/Badge';
+import BadgeListViewer from '@/components/viewers/BadgeList';
 
 // Services
 import ipcService from '@/services/ipc.service';
@@ -753,7 +753,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
             ${grade[`lv-${memberGrade}`]}
           `}
         />
-        <BadgeViewer badges={memberBadges} maxDisplay={5} />
+        <BadgeListViewer badges={memberBadges} maxDisplay={5} />
         {isCurrentUser && <div className={styles['myLocationIcon']} />}
       </div>
     );
@@ -762,7 +762,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
 
 UserTab.displayName = 'UserTab';
 
-interface ChannelViewerProps {
+interface ChannelListViewerProps {
   member: Member;
   server: Server;
   currentChannel: Channel;
@@ -770,7 +770,7 @@ interface ChannelViewerProps {
   serverChannels: (Channel | Category)[];
 }
 
-const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
+const ChannelListViewer: React.FC<ChannelListViewerProps> = React.memo(
   ({ member, server, currentChannel, serverMembers, serverChannels }) => {
     // Hooks
     const lang = useLanguage();
@@ -1125,6 +1125,6 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
   },
 );
 
-ChannelViewer.displayName = 'ChannelViewer';
+ChannelListViewer.displayName = 'ChannelListViewer';
 
-export default ChannelViewer;
+export default ChannelListViewer;
