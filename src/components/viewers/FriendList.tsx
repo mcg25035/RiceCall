@@ -59,18 +59,19 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
       userId: User['userId'],
     ) => {
       if (!socket) return;
-      socket.send.deleteFriendGroup({ friendGroupId, userId });
+      handleOpenWarning(
+        lang.tr.deleteFriendGroupDialog.replace('{0}', friendGroupName),
+        () => socket.send.deleteFriendGroup({ friendGroupId, userId }),
+      );
     };
 
-    const handleOpenWarning = (message: string) => {
+    const handleOpenWarning = (message: string, callback: () => void) => {
       ipcService.popup.open(PopupType.DIALOG_ALERT);
       ipcService.initialData.onRequest(PopupType.DIALOG_ALERT, {
         iconType: 'warning',
         title: message,
       });
-      ipcService.popup.onSubmit(PopupType.DIALOG_ALERT, () =>
-        socket.send.deleteFriendGroup({ friendGroupId, userId }),
-      );
+      ipcService.popup.onSubmit(PopupType.DIALOG_ALERT, callback);
     };
 
     const handleOpenEditFriendGroup = (
@@ -102,13 +103,7 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
                 id: 'delete',
                 label: lang.tr.friendDeleteGroup,
                 show: canManageFriendGroup,
-                onClick: () =>
-                  handleOpenWarning(
-                    lang.tr.deleteFriendGroupDialog.replace(
-                      '{0}',
-                      friendGroupName,
-                    ),
-                  ),
+                onClick: () => handleDeleteFriendGroup(friendGroupId, userId),
               },
             ]);
           }}

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -6,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { User, DirectMessage, SocketServerEvent, Badge } from '@/types';
 
 // Providers
-import { useLanguage } from '@/providers/Language';
+// import { useLanguage } from '@/providers/Language';
 import { useSocket } from '@/providers/Socket';
 
 // Components
@@ -34,7 +33,7 @@ interface DirectMessagePopupProps {
 const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
   (initialData: DirectMessagePopupProps) => {
     // Hooks
-    const lang = useLanguage();
+    // const lang = useLanguage();
     const socket = useSocket();
 
     // Refs
@@ -64,8 +63,8 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
     const [directMessages, setDirectMessages] = useState<DirectMessage[]>([]);
     const [messageInput, setMessageInput] = useState<string>('');
     const [isComposing, setIsComposing] = useState<boolean>(false);
-    const [isDisabled, setIsDisabled] = useState<boolean>(false);
-    const [isWarning, setIsWarning] = useState<boolean>(false);
+    // const [isDisabled, setIsDisabled] = useState<boolean>(false);
+    // const [isWarning, setIsWarning] = useState<boolean>(false);
 
     // Variables
     const { targetId, userId } = initialData;
@@ -267,12 +266,12 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
                 className={directMessage['input']}
                 value={messageInput}
                 onChange={(e) => {
-                  if (isDisabled) return;
+                  // if (isDisabled) return;
                   e.preventDefault();
                   setMessageInput(e.target.value);
                 }}
                 onPaste={(e) => {
-                  if (isDisabled) return;
+                  // if (isDisabled) return;
                   e.preventDefault();
                   setMessageInput(
                     (prev) => prev + e.clipboardData.getData('text'),
@@ -285,8 +284,8 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
                   if (!messageInput.trim()) return;
                   if (messageInput.length > 2000) return;
                   if (isComposing) return;
-                  if (isDisabled) return;
-                  if (isWarning) return;
+                  // if (isDisabled) return;
+                  // if (isWarning) return;
                   handleSendMessage(
                     { type: 'dm', content: messageInput },
                     userId,

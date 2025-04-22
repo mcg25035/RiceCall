@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-
 import dynamic from 'next/dynamic';
 import React, { useState, useEffect, useCallback } from 'react';
 
@@ -167,7 +166,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       [isResizing],
     );
 
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = useCallback((e: MouseEvent) => {
       const micContainer = document.querySelector(
         `.${styles['micVolumeContainer']}`,
       );
@@ -182,7 +181,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
         setShowMicVolume(false);
         setShowSpeakerVolume(false);
       }
-    };
+    }, []);
 
     // Effects
     useEffect(() => {
@@ -225,7 +224,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     useEffect(() => {
       if (!webRTC || !channelBitrate) return;
       webRTC.handleUpdateBitrate(channelBitrate);
-    }, [channelBitrate]);
+    }, [channelBitrate]); // Please ignore this warning
 
     useEffect(() => {
       const timer = setInterval(() => {
