@@ -647,12 +647,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                           (isCurrentUser && permissionLevel > 1);
                         const canChangeToGuest =
                           canManageMember &&
-                          memberPermission !== 1 &&
-                          memberPermission > 1;
+                          permissionLevel > 5 &&
+                          memberPermission !== 1;
                         const canChangeToMember =
                           canManageMember &&
-                          memberPermission !== 2 &&
-                          memberPermission > 1;
+                          permissionLevel > 5 &&
+                          memberPermission !== 2;
                         const canChangeToChannelAdmin =
                           canManageMember &&
                           memberPermission !== 3 &&
@@ -736,7 +736,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                       show: canChangeToMember,
                                       onClick: () =>
                                         handleUpdateMember(
-                                          { permissionLevel: 1 },
+                                          { permissionLevel: 2 },
                                           memberUserId,
                                           memberServerId,
                                         ),

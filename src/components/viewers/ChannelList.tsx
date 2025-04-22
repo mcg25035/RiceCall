@@ -522,9 +522,9 @@ const UserTab: React.FC<UserTabProps> = React.memo(
     const canEditNickname =
       canManageMember || (isCurrentUser && permissionLevel > 1);
     const canChangeToGuest =
-      canManageMember && memberPermission !== 1 && memberPermission > 1;
+      canManageMember && permissionLevel > 5 && memberPermission !== 1;
     const canChangeToMember =
-      canManageMember && memberPermission !== 2 && memberPermission > 1;
+      canManageMember && permissionLevel > 5 && memberPermission !== 2;
     const canChangeToChannelAdmin =
       canManageMember && memberPermission !== 3 && memberPermission > 1;
     const canChangeToCategoryAdmin =
@@ -749,7 +749,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
                     show: canChangeToMember,
                     onClick: () =>
                       handleUpdateMember(
-                        { permissionLevel: 1 },
+                        { permissionLevel: 2 },
                         memberUserId,
                         serverId,
                       ),
