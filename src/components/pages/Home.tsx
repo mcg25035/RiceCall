@@ -368,12 +368,9 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
                   {hasResults && (
                     <>
                       {exactMatch && (
-                        <>
-                          <div className={homePage['dropdownHeaderText']}>
-                            {lang.tr.quickEnterServer} {exactMatch.displayId}
-                          </div>
-                          <div className={homePage['dropdownSplit']}></div>
-                        </>
+                        <div className={homePage['dropdownHeaderText']}>
+                          {lang.tr.quickEnterServer} {exactMatch.displayId}
+                        </div>
                       )}
                       {personalResults.length > 0 && (
                         <>
