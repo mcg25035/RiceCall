@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // CSS
 import homePage from '@/styles/pages/home.module.css';
@@ -19,11 +19,11 @@ import {
 // Providers
 import { useSocket } from '@/providers/Socket';
 import { useLanguage } from '@/providers/Language';
+import { useMainTab } from '@/providers/MainTab';
 
 // Services
 import ipcService from '@/services/ipc.service';
 import refreshService from '@/services/refresh.service';
-import { useMainTab } from '@/providers/MainTab';
 
 export interface ServerListSectionProps {
   title: string;

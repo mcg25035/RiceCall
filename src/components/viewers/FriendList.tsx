@@ -4,15 +4,9 @@ import React, { useRef, useEffect, useState } from 'react';
 import styles from '@/styles/pages/friend.module.css';
 import grade from '@/styles/grade.module.css';
 import vip from '@/styles/vip.module.css';
+
 // Types
-import {
-  PopupType,
-  User,
-  FriendGroup,
-  UserFriend,
-  Server,
-  // Friend,
-} from '@/types';
+import { PopupType, User, FriendGroup, UserFriend, Server } from '@/types';
 
 // Components
 import BadgeViewer from '@/components/viewers/Badge';
@@ -24,8 +18,10 @@ import { useSocket } from '@/providers/Socket';
 
 // Services
 import ipcService from '@/services/ipc.service';
-import { createDefault } from '@/utils/createDefault';
 import refreshService from '@/services/refresh.service';
+
+// Utils
+import { createDefault } from '@/utils/createDefault';
 
 interface FriendGroupTabProps {
   friendGroup: FriendGroup;

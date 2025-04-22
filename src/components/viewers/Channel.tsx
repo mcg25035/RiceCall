@@ -15,8 +15,6 @@ import {
   User,
   Member,
   Category,
-  ContextMenuItem,
-  Permission,
   UserFriend,
 } from '@/types';
 

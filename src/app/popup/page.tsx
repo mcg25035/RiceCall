@@ -19,6 +19,7 @@ import MemberApplySetting from '@/components/popups/MemberApplySetting';
 import CreateServer from '@/components/popups/CreateServer';
 import CreateChannel from '@/components/popups/CreateChannel';
 import CreateFriendGroup from '@/components/popups/CreateFriendGroup';
+import EditChannelName from '@/components/popups/EditChannelName';
 import EditChannelOrder from '@/components/popups/EditChannelOrder';
 import EditNickname from '@/components/popups/EditNickname';
 import EditFriendGroup from '@/components/popups/EditFriendGroup';
@@ -34,7 +35,6 @@ import ipcService from '@/services/ipc.service';
 
 // Providers
 import { useLanguage } from '@/providers/Language';
-import EditChannelName from '@/components/popups/EditChannelName';
 
 interface HeaderProps {
   title: string;
