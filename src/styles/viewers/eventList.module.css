@@ -1,0 +1,186 @@
+.eventBannerList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.eventBanner {
+  background-color: rgba(255, 222, 89, 0.15);
+  border-left: 4px solid #FFDE59;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.eventBanner:hover {
+  background-color: rgba(255, 222, 89, 0.25);
+  transform: translateX(2px);
+}
+
+.eventBannerContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.eventBannerName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+  margin-bottom: 2px;
+}
+
+.eventBannerInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-color-secondary);
+}
+
+.eventBannerTime {
+  color: #e6b800;
+  font-weight: 500;
+}
+
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  padding: 16px;
+}
+
+.eventItem {
+  background-color: var(--bg-color-secondary);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.eventItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.eventHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.eventTitle {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+}
+
+.eventIcon {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.xpBoostIcon {
+  background-image: url('/icons/xp-boost.svg');
+}
+
+.badgeIcon {
+  background-image: url('/icons/badge.svg');
+}
+
+.specialIcon {
+  background-image: url('/icons/special-event.svg');
+}
+
+.eventTime {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  padding: 4px 8px;
+  background-color: var(--accent-color);
+  border-radius: 12px;
+  color: #fff;
+}
+
+.eventDescription {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  margin-bottom: 12px;
+  padding-left: 32px;
+}
+
+.boostInfo, .badgeInfo {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding-left: 32px;
+}
+
+.boostText, .badgeText {
+  font-size: 14px;
+  color: var(--accent-color);
+  font-weight: 500;
+}
+
+.badgeTime {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+  margin-left: 8px;
+}
+
+.eventFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+  padding-left: 32px;
+}
+
+.eventTimeRange {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-color-tertiary);
+}
+
+.emptyEvents {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background-color: var(--bg-color-secondary);
+  border-radius: 8px;
+  width: 100%;
+  min-height: 200px;
+}
+
+.emptyIcon {
+  width: 64px;
+  height: 64px;
+  background-image: url('/icons/empty-event.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: 16px;
+  color: var(--text-color-tertiary);
+} 
