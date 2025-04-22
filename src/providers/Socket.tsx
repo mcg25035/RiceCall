@@ -121,6 +121,10 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
       }, {} as SocketContextType['send']),
     );
 
+    ipcService.getSocketStatus().then((status) => {
+      setIsConnected(status === 'connected');
+    });
+
     ipcService.onSocketEvent('connect', handleConnect);
     ipcService.onSocketEvent('connect_error', handleConnectError);
     ipcService.onSocketEvent('reconnect', handleReconnect);

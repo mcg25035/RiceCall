@@ -701,6 +701,11 @@ app.on('ready', async () => {
     isLogin = false;
     trayIcon(true);
   });
+  ipcMain.on('get-socket-status', () => {
+    return socketInstance && socketInstance.connected
+      ? 'connected'
+      : 'disconnected';
+  });
 
   // Initial data request handlers
   ipcMain.on('request-initial-data', (_, to) => {
