@@ -10,13 +10,13 @@ import { Server, User } from '@/types';
 import { useSocket } from '@/providers/Socket';
 
 interface ServerCardProps {
+  user: User;
   server: Server;
-  userId: User['userId'];
   onClick?: () => void;
 }
 
 const ServerCard: React.FC<ServerCardProps> = React.memo(
-  ({ userId, server, onClick }) => {
+  ({ user, server, onClick }) => {
     // Hooks
     const socket = useSocket();
 
@@ -29,6 +29,7 @@ const ServerCard: React.FC<ServerCardProps> = React.memo(
       slogan: serverSlogan,
       ownerId: serverOwnerId,
     } = server;
+    const { userId } = user;
     const isOwner = serverOwnerId === userId;
 
     // Handlers
@@ -78,19 +79,19 @@ ServerCard.displayName = 'ServerCard';
 
 // ServerGrid Component
 interface ServerListViewerProps {
+  user: User;
   servers: Server[];
-  userId: User['userId'];
   onServerClick?: (server: Server) => void;
 }
 
 const ServerListViewer: React.FC<ServerListViewerProps> = React.memo(
-  ({ userId, servers, onServerClick }) => {
+  ({ user, servers, onServerClick }) => {
     return (
       <div className={homePage['serverCards']}>
         {servers.map((server) => (
           <ServerCard
             key={server.serverId}
-            userId={userId}
+            user={user}
             server={server}
             onClick={() => onServerClick?.(server)}
           />

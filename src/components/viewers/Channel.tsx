@@ -33,26 +33,24 @@ import ipcService from '@/services/ipc.service';
 import refreshService from '@/services/refresh.service';
 
 interface CategoryTabProps {
-  userId: User['userId'];
-  currentChannelId: Channel['channelId'];
-  serverId: Server['serverId'];
-  serverActiveMembers: ServerMember[];
-  serverChannels: (Channel | Category)[];
+  member: Member;
   category: Category;
-  permissionLevel: number;
+  currentChannel: Channel;
+  userFriends: UserFriend[];
+  serverMembers: ServerMember[];
+  serverChannels: (Channel | Category)[];
   expanded: Record<string, boolean>;
   setExpanded: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }
 
 const CategoryTab: React.FC<CategoryTabProps> = React.memo(
   ({
-    userId,
-    currentChannelId,
-    serverId,
-    serverActiveMembers,
-    serverChannels,
+    member,
     category,
-    permissionLevel,
+    currentChannel,
+    userFriends,
+    serverMembers,
+    serverChannels,
     expanded,
     setExpanded,
   }) => {
@@ -68,11 +66,12 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
       name: categoryName,
       visibility: categoryVisibility,
     } = category;
+    const { permissionLevel, userId, serverId } = member;
     const categoryChannels = serverChannels
       .filter((ch) => ch.type === 'channel')
       .filter((ch) => ch.categoryId === categoryId);
     const userInCategory = categoryChannels.some(
-      (ch) => ch.channelId === currentChannelId,
+      (ch) => ch.channelId === currentChannel.channelId,
     );
     const canManageChannel = permissionLevel > 4;
 
@@ -213,15 +212,13 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
             .map((channel) => (
               <ChannelTab
                 key={channel.channelId}
-                userId={userId}
-                currentChannelId={currentChannelId}
-                serverId={serverId}
-                serverActiveMembers={serverActiveMembers}
+                member={member}
                 channel={channel}
-                permissionLevel={permissionLevel}
+                currentChannel={currentChannel}
+                userFriends={userFriends}
+                serverMembers={serverMembers}
                 expanded={expanded}
                 setExpanded={setExpanded}
-                userFriends={[]}
               />
             ))}
         </div>
@@ -233,28 +230,24 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
 CategoryTab.displayName = 'CategoryTab';
 
 interface ChannelTabProps {
-  userId: User['userId'];
-  currentChannelId: Channel['channelId'];
-  serverId: Server['serverId'];
-  serverActiveMembers: ServerMember[];
+  member: Member;
   channel: Channel;
-  permissionLevel: number;
+  currentChannel: Channel;
+  userFriends: UserFriend[];
+  serverMembers: ServerMember[];
   expanded: Record<string, boolean>;
   setExpanded: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  userFriends: UserFriend[];
 }
 
 const ChannelTab: React.FC<ChannelTabProps> = React.memo(
   ({
-    userId,
-    currentChannelId,
-    serverId,
-    serverActiveMembers,
+    member,
     channel,
-    permissionLevel,
+    currentChannel,
+    userFriends,
+    serverMembers,
     expanded,
     setExpanded,
-    userFriends,
   }) => {
     // Hooks
     const lang = useLanguage();
@@ -271,10 +264,11 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
       userLimit: channelUserLimit,
       categoryId: channelCategoryId,
     } = channel;
-    const channelMembers = serverActiveMembers.filter(
+    const { permissionLevel, userId, serverId } = member;
+    const channelMembers = serverMembers.filter(
       (mb) => mb.currentChannelId === channelId,
     );
-    const userInChannel = currentChannelId === channelId;
+    const userInChannel = currentChannel.channelId === channelId;
     const canJoin =
       !userInChannel &&
       channelVisibility !== 'readonly' &&
@@ -769,23 +763,15 @@ const UserTab: React.FC<UserTabProps> = React.memo(
 UserTab.displayName = 'UserTab';
 
 interface ChannelViewerProps {
-  user: User;
+  member: Member;
   server: Server;
   currentChannel: Channel;
+  serverMembers: ServerMember[];
   serverChannels: (Channel | Category)[];
-  serverActiveMembers: ServerMember[];
-  permissionLevel: Member['permissionLevel'];
 }
 
 const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
-  ({
-    user,
-    server,
-    currentChannel,
-    serverChannels,
-    serverActiveMembers,
-    permissionLevel,
-  }) => {
+  ({ member, server, currentChannel, serverMembers, serverChannels }) => {
     // Hooks
     const lang = useLanguage();
     const socket = useSocket();
@@ -794,7 +780,7 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
       useExpandedContext();
 
     // Ref
-    const userFriendsRefreshed = useRef(false);
+    const refreshed = useRef(false);
 
     // States
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -804,14 +790,13 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
 
     // Variables
     const connectStatus = 4 - Math.floor(Number(latency) / 50);
-    const { userId } = user;
     const {
-      serverId,
       name: serverName,
       avatarUrl: serverAvatarUrl,
       displayId: serverDisplayId,
       receiveApply: serverReceiveApply,
     } = server;
+    const { permissionLevel, userId, serverId } = member;
     const {
       channelId: currentChannelId,
       name: currentChannelName,
@@ -905,13 +890,9 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
     }, [socket]);
 
     useEffect(() => {
-      userFriendsRefreshed.current = false;
-    }, [currentChannel.channelId]);
-
-    useEffect(() => {
-      if (!userId || userFriendsRefreshed.current) return;
+      if (!userId || refreshed.current) return;
       const refresh = async () => {
-        userFriendsRefreshed.current = true;
+        refreshed.current = true;
         Promise.all([
           refreshService.userFriends({
             userId: userId,
@@ -947,9 +928,7 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
             </div>
             <div className={styles['container']}>
               <div className={styles['idText']}>{serverDisplayId}</div>
-              <div className={styles['memberText']}>
-                {serverActiveMembers.length}
-              </div>
+              <div className={styles['memberText']}>{serverMembers.length}</div>
             </div>
           </div>
           <div className={styles['optionBox']}>
@@ -1074,15 +1053,13 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
             {view === 'current' ? (
               <ChannelTab
                 key={currentChannelId}
-                userId={userId}
-                currentChannelId={currentChannelId}
-                serverId={serverId}
-                serverActiveMembers={serverActiveMembers}
+                member={member}
                 channel={currentChannel}
-                permissionLevel={permissionLevel}
+                currentChannel={currentChannel}
+                userFriends={userFriends}
+                serverMembers={serverMembers}
                 expanded={{ [currentChannelId]: true }}
                 setExpanded={() => {}}
-                userFriends={userFriends}
               />
             ) : (
               serverChannels
@@ -1096,28 +1073,25 @@ const ChannelViewer: React.FC<ChannelViewerProps> = React.memo(
                   item.type === 'category' ? (
                     <CategoryTab
                       key={item.channelId}
-                      userId={userId}
-                      currentChannelId={currentChannelId}
-                      serverId={serverId}
-                      serverActiveMembers={serverActiveMembers}
-                      serverChannels={serverChannels}
+                      member={member}
                       category={item}
-                      permissionLevel={permissionLevel}
+                      currentChannel={currentChannel}
+                      userFriends={userFriends}
+                      serverMembers={serverMembers}
+                      serverChannels={serverChannels}
                       expanded={expanded}
                       setExpanded={setExpanded}
                     />
                   ) : (
                     <ChannelTab
                       key={item.channelId}
-                      userId={userId}
-                      currentChannelId={currentChannelId}
-                      serverId={serverId}
-                      serverActiveMembers={serverActiveMembers}
+                      member={member}
                       channel={item}
-                      permissionLevel={permissionLevel}
+                      currentChannel={currentChannel}
+                      userFriends={userFriends}
+                      serverMembers={serverMembers}
                       expanded={expanded}
                       setExpanded={setExpanded}
-                      userFriends={userFriends}
                     />
                   ),
                 )

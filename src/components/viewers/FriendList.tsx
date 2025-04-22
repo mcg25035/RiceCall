@@ -24,13 +24,13 @@ import refreshService from '@/services/refresh.service';
 import { createDefault } from '@/utils/createDefault';
 
 interface FriendGroupTabProps {
+  user: User;
   friendGroup: FriendGroup;
   friends: UserFriend[];
-  userId: User['userId'];
 }
 
 const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
-  ({ friendGroup, friends, userId }) => {
+  ({ user, friendGroup, friends }) => {
     // Hooks
     const lang = useLanguage();
     const contextMenu = useContextMenu();
@@ -42,6 +42,7 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
     const socket = useSocket();
 
     // Variables
+    const { userId } = user;
     const { friendGroupId, name: friendGroupName } = friendGroup;
     const friendGroupFriends =
       friendGroupId === ''
@@ -131,7 +132,7 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
           }}
         >
           {friendGroupFriends.map((friend) => (
-            <FriendCard key={friend.targetId} friend={friend} userId={userId} />
+            <FriendCard key={friend.targetId} friend={friend} />
           ))}
         </div>
       </div>
@@ -142,201 +143,193 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
 FriendGroupTab.displayName = 'FriendGroupTab';
 
 interface FriendCardProps {
-  userId: string;
   friend: UserFriend;
 }
 
-const FriendCard: React.FC<FriendCardProps> = React.memo(
-  ({ friend, userId }) => {
-    // Hooks
-    const lang = useLanguage();
-    const contextMenu = useContextMenu();
+const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
+  // Hooks
+  const lang = useLanguage();
+  const contextMenu = useContextMenu();
 
-    // Socket
-    const socket = useSocket();
+  // Socket
+  const socket = useSocket();
 
-    // Refs
-    const refreshed = useRef(false);
+  // Refs
+  const refreshed = useRef(false);
 
-    // States
-    const [friendServerName, setFriendServerName] = useState<Server['name']>(
-      createDefault.server().name,
+  // States
+  const [friendServerName, setFriendServerName] = useState<Server['name']>(
+    createDefault.server().name,
+  );
+
+  // Variables
+  const {
+    userId: friendUserId,
+    targetId: friendTargetId,
+    name: friendName,
+    avatarUrl: friendAvatarUrl,
+    signature: friendSignature,
+    vip: friendVip,
+    level: friendLevel,
+    badges: friendBadges,
+    currentServerId: friendCurrentServerId,
+  } = friend;
+  const friendGrade = Math.min(56, friendLevel); // 56 is max level
+  const isCurrentUser = friendTargetId === friendUserId;
+  const canManageFriend = !isCurrentUser;
+
+  // Handlers
+
+  const handleDeleteFriend = (
+    userId: User['userId'],
+    targetId: User['userId'],
+  ) => {
+    if (!socket) return;
+    handleOpenWarning(
+      lang.tr.deleteFriendDialog.replace('{0}', friendName),
+      () => socket.send.deleteFriend({ userId, targetId }),
     );
+  };
 
-    // Variables
-    const {
-      userId: friendUserId,
-      targetId: friendTargetId,
-      name: friendName,
-      avatarUrl: friendAvatarUrl,
-      signature: friendSignature,
-      vip: friendVip,
-      level: friendLevel,
-      badges: friendBadges,
-      currentServerId: friendCurrentServerId,
-    } = friend;
-    const friendGrade = Math.min(56, friendLevel); // 56 is max level
-    const isCurrentUser = friendTargetId === userId;
-    const canManageFriend = !isCurrentUser;
+  const handleServerUpdate = (data: Server | null) => {
+    if (!data) data = createDefault.server();
+    setFriendServerName(data.name);
+  };
 
-    // Handlers
+  const handleOpenWarning = (message: string, callback: () => void) => {
+    ipcService.popup.open(PopupType.DIALOG_ALERT);
+    ipcService.initialData.onRequest(PopupType.DIALOG_ALERT, {
+      iconType: 'warning',
+      title: message,
+    });
+    ipcService.popup.onSubmit(PopupType.DIALOG_ALERT, callback);
+  };
 
-    const handleDeleteFriend = (
-      userId: User['userId'],
-      targetId: User['userId'],
-    ) => {
-      if (!socket) return;
-      handleOpenWarning(
-        lang.tr.deleteFriendDialog.replace('{0}', friendName),
-        () => socket.send.deleteFriend({ userId, targetId }),
-      );
-    };
+  const handleOpenDirectMessage = (
+    userId: User['userId'],
+    targetId: User['userId'],
+    targetName: User['name'],
+  ) => {
+    ipcService.popup.open(PopupType.DIRECT_MESSAGE, { targetId });
+    ipcService.initialData.onRequest(PopupType.DIRECT_MESSAGE, {
+      userId,
+      targetId,
+      targetName,
+    });
+  };
 
-    const handleServerUpdate = (data: Server | null) => {
-      if (!data) data = createDefault.server();
-      setFriendServerName(data.name);
-    };
+  const handleOpenUserInfo = (
+    userId: User['userId'],
+    targetId: User['userId'],
+  ) => {
+    ipcService.popup.open(PopupType.USER_INFO);
+    ipcService.initialData.onRequest(PopupType.USER_INFO, {
+      userId,
+      targetId,
+    });
+  };
 
-    const handleOpenWarning = (message: string, callback: () => void) => {
-      ipcService.popup.open(PopupType.DIALOG_ALERT);
-      ipcService.initialData.onRequest(PopupType.DIALOG_ALERT, {
-        iconType: 'warning',
-        title: message,
-      });
-      ipcService.popup.onSubmit(PopupType.DIALOG_ALERT, callback);
-    };
+  const handleOpenEditFriend = (
+    userId: User['userId'],
+    targetId: User['userId'],
+  ) => {
+    ipcService.popup.open(PopupType.EDIT_FRIEND);
+    ipcService.initialData.onRequest(PopupType.EDIT_FRIEND, {
+      userId,
+      targetId,
+    });
+  };
 
-    const handleOpenDirectMessage = (
-      userId: User['userId'],
-      targetId: User['userId'],
-      targetName: User['name'],
-    ) => {
-      ipcService.popup.open(PopupType.DIRECT_MESSAGE, { targetId });
-      ipcService.initialData.onRequest(PopupType.DIRECT_MESSAGE, {
-        userId,
-        targetId,
-        targetName,
-      });
-    };
-
-    const handleOpenUserInfo = (
-      userId: User['userId'],
-      targetId: User['userId'],
-    ) => {
-      ipcService.popup.open(PopupType.USER_INFO);
-      ipcService.initialData.onRequest(PopupType.USER_INFO, {
-        userId,
-        targetId,
+  useEffect(() => {
+    if (!friendCurrentServerId || refreshed.current) return;
+    const refresh = async () => {
+      refreshed.current = true;
+      Promise.all([
+        refreshService.server({
+          serverId: friendCurrentServerId,
+        }),
+      ]).then(([server]) => {
+        handleServerUpdate(server);
       });
     };
+    refresh();
+  }, [friendCurrentServerId]);
 
-    const handleOpenEditFriend = (
-      userId: User['userId'],
-      targetId: User['userId'],
-    ) => {
-      ipcService.popup.open(PopupType.EDIT_FRIEND);
-      ipcService.initialData.onRequest(PopupType.EDIT_FRIEND, {
-        userId,
-        targetId,
-      });
-    };
-
-    useEffect(() => {
-      if (!friendCurrentServerId || refreshed.current) return;
-      const refresh = async () => {
-        refreshed.current = true;
-        Promise.all([
-          refreshService.server({
-            serverId: friendCurrentServerId,
-          }),
-        ]).then(([server]) => {
-          handleServerUpdate(server);
-        });
-      };
-      refresh();
-    }, [friendCurrentServerId]);
-
-    return (
-      <div key={friendTargetId}>
-        {/* User View */}
+  return (
+    <div key={friendTargetId}>
+      {/* User View */}
+      <div
+        className={styles['friendCard']}
+        onContextMenu={(e) => {
+          contextMenu.showContextMenu(e.pageX, e.pageY, [
+            {
+              id: 'info',
+              label: lang.tr.viewProfile,
+              show: !isCurrentUser,
+              onClick: () => handleOpenUserInfo(friendUserId, friendTargetId),
+            },
+            {
+              id: 'edit',
+              label: lang.tr.editFriendGroup,
+              show: canManageFriend,
+              onClick: () => handleOpenEditFriend(friendUserId, friendTargetId),
+            },
+            {
+              id: 'delete',
+              label: lang.tr.deleteFriend,
+              show: canManageFriend,
+              onClick: () => handleDeleteFriend(friendUserId, friendTargetId),
+            },
+          ]);
+        }}
+        onDoubleClick={() =>
+          handleOpenDirectMessage(friendUserId, friendTargetId, friendName)
+        }
+      >
         <div
-          className={styles['friendCard']}
-          onContextMenu={(e) => {
-            contextMenu.showContextMenu(e.pageX, e.pageY, [
-              {
-                id: 'info',
-                label: lang.tr.viewProfile,
-                show: !isCurrentUser,
-                onClick: () => {
-                  handleOpenUserInfo(userId, friendTargetId);
-                },
-              },
-              {
-                id: 'edit',
-                label: lang.tr.editFriendGroup,
-                show: canManageFriend,
-                onClick: () =>
-                  handleOpenEditFriend(friendUserId, friendTargetId),
-              },
-              {
-                id: 'delete',
-                label: lang.tr.deleteFriend,
-                show: canManageFriend,
-                onClick: () => handleDeleteFriend(friendUserId, friendTargetId),
-              },
-            ]);
+          className={styles['avatarPicture']}
+          style={{
+            backgroundImage: `url(${friendAvatarUrl})`,
+            filter: !friendServerName ? 'grayscale(100%)' : '',
           }}
-          onDoubleClick={() => {
-            handleOpenDirectMessage(friendUserId, friendTargetId, friendName);
-          }}
-        >
-          <div
-            className={styles['avatarPicture']}
-            style={{
-              backgroundImage: `url(${friendAvatarUrl})`,
-              filter: !friendServerName ? 'grayscale(100%)' : '',
-            }}
-          />
-          <div className={styles['baseInfoBox']}>
-            <div className={styles['container']}>
-              {friendVip > 0 && (
-                <div
-                  className={`${vip['vipIcon']} ${
-                    vip[`vip-small-${friendVip}`]
-                  }`}
-                />
-              )}
-              <div className={styles['name']}>{friendName}</div>
+        />
+        <div className={styles['baseInfoBox']}>
+          <div className={styles['container']}>
+            {friendVip > 0 && (
               <div
-                className={`${grade['grade']} ${grade[`lv-${friendGrade}`]}`}
+                className={`${vip['vipIcon']} ${vip[`vip-small-${friendVip}`]}`}
               />
-              <BadgeViewer badges={friendBadges} maxDisplay={5} />
-            </div>
-            {friendServerName ? (
-              <div className={styles['container']}>
-                <div className={styles['location']} />
-                <div className={styles['serverName']}>{friendServerName}</div>
-              </div>
-            ) : (
-              <div className={styles['signature']}>{friendSignature}</div>
             )}
+            <div className={styles['name']}>{friendName}</div>
+            <div
+              className={`${grade['grade']} ${grade[`lv-${friendGrade}`]}`}
+            />
+            <BadgeViewer badges={friendBadges} maxDisplay={5} />
           </div>
+          {friendServerName ? (
+            <div className={styles['container']}>
+              <div className={styles['location']} />
+              <div className={styles['serverName']}>{friendServerName}</div>
+            </div>
+          ) : (
+            <div className={styles['signature']}>{friendSignature}</div>
+          )}
         </div>
       </div>
-    );
-  },
-);
+    </div>
+  );
+});
 
 FriendCard.displayName = 'FriendCard';
 
 interface FriendListViewerProps {
+  user: User;
   friendGroups: FriendGroup[];
   friends: UserFriend[];
-  userId: string;
 }
 
 const FriendListViewer: React.FC<FriendListViewerProps> = React.memo(
-  ({ friendGroups, friends, userId }) => {
+  ({ user, friendGroups, friends }) => {
     // Hooks
     const lang = useLanguage();
 
@@ -345,6 +338,7 @@ const FriendListViewer: React.FC<FriendListViewerProps> = React.memo(
     const [selectedTabId, setSelectedTabId] = useState<number>(0);
 
     // Variables
+    const { userId } = user;
     friends.sort((a, b) => {
       if (a.currentServerId && !b.currentServerId) return -1;
       if (!a.currentServerId && b.currentServerId) return 1;
@@ -425,7 +419,7 @@ const FriendListViewer: React.FC<FriendListViewerProps> = React.memo(
                     key={friendGroup.friendGroupId}
                     friendGroup={friendGroup}
                     friends={filteredFriends}
-                    userId={userId}
+                    user={user}
                   />
                 ))}
             </div>

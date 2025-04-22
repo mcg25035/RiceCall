@@ -44,263 +44,256 @@ import ipcService from '@/services/ipc.service';
 import authService from '@/services/auth.service';
 
 interface HeaderProps {
-  userId: User['userId'];
-  userName: User['name'];
-  userStatus: User['status'];
-  serverId: Server['serverId'];
-  serverName: Server['name'];
+  user: User;
+  server: Server;
 }
 
-const Header: React.FC<HeaderProps> = React.memo(
-  ({ userId, userName, userStatus, serverId, serverName }) => {
-    // Hooks
-    const socket = useSocket();
-    const lang = useLanguage();
-    const contextMenu = useContextMenu();
-    const mainTab = useMainTab();
+const Header: React.FC<HeaderProps> = React.memo(({ user, server }) => {
+  // Hooks
+  const socket = useSocket();
+  const lang = useLanguage();
+  const contextMenu = useContextMenu();
+  const mainTab = useMainTab();
 
-    // States
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  // States
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
-    // Constants
-    const MAIN_TABS = [
-      { id: 'home', label: lang.tr.home },
-      { id: 'friends', label: lang.tr.friends },
-      { id: 'server', label: serverName },
-    ];
-    const STATUS_OPTIONS = [
-      { status: 'online', label: lang.tr.online },
-      { status: 'dnd', label: lang.tr.dnd },
-      { status: 'idle', label: lang.tr.idle },
-      { status: 'gn', label: lang.tr.gn },
-    ];
+  const { userId, name: userName, status: userStatus } = user;
+  const { serverId, name: serverName } = server;
 
-    // Handlers
-    const handleLeaveServer = (
-      userId: User['userId'],
-      serverId: Server['serverId'],
-    ) => {
-      if (!socket) return;
-      socket.send.disconnectServer({ userId, serverId });
-    };
+  // Constants
+  const MAIN_TABS = [
+    { id: 'home', label: lang.tr.home },
+    { id: 'friends', label: lang.tr.friends },
+    { id: 'server', label: serverName },
+  ];
+  const STATUS_OPTIONS = [
+    { status: 'online', label: lang.tr.online },
+    { status: 'dnd', label: lang.tr.dnd },
+    { status: 'idle', label: lang.tr.idle },
+    { status: 'gn', label: lang.tr.gn },
+  ];
 
-    const handleUpdateStatus = (
-      status: User['status'],
-      userId: User['userId'],
-    ) => {
-      if (!socket) return;
-      socket.send.updateUser({ user: { status }, userId });
-    };
+  // Handlers
+  const handleLeaveServer = (
+    userId: User['userId'],
+    serverId: Server['serverId'],
+  ) => {
+    if (!socket) return;
+    socket.send.disconnectServer({ userId, serverId });
+  };
 
-    const handleOpenUserSetting = (userId: User['userId']) => {
-      const targetId = userId;
-      ipcService.popup.open(PopupType.USER_INFO);
-      ipcService.initialData.onRequest(PopupType.USER_INFO, {
-        userId,
-        targetId,
-      });
-    };
+  const handleUpdateStatus = (
+    status: User['status'],
+    userId: User['userId'],
+  ) => {
+    if (!socket) return;
+    socket.send.updateUser({ user: { status }, userId });
+  };
 
-    const handleOpenSystemSetting = () => {
-      ipcService.popup.open(PopupType.SYSTEM_SETTING);
-      ipcService.initialData.onRequest(PopupType.SYSTEM_SETTING, {});
-    };
+  const handleOpenUserSetting = (userId: User['userId']) => {
+    const targetId = userId;
+    ipcService.popup.open(PopupType.USER_INFO);
+    ipcService.initialData.onRequest(PopupType.USER_INFO, {
+      userId,
+      targetId,
+    });
+  };
 
-    const handleLogout = () => {
-      authService.logout();
-    };
+  const handleOpenSystemSetting = () => {
+    ipcService.popup.open(PopupType.SYSTEM_SETTING);
+    ipcService.initialData.onRequest(PopupType.SYSTEM_SETTING, {});
+  };
 
-    const handleFullscreen = () => {
-      ipcService.window.maximize();
-      setIsFullscreen(!isFullscreen);
-    };
+  const handleLogout = () => {
+    authService.logout();
+  };
 
-    const handleMinimize = () => {
-      ipcService.window.minimize();
-    };
+  const handleFullscreen = () => {
+    ipcService.window.maximize();
+    setIsFullscreen(!isFullscreen);
+  };
 
-    const handleClose = () => {
-      ipcService.window.close();
-    };
+  const handleMinimize = () => {
+    ipcService.window.minimize();
+  };
 
-    const handleLanguageChange = (language: LanguageKey) => {
-      lang.set(language);
-      localStorage.setItem('language', language);
-    };
+  const handleClose = () => {
+    ipcService.window.close();
+  };
 
-    return (
-      <div className={header['header']}>
-        {/* Title */}
-        <div className={`${header['titleBox']} ${header['big']}`}>
-          <div
-            className={header['nameBox']}
-            onClick={() => handleOpenUserSetting(userId)}
-          >
-            {userName}
-          </div>
-          <div
-            className={header['statusBox']}
-            onClick={() => {
-              setShowStatusDropdown(!showStatusDropdown);
-            }}
-          >
-            <div className={header['statusDisplay']} datatype={userStatus} />
-            <div className={header['statusTriangle']} />
-            <div
-              className={`${header['statusDropdown']} ${
-                showStatusDropdown ? '' : header['hidden']
-              }`}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <div
-                  key={option.status}
-                  className={header['option']}
-                  datatype={option.status}
-                  onClick={() => {
-                    handleUpdateStatus(option.status as User['status'], userId);
-                    setShowStatusDropdown(false);
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+  const handleLanguageChange = (language: LanguageKey) => {
+    lang.set(language);
+    localStorage.setItem('language', language);
+  };
+
+  return (
+    <div className={header['header']}>
+      {/* Title */}
+      <div className={`${header['titleBox']} ${header['big']}`}>
+        <div
+          className={header['nameBox']}
+          onClick={() => handleOpenUserSetting(userId)}
+        >
+          {userName}
         </div>
-        {/* Main Tabs */}
-        <div className={header['mainTabs']}>
-          {MAIN_TABS.map((Tab) => {
-            const TabId = Tab.id;
-            const TabLable = Tab.label;
-            const TabClose = TabId === 'server';
-            if (TabId === 'server' && !serverId) return null;
-            return (
+        <div
+          className={header['statusBox']}
+          onClick={() => {
+            setShowStatusDropdown(!showStatusDropdown);
+          }}
+        >
+          <div className={header['statusDisplay']} datatype={userStatus} />
+          <div className={header['statusTriangle']} />
+          <div
+            className={`${header['statusDropdown']} ${
+              showStatusDropdown ? '' : header['hidden']
+            }`}
+          >
+            {STATUS_OPTIONS.map((option) => (
               <div
-                key={`Tabs-${TabId}`}
-                className={`${header['tab']} ${
-                  TabId === mainTab.selectedTabId ? header['selected'] : ''
-                }`}
-                onClick={() =>
-                  mainTab.setSelectedTabId(
-                    TabId as 'home' | 'friends' | 'server',
-                  )
-                }
-              >
-                <div className={header['tabLable']}>{TabLable}</div>
-                <div className={header['tabBg']} />
-                {TabClose && (
-                  <div
-                    className={header['tabClose']}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLeaveServer(userId, serverId);
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {/* Buttons */}
-        <div className={header['buttons']}>
-          <div className={header['gift']} />
-          <div className={header['game']} />
-          <div className={header['notice']} />
-          <div className={header['spliter']} />
-          <div
-            className={header['menu']}
-            onClick={(e) =>
-              contextMenu.showContextMenu(
-                e.clientX,
-                e.clientY,
-                [
-                  {
-                    id: 'system-setting',
-                    label: lang.tr.systemSettings,
-                    icon: 'setting',
-                    onClick: () => handleOpenSystemSetting(),
-                  },
-                  // {
-                  //   id: 'message-history',
-                  //   label: lang.tr.messageHistory,
-                  //   icon: 'message',
-                  //   onClick: () => {},
-                  // },
-                  // {
-                  //   id: 'change-theme',
-                  //   label: lang.tr.changeTheme,
-                  //   icon: 'skin',
-                  //   onClick: () => {},
-                  // },
-                  {
-                    id: 'feedback',
-                    label: lang.tr.feedback,
-                    icon: 'feedback',
-                    onClick: () => {
-                      window.open(
-                        'https://forms.gle/AkBTqsZm9NGr5aH46',
-                        '_blank',
-                      );
-                    },
-                  },
-                  {
-                    id: 'language-select',
-                    label: lang.tr.languageSelect,
-                    icon: 'submenu',
-                    hasSubmenu: true,
-                    submenuItems: [
-                      {
-                        id: 'language-select-tw',
-                        label: '繁體中文',
-                        onClick: () => handleLanguageChange('tw'),
-                      },
-                      {
-                        id: 'language-select-cn',
-                        label: '簡體中文',
-                        onClick: () => handleLanguageChange('cn'),
-                      },
-                      {
-                        id: 'language-select-en',
-                        label: 'English',
-                        onClick: () => handleLanguageChange('en'),
-                      },
-                      {
-                        id: 'language-select-jp',
-                        label: '日本語',
-                        onClick: () => handleLanguageChange('jp'),
-                      },
-                    ],
-                  },
-                  {
-                    id: 'logout',
-                    label: lang.tr.logout,
-                    icon: 'logout',
-                    onClick: () => handleLogout(),
-                  },
-                  {
-                    id: 'exit',
-                    label: lang.tr.exit,
-                    icon: 'exit',
-                    onClick: () => handleClose(),
-                  },
-                ],
-                e.currentTarget as HTMLElement,
-              )
-            }
-          />
-          <div
-            className={header['minimize']}
-            onClick={() => handleMinimize()}
-          />
-          <div
-            className={isFullscreen ? header['restore'] : header['maxsize']}
-            onClick={() => handleFullscreen()}
-          />
-          <div className={header['close']} onClick={() => handleClose()} />
+                key={option.status}
+                className={header['option']}
+                datatype={option.status}
+                onClick={() => {
+                  handleUpdateStatus(option.status as User['status'], userId);
+                  setShowStatusDropdown(false);
+                }}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    );
-  },
-);
+      {/* Main Tabs */}
+      <div className={header['mainTabs']}>
+        {MAIN_TABS.map((Tab) => {
+          const TabId = Tab.id;
+          const TabLable = Tab.label;
+          const TabClose = TabId === 'server';
+          if (TabId === 'server' && !serverId) return null;
+          return (
+            <div
+              key={`Tabs-${TabId}`}
+              className={`${header['tab']} ${
+                TabId === mainTab.selectedTabId ? header['selected'] : ''
+              }`}
+              onClick={() =>
+                mainTab.setSelectedTabId(TabId as 'home' | 'friends' | 'server')
+              }
+            >
+              <div className={header['tabLable']}>{TabLable}</div>
+              <div className={header['tabBg']} />
+              {TabClose && (
+                <div
+                  className={header['tabClose']}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLeaveServer(userId, serverId);
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* Buttons */}
+      <div className={header['buttons']}>
+        <div className={header['gift']} />
+        <div className={header['game']} />
+        <div className={header['notice']} />
+        <div className={header['spliter']} />
+        <div
+          className={header['menu']}
+          onClick={(e) =>
+            contextMenu.showContextMenu(
+              e.clientX,
+              e.clientY,
+              [
+                {
+                  id: 'system-setting',
+                  label: lang.tr.systemSettings,
+                  icon: 'setting',
+                  onClick: () => handleOpenSystemSetting(),
+                },
+                // {
+                //   id: 'message-history',
+                //   label: lang.tr.messageHistory,
+                //   icon: 'message',
+                //   onClick: () => {},
+                // },
+                // {
+                //   id: 'change-theme',
+                //   label: lang.tr.changeTheme,
+                //   icon: 'skin',
+                //   onClick: () => {},
+                // },
+                {
+                  id: 'feedback',
+                  label: lang.tr.feedback,
+                  icon: 'feedback',
+                  onClick: () => {
+                    window.open(
+                      'https://forms.gle/AkBTqsZm9NGr5aH46',
+                      '_blank',
+                    );
+                  },
+                },
+                {
+                  id: 'language-select',
+                  label: lang.tr.languageSelect,
+                  icon: 'submenu',
+                  hasSubmenu: true,
+                  submenuItems: [
+                    {
+                      id: 'language-select-tw',
+                      label: '繁體中文',
+                      onClick: () => handleLanguageChange('tw'),
+                    },
+                    {
+                      id: 'language-select-cn',
+                      label: '簡體中文',
+                      onClick: () => handleLanguageChange('cn'),
+                    },
+                    {
+                      id: 'language-select-en',
+                      label: 'English',
+                      onClick: () => handleLanguageChange('en'),
+                    },
+                    {
+                      id: 'language-select-jp',
+                      label: '日本語',
+                      onClick: () => handleLanguageChange('jp'),
+                    },
+                  ],
+                },
+                {
+                  id: 'logout',
+                  label: lang.tr.logout,
+                  icon: 'logout',
+                  onClick: () => handleLogout(),
+                },
+                {
+                  id: 'exit',
+                  label: lang.tr.exit,
+                  icon: 'exit',
+                  onClick: () => handleClose(),
+                },
+              ],
+              e.currentTarget as HTMLElement,
+            )
+          }
+        />
+        <div className={header['minimize']} onClick={() => handleMinimize()} />
+        <div
+          className={isFullscreen ? header['restore'] : header['maxsize']}
+          onClick={() => handleFullscreen()}
+        />
+        <div className={header['close']} onClick={() => handleClose()} />
+      </div>
+    </div>
+  );
+});
 
 Header.displayName = 'Header';
 
@@ -447,13 +440,7 @@ const RootPageComponent = () => {
   return (
     <WebRTCProvider>
       <div className="wrapper">
-        <Header
-          userId={userId}
-          userName={userName}
-          userStatus={userStatus}
-          serverId={serverId}
-          serverName={serverName}
-        />
+        <Header user={user} server={server} />
         {/* Main Content */}
         <div className="content">{getMainContent()}</div>
       </div>

@@ -53,12 +53,12 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     const contextMenu = useContextMenu();
 
     // States
+    const [member, setMember] = useState<Member>(createDefault.member());
     const [serverChannels, setServerChannels] = useState<Channel[]>([]);
     const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
     const [channelMessages, setChannelMessages] = useState<
       Record<Channel['channelId'], ChannelMessage[]>
     >({});
-    const [member, setMember] = useState<Member>(createDefault.member());
     const [sidebarWidth, setSidebarWidth] = useState<number>(270);
     const [isResizing, setIsResizing] = useState<boolean>(false);
     const [showMicVolume, setShowMicVolume] = useState(false);
@@ -270,12 +270,11 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
             style={{ width: `${sidebarWidth}px` }}
           >
             <ChannelViewer
-              user={user}
+              member={member}
               server={server}
               currentChannel={channel}
-              serverActiveMembers={serverActiveMembers}
+              serverMembers={serverMembers}
               serverChannels={serverChannels}
-              permissionLevel={memberPermissionLevel}
             />
           </div>
           {/* Resize Handle */}

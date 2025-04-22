@@ -222,9 +222,9 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
             style={{ width: `${sidebarWidth}px` }}
           >
             <FriendListViewer
-              friendGroups={userFriendGroups || []}
-              friends={userFriends || []}
-              userId={userId}
+              friendGroups={userFriendGroups}
+              friends={userFriends}
+              user={user}
             />
           </div>
           {/* Resize Handle */}

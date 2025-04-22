@@ -28,13 +28,13 @@ import refreshService from '@/services/refresh.service';
 export interface ServerListSectionProps {
   title: string;
   servers: Server[];
-  userId: string;
+  user: User;
   onServerClick?: (server: Server) => void;
 }
 
 const ServerListSection: React.FC<ServerListSectionProps> = ({
   title,
-  userId,
+  user,
   servers,
   onServerClick,
 }) => {
@@ -52,7 +52,7 @@ const ServerListSection: React.FC<ServerListSectionProps> = ({
     <div className={homePage['serverList']}>
       <div className={homePage['serverListTitle']}>{title}</div>
       <ServerListViewer
-        userId={userId}
+        user={user}
         servers={displayedServers}
         onServerClick={onServerClick}
       />
@@ -127,7 +127,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       .filter((s) => s.recent)
       .sort((a, b) => b.timestamp - a.timestamp);
     const favoriteServers = userServers.filter((s) => s.favorite);
-    const ownedServers = userServers.filter((s) => s.owned);
+    const ownedServers = userServers.filter((s) => s.permissionLevel > 1);
 
     // Handlers
     const handleSearchServer = (query: string) => {
@@ -315,13 +315,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
                   const value = e.target.value;
                   setSearchQuery(value);
                   setShowDropdown(true);
-                  if (value.trim() === '') {
-                    setExactMatch(null);
-                    setPersonalResults([]);
-                    setRelatedResults([]);
-                    return;
-                  }
-
                   handleSearchServer(value);
                 }}
                 onKeyDown={(e) => {
@@ -435,7 +428,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
           <ServerListSection
             title={lang.tr.recentVisits}
             servers={recentServers}
-            userId={userId}
+            user={user}
             onServerClick={(server) => {
               if (currentServerId == server.serverId) {
                 mainTab.setSelectedTabId('server');
@@ -448,7 +441,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
           <ServerListSection
             title={lang.tr.myGroups}
             servers={ownedServers}
-            userId={userId}
+            user={user}
             onServerClick={(server) => {
               setIsLoading(true);
               setLoadingGroupID(server.displayId);
@@ -457,7 +450,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
           <ServerListSection
             title={lang.tr.favoriteGroups}
             servers={favoriteServers}
-            userId={userId}
+            user={user}
             onServerClick={(server) => {
               setIsLoading(true);
               setLoadingGroupID(server.displayId);
