@@ -136,10 +136,8 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     };
 
     const handleSearchServer = (query: string) => {
-      if (!socket || query.trim() === '') {
-        setExactMatch(null);
-        setPersonalResults([]);
-        setRelatedResults([]);
+      if (!socket || !query.trim()) {
+        handleClearSearchState();
         return;
       }
       socket.send.searchServer({ query });
@@ -155,76 +153,49 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
         serverId,
         userId: userId,
       });
-      setShowDropdown(false);
-      setSearchQuery('');
-      setExactMatch(null);
-      setPersonalResults([]);
-      setRelatedResults([]);
+      handleClearSearchState();
       setIsLoading(true);
       setLoadingGroupID(serverDisplayId);
     };
 
-    const handleServerSearch = useCallback(
-      (servers: Server[], query: string) => {
-        if (!query.trim()) {
-          setExactMatch(null);
-          setPersonalResults([]);
-          setRelatedResults([]);
-          return;
-        }
-
+    const handleServerSearch = (servers: Server[]) => {
+      if (!servers.length) {
         setExactMatch(null);
         setPersonalResults([]);
         setRelatedResults([]);
+        return;
+      }
 
-        if (!servers.length) return;
+      const sortedServers = servers.sort((a, b) => {
+        const aHasId = a.displayId.toString().includes(searchQuery);
+        const bHasId = b.displayId.toString().includes(searchQuery);
+        if (aHasId && !bHasId) return -1;
+        if (!aHasId && bHasId) return 1;
+        return 0;
+      });
 
-        const exact = servers.find(
-          (server) => server.displayId.toString() === query.trim(),
-        );
+      const exact = sortedServers.find(
+        (server) => server.displayId === searchQuery,
+      );
+      setExactMatch(exact || null);
 
-        if (exact) setExactMatch(exact);
+      const personal = sortedServers.filter((server) =>
+        userServers.some(
+          (s) =>
+            s.recent || s.favorite || s.owned || s.serverId === server.serverId,
+        ),
+      );
+      setPersonalResults(personal);
 
-        const sortedServers = servers.sort((a, b) => {
-          const aHasId = a.displayId.toString().includes(query.trim());
-          const bHasId = b.displayId.toString().includes(query.trim());
-          if (aHasId && !bHasId) return -1;
-          if (!aHasId && bHasId) return 1;
-          return 0;
-        });
-
-        const personal = sortedServers.filter(
-          (server) =>
-            userServers.some(
-              (s) => s.recent && s.serverId === server.serverId,
-            ) ||
-            userServers.some(
-              (s) => s.favorite && s.serverId === server.serverId,
-            ) ||
-            userServers.some((s) => s.owned && s.serverId === server.serverId),
-        );
-        setPersonalResults(personal);
-
-        const related = sortedServers
-          .filter((server) => !personal.includes(server))
-          .filter((server) => server.visibility !== 'invisible');
-        setRelatedResults(related);
-      },
-      [userServers, setExactMatch, setPersonalResults, setRelatedResults],
-    );
+      const related = sortedServers
+        .filter((server) => !personal.includes(server))
+        .filter((server) => server.visibility !== 'invisible');
+      setRelatedResults(related);
+    };
 
     const handleOpenCreateServer = (userId: User['userId']) => {
       ipcService.popup.open(PopupType.CREATE_SERVER);
       ipcService.initialData.onRequest(PopupType.CREATE_SERVER, { userId });
-    };
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
     };
 
     const handleClearSearchState = () => {
@@ -237,6 +208,15 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
 
     // Effects
     useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          searchRef.current &&
+          !searchRef.current.contains(event.target as Node)
+        ) {
+          setShowDropdown(false);
+        }
+      };
+
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.addEventListener('mousedown', handleClickOutside);
     }, []);
@@ -245,8 +225,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       if (!socket) return;
 
       const eventHandlers = {
-        [SocketServerEvent.SERVER_SEARCH]: (servers: Server[]) =>
-          handleServerSearch(servers, searchQuery),
+        [SocketServerEvent.SERVER_SEARCH]: handleServerSearch,
         [SocketServerEvent.USER_SERVERS_UPDATE]: handleUserServersUpdate,
       };
       const unsubscribe: (() => void)[] = [];
@@ -259,7 +238,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       return () => {
         unsubscribe.forEach((unsub) => unsub());
       };
-    }, [socket, searchQuery, handleServerSearch]);
+    }, [socket, searchQuery]);
 
     useEffect(() => {
       if (!userId || refreshed.current) return;
