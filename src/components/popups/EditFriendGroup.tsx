@@ -63,7 +63,7 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
       ipcService.window.close();
     };
 
-    // FIXME: Add refresh
+    // Effects
     useEffect(() => {
       if (!socket) return;
 

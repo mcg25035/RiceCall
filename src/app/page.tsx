@@ -93,13 +93,26 @@ const Header: React.FC<HeaderProps> = React.memo(
       socket.send.updateUser({ user: { status }, userId });
     };
 
+    const handleOpenUserSetting = (userId: User['userId']) => {
+      const targetId = userId;
+      ipcService.popup.open(PopupType.USER_INFO);
+      ipcService.initialData.onRequest(PopupType.USER_INFO, {
+        userId,
+        targetId,
+      });
+    };
+
+    const handleOpenSystemSetting = () => {
+      ipcService.popup.open(PopupType.SYSTEM_SETTING);
+      ipcService.initialData.onRequest(PopupType.SYSTEM_SETTING, {});
+    };
+
     const handleLogout = () => {
       authService.logout();
     };
 
     const handleFullscreen = () => {
-      if (isFullscreen) ipcService.window.unmaximize();
-      else ipcService.window.maximize();
+      ipcService.window.maximize();
       setIsFullscreen(!isFullscreen);
     };
 
@@ -114,20 +127,6 @@ const Header: React.FC<HeaderProps> = React.memo(
     const handleLanguageChange = (language: LanguageKey) => {
       lang.set(language);
       localStorage.setItem('language', language);
-    };
-
-    const handleOpenUserSetting = (userId: User['userId']) => {
-      const targetId = userId;
-      ipcService.popup.open(PopupType.USER_INFO);
-      ipcService.initialData.onRequest(PopupType.USER_INFO, {
-        userId,
-        targetId,
-      });
-    };
-
-    const handleOpenSystemSetting = () => {
-      ipcService.popup.open(PopupType.SYSTEM_SETTING);
-      ipcService.initialData.onRequest(PopupType.SYSTEM_SETTING, {});
     };
 
     return (

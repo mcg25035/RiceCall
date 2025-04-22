@@ -79,15 +79,6 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
       setUserFriends(data);
     };
 
-    const handleStartResizing = useCallback((e: React.MouseEvent) => {
-      e.preventDefault();
-      setIsResizing(true);
-    }, []);
-
-    const handleStopResizing = useCallback(() => {
-      setIsResizing(false);
-    }, []);
-
     const handleResize = useCallback(
       (e: MouseEvent) => {
         if (!isResizing) return;
@@ -101,12 +92,12 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
     // Effects
     useEffect(() => {
       window.addEventListener('mousemove', handleResize);
-      window.addEventListener('mouseup', handleStopResizing);
+      window.addEventListener('mouseup', () => setIsResizing(false));
       return () => {
         window.removeEventListener('mousemove', handleResize);
-        window.removeEventListener('mouseup', handleStopResizing);
+        window.removeEventListener('mouseup', () => setIsResizing(false));
       };
-    }, [handleResize, handleStopResizing]);
+    }, [handleResize]);
 
     useEffect(() => {
       if (!socket) return;
@@ -239,8 +230,8 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
           {/* Resize Handle */}
           <div
             className="resizeHandle"
-            onMouseDown={handleStartResizing}
-            onMouseUp={handleStopResizing}
+            onMouseDown={() => setIsResizing(true)}
+            onMouseUp={() => setIsResizing(false)}
           />
           {/* Right Content */}
           <div className={friendPage['mainContent']}>

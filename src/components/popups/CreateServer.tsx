@@ -108,7 +108,6 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
     };
 
     // Effects
-
     useEffect(() => {
       if (!userId || refreshRef.current) return;
       const refresh = async () => {

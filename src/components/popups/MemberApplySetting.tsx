@@ -43,10 +43,6 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
     );
 
     // Handlers
-    const handleClose = () => {
-      ipcService.window.close();
-    };
-
     const handleUpdateServer = (
       server: Partial<Server>,
       serverId: Server['serverId'],
@@ -59,6 +55,10 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
       if (!data) data = createDefault.server();
       setIsReceiveApply(data.receiveApply);
       setApplyNotice(data.applyNotice);
+    };
+
+    const handleClose = () => {
+      ipcService.window.close();
     };
 
     // Effects

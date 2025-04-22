@@ -109,22 +109,22 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
       if (isCurrentMessage) setDirectMessages((prev) => [...prev, data]);
     };
 
-    const shakeWindow = (duration = 500) => {
-      const el = initialData.windowRef.current;
-      if (!el) return;
+    const handleShakeWindow = (duration = 500) => {
+      const windowRef = initialData.windowRef.current;
+      if (!windowRef) return;
 
       const start = performance.now();
 
       const shake = (time: number) => {
         const elapsed = time - start;
         if (elapsed > duration) {
-          el.style.transform = 'translate(0, 0)';
+          windowRef.style.transform = 'translate(0, 0)';
           return;
         }
 
         const x = Math.round((Math.random() - 0.5) * 10);
         const y = Math.round((Math.random() - 0.5) * 10);
-        el.style.transform = `translate(${x}px, ${y}px)`;
+        windowRef.style.transform = `translate(${x}px, ${y}px)`;
 
         requestAnimationFrame(shake);
       };
@@ -254,7 +254,7 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
                   />
                   <div
                     className={`${directMessage['button']} ${directMessage['nudge']}`}
-                    onClick={() => shakeWindow()}
+                    onClick={() => handleShakeWindow()}
                   />
                 </div>
                 <div className={directMessage['buttons']}>

@@ -42,10 +42,6 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
     const [userName, setUserName] = useState(createDefault.user().name);
 
     // Handlers
-    const handleClose = () => {
-      ipcService.window.close();
-    };
-
     const handleUpdateMember = (
       member: Partial<Member>,
       userId: User['userId'],
@@ -63,6 +59,10 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
     const handleUserUpdate = (data: User | null) => {
       if (!data) data = createDefault.user();
       setUserName(data.name);
+    };
+
+    const handleClose = () => {
+      ipcService.window.close();
     };
 
     // Effects

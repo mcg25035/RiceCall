@@ -37,15 +37,16 @@ const DialogPopup: React.FC<DialogPopupProps> = (
   const containerRef = useRef<HTMLFormElement>(null);
 
   // Handlers
-  const handleClose = () => {
-    ipcService.window.close();
-  };
-
   const handleSubmit = () => {
     ipcService.popup.submit(submitTo);
     handleClose();
   };
 
+  const handleClose = () => {
+    ipcService.window.close();
+  };
+
+  // Effects
   useEffect(() => {
     containerRef.current?.focus();
   }, []);

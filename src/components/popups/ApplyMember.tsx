@@ -97,7 +97,6 @@ const ApplyMemberPopup: React.FC<ApplyMemberPopupProps> = React.memo(
     };
 
     // UseEffect
-
     useEffect(() => {
       if (!serverId || !userId || refreshRef.current) return;
       const refresh = async () => {

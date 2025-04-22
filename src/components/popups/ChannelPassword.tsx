@@ -37,10 +37,6 @@ const ChannelPasswordPopup: React.FC<ChannelPasswordPopupProps> = React.memo(
     const [password, setPassword] = useState<string | null>(null);
 
     // Handlers
-    const handleClose = () => {
-      ipcService.window.close();
-    };
-
     const handleJoinChannel = (
       userId: User['userId'],
       channelId: Channel['channelId'],
@@ -49,6 +45,10 @@ const ChannelPasswordPopup: React.FC<ChannelPasswordPopupProps> = React.memo(
     ) => {
       if (!socket) return;
       socket.send.connectChannel({ userId, channelId, serverId, password });
+    };
+
+    const handleClose = () => {
+      ipcService.window.close();
     };
 
     // Effects

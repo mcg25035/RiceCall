@@ -53,6 +53,25 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
     const canManageFriendGroup = friendGroupId !== '';
 
     // Handlers
+    const handleDeleteFriendGroup = (
+      friendGroupId: FriendGroup['friendGroupId'],
+      userId: User['userId'],
+    ) => {
+      if (!socket) return;
+      socket.send.deleteFriendGroup({ friendGroupId, userId });
+    };
+
+    const handleOpenWarning = (message: string) => {
+      ipcService.popup.open(PopupType.DIALOG_ALERT);
+      ipcService.initialData.onRequest(PopupType.DIALOG_ALERT, {
+        iconType: 'warning',
+        title: message,
+      });
+      ipcService.popup.onSubmit(PopupType.DIALOG_ALERT, () =>
+        socket.send.deleteFriendGroup({ friendGroupId, userId }),
+      );
+    };
+
     const handleOpenEditFriendGroup = (
       friendGroupId: FriendGroup['friendGroupId'],
       userId: User['userId'],
@@ -61,21 +80,6 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
       ipcService.initialData.onRequest(PopupType.EDIT_FRIENDGROUP, {
         friendGroupId,
         userId,
-      });
-    };
-
-    const handleDeleteFriendGroup = (
-      friendGroupId: FriendGroup['friendGroupId'],
-      userId: User['userId'],
-    ) => {
-      ipcService.popup.open(PopupType.DIALOG_ALERT);
-      ipcService.initialData.onRequest(PopupType.DIALOG_ALERT, {
-        iconType: 'warning',
-        title: lang.tr.deleteFriendGroupDialog.replace('{0}', friendGroupName),
-        submitTo: PopupType.DIALOG_ALERT,
-      });
-      ipcService.popup.onSubmit(PopupType.DIALOG_ALERT, () => {
-        socket.send.deleteFriendGroup({ friendGroupId, userId });
       });
     };
 
@@ -97,7 +101,13 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
                 id: 'delete',
                 label: lang.tr.friendDeleteGroup,
                 show: canManageFriendGroup,
-                onClick: () => handleDeleteFriendGroup(friendGroupId, userId),
+                onClick: () =>
+                  handleOpenWarning(
+                    lang.tr.deleteFriendGroupDialog.replace(
+                      '{0}',
+                      friendGroupName,
+                    ),
+                  ),
               },
             ]);
           }}
@@ -168,7 +178,34 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(
     const friendGrade = Math.min(56, friendLevel); // 56 is max level
     const isCurrentUser = friendTargetId === userId;
     const canManageFriend = !isCurrentUser;
+
     // Handlers
+
+    const handleDeleteFriend = (
+      userId: User['userId'],
+      targetId: User['userId'],
+    ) => {
+      if (!socket) return;
+      handleOpenWarning(
+        lang.tr.deleteFriendDialog.replace('{0}', friendName),
+        () => socket.send.deleteFriend({ userId, targetId }),
+      );
+    };
+
+    const handleServerUpdate = (data: Server | null) => {
+      if (!data) data = createDefault.server();
+      setFriendServerName(data.name);
+    };
+
+    const handleOpenWarning = (message: string, callback: () => void) => {
+      ipcService.popup.open(PopupType.DIALOG_ALERT);
+      ipcService.initialData.onRequest(PopupType.DIALOG_ALERT, {
+        iconType: 'warning',
+        title: message,
+      });
+      ipcService.popup.onSubmit(PopupType.DIALOG_ALERT, callback);
+    };
+
     const handleOpenDirectMessage = (
       userId: User['userId'],
       targetId: User['userId'],
@@ -180,12 +217,6 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(
         targetId,
         targetName,
       });
-    };
-
-    // Handlers
-    const handleServerUpdate = (data: Server | null) => {
-      if (!data) data = createDefault.server();
-      setFriendServerName(data.name);
     };
 
     const handleOpenUserInfo = (
@@ -207,24 +238,6 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(
       ipcService.initialData.onRequest(PopupType.EDIT_FRIEND, {
         userId,
         targetId,
-      });
-    };
-
-    const handleDeleteFriend = (
-      userId: User['userId'],
-      targetId: User['userId'],
-    ) => {
-      ipcService.popup.open(PopupType.DIALOG_ALERT);
-      ipcService.initialData.onRequest(PopupType.DIALOG_ALERT, {
-        iconType: 'warning',
-        title: lang.tr.deleteFriendDialog.replace('{0}', friendName),
-        submitTo: PopupType.DIALOG_ALERT,
-      });
-      ipcService.popup.onSubmit(PopupType.DIALOG_ALERT, () => {
-        socket.send.deleteFriend({
-          userId,
-          targetId,
-        });
       });
     };
 

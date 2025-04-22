@@ -220,6 +220,42 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       socket.send.disconnectServer({ userId, serverId });
     };
 
+    const handleServerUpdate = (data: Server | null) => {
+      if (!data) data = createDefault.server();
+      setServerName(data.name);
+      setServerAvatar(data.avatar);
+      setServerAvatarUrl(data.avatarUrl);
+      setServerAnnouncement(data.announcement);
+      setServerDescription(data.description);
+      setServerType(data.type);
+      setServerDisplayId(data.displayId);
+      setServerSlogan(data.slogan);
+      setServerLevel(data.level);
+      setServerWealth(data.wealth);
+      setServerCreatedAt(data.createdAt);
+      setServerVisibility(data.visibility);
+    };
+
+    const handleMembersUpdate = (data: ServerMember[] | null) => {
+      if (!data) data = [];
+      const sorted = [...data].sort(
+        (a, b) => b.permissionLevel - a.permissionLevel,
+      );
+      setServerMembers(sorted);
+    };
+
+    const handleMemberApplicationsUpdate = (
+      data: MemberApplication[] | null,
+    ) => {
+      if (!data) data = [];
+      setServerApplications(data);
+    };
+
+    const handleMemberUpdate = (data: Member | null) => {
+      if (!data) data = createDefault.member();
+      setPermissionLevel(data.permissionLevel);
+    };
+
     const handleOpenMemberApplySetting = () => {
       ipcService.popup.open(PopupType.MEMBERAPPLY_SETTING);
       ipcService.initialData.onRequest(PopupType.MEMBERAPPLY_SETTING, {
@@ -279,42 +315,6 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
         title: message,
         submitTo: PopupType.DIALOG_ERROR,
       });
-    };
-
-    const handleServerUpdate = (data: Server | null) => {
-      if (!data) data = createDefault.server();
-      setServerName(data.name);
-      setServerAvatar(data.avatar);
-      setServerAvatarUrl(data.avatarUrl);
-      setServerAnnouncement(data.announcement);
-      setServerDescription(data.description);
-      setServerType(data.type);
-      setServerDisplayId(data.displayId);
-      setServerSlogan(data.slogan);
-      setServerLevel(data.level);
-      setServerWealth(data.wealth);
-      setServerCreatedAt(data.createdAt);
-      setServerVisibility(data.visibility);
-    };
-
-    const handleMembersUpdate = (data: ServerMember[] | null) => {
-      if (!data) data = [];
-      const sorted = [...data].sort(
-        (a, b) => b.permissionLevel - a.permissionLevel,
-      );
-      setServerMembers(sorted);
-    };
-
-    const handleMemberApplicationsUpdate = (
-      data: MemberApplication[] | null,
-    ) => {
-      if (!data) data = [];
-      setServerApplications(data);
-    };
-
-    const handleMemberUpdate = (data: Member | null) => {
-      if (!data) data = createDefault.member();
-      setPermissionLevel(data.permissionLevel);
     };
 
     const handleMemberSort = (field: keyof ServerMember) => {

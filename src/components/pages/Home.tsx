@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // CSS
 import homePage from '@/styles/pages/home.module.css';
@@ -130,11 +130,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     const ownedServers = userServers.filter((s) => s.owned);
 
     // Handlers
-    const handleUserServersUpdate = (data: UserServer[] | null) => {
-      if (!data) data = [];
-      setUserServers(data);
-    };
-
     const handleSearchServer = (query: string) => {
       if (!socket || !query.trim()) {
         handleClearSearchState();
@@ -156,6 +151,11 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       handleClearSearchState();
       setIsLoading(true);
       setLoadingGroupID(serverDisplayId);
+    };
+
+    const handleUserServersUpdate = (data: UserServer[] | null) => {
+      if (!data) data = [];
+      setUserServers(data);
     };
 
     const handleServerSearch = (servers: Server[]) => {
@@ -206,20 +206,21 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       setShowDropdown(false);
     };
 
+    const handleClickOutside = useCallback((event: MouseEvent) => {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    }, []);
+
     // Effects
     useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (
-          searchRef.current &&
-          !searchRef.current.contains(event.target as Node)
-        ) {
-          setShowDropdown(false);
-        }
-      };
-
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.addEventListener('mousedown', handleClickOutside);
-    }, []);
+      return () =>
+        document.removeEventListener('mousedown', handleClickOutside);
+    }, [handleClickOutside]);
 
     useEffect(() => {
       if (!socket) return;

@@ -78,28 +78,7 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
     const canBottom = isSelected && !isLast && !isLobby;
     const canAdd = !isLobby && !selectedChannel?.categoryId;
 
-    const handleServerChannelsUpdate = (data: Channel[] | null): void => {
-      if (!data) data = [];
-      data = data.filter((ch) => !ch.isLobby);
-      setServerChannels(data);
-      data.forEach((ch) => {
-        map.current[ch.channelId] = ch.order;
-      });
-    };
-
-    const handleOpenWarning = (message: string) => {
-      ipcService.popup.open(PopupType.DIALOG_WARNING);
-      ipcService.initialData.onRequest(PopupType.DIALOG_WARNING, {
-        iconType: 'warning',
-        title: message,
-        submitTo: PopupType.DIALOG_WARNING,
-      });
-      ipcService.popup.onSubmit(PopupType.DIALOG_WARNING, () => {
-        if (!selectedChannel) return;
-        handleDeleteChannel(selectedChannel.channelId, serverId);
-      });
-    };
-
+    // Handlers
     const handleUpdateChannels = (
       channels: Partial<Channel>[],
       serverId: Server['serverId'],
@@ -129,6 +108,28 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
         userId,
         serverId,
         channelId,
+      });
+    };
+
+    const handleServerChannelsUpdate = (data: Channel[] | null): void => {
+      if (!data) data = [];
+      data = data.filter((ch) => !ch.isLobby);
+      setServerChannels(data);
+      data.forEach((ch) => {
+        map.current[ch.channelId] = ch.order;
+      });
+    };
+
+    const handleOpenWarning = (message: string) => {
+      ipcService.popup.open(PopupType.DIALOG_WARNING);
+      ipcService.initialData.onRequest(PopupType.DIALOG_WARNING, {
+        iconType: 'warning',
+        title: message,
+        submitTo: PopupType.DIALOG_WARNING,
+      });
+      ipcService.popup.onSubmit(PopupType.DIALOG_WARNING, () => {
+        if (!selectedChannel) return;
+        handleDeleteChannel(selectedChannel.channelId, serverId);
       });
     };
 

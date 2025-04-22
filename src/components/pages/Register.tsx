@@ -49,6 +49,7 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
     const [errors, setErrors] = useState<FormErrors>({});
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
+    // Handlers
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
       setFormData((prev) => ({
@@ -107,7 +108,6 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
         }));
         return;
       }
-
       setIsLoading(true);
       if (await authService.register(formData)) setSection('login');
       setIsLoading(false);

@@ -71,6 +71,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
   const [startMinimized, setStartMinimized] = useState<boolean>(false);
   const [notificationSound, setNotificationSound] = useState<boolean>(true);
 
+  // Handlers
   const handleAutoLaunchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const enabled = e.target.checked;
     setAutoLaunch(enabled);
@@ -81,6 +82,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
     ipcService.window.close();
   };
 
+  // Effects
   useEffect(() => {
     ipcService.autoLaunch.get((enabled) => {
       setAutoLaunch(enabled);

@@ -40,6 +40,9 @@ const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
   const lang = useLanguage();
   const validators = React.useMemo(() => createValidators(lang), [lang]);
 
+  // Refs
+  const comboRef = useRef<HTMLDivElement>(null);
+
   // States
   const [formData, setFormData] = useState<FormDatas>({
     account: '',
@@ -52,8 +55,6 @@ const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
   const [accountSelectBox, setAccountSelectBox] = useState<boolean>(false);
   const [accountList, setAccountList] = useState<AccountItem[]>([]);
 
-  const comboRef = useRef<HTMLDivElement>(null);
-
   const getParsedAccounts = () => {
     try {
       const raw = localStorage.getItem('login-accounts');
@@ -62,31 +63,6 @@ const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
       return { accounts: [], remembered: [] };
     }
   };
-
-  useEffect(() => {
-    const { accounts } = getParsedAccounts();
-    setAccountList(accounts);
-    const defaultAcc = accounts.find(
-      (a: { selected: string }) => a.selected,
-    )?.account;
-    const match = accounts.find(
-      (a: { account: string }) => a.account === defaultAcc,
-    );
-    if (match) {
-      setFormData((prev) => ({
-        ...prev,
-        account: defaultAcc,
-        rememberAccount: true,
-        autoLogin: match.auto || false,
-      }));
-    }
-    const listener = (e: MouseEvent) => {
-      if (!comboRef.current?.contains(e.target as Node))
-        setAccountSelectBox(false);
-    };
-    document.addEventListener('click', listener);
-    return () => document.removeEventListener('click', listener);
-  }, []);
 
   // Handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -177,6 +153,32 @@ const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
     }
     setIsLoading(false);
   };
+
+  // Effects
+  useEffect(() => {
+    const { accounts } = getParsedAccounts();
+    setAccountList(accounts);
+    const defaultAcc = accounts.find(
+      (a: { selected: string }) => a.selected,
+    )?.account;
+    const match = accounts.find(
+      (a: { account: string }) => a.account === defaultAcc,
+    );
+    if (match) {
+      setFormData((prev) => ({
+        ...prev,
+        account: defaultAcc,
+        rememberAccount: true,
+        autoLogin: match.auto || false,
+      }));
+    }
+    const listener = (e: MouseEvent) => {
+      if (!comboRef.current?.contains(e.target as Node))
+        setAccountSelectBox(false);
+    };
+    document.addEventListener('click', listener);
+    return () => document.removeEventListener('click', listener);
+  }, []);
 
   return (
     <div className={styles['loginWrapper']}>
