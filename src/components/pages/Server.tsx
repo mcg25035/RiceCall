@@ -107,6 +107,12 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       memberPermissionLevel === 1;
     const textMaxLength =
       memberPermissionLevel === 1 ? channelGuestTextMaxLength || 100 : 2000;
+    const canChangeToFreeSpeech =
+      memberPermissionLevel > 4 && channelVoiceMode !== 'free';
+    const canChangeToForbiddenSpeech =
+      memberPermissionLevel > 4 && channelVoiceMode !== 'forbidden';
+    // const canChangeToQueue =
+    //   memberPermissionLevel > 4 && channelVoiceMode !== 'queue';
 
     // Handlers
     const handleSendMessage = (
@@ -337,6 +343,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                         {
                           id: 'freeSpeech',
                           label: lang.tr.freeSpeech,
+                          show: canChangeToFreeSpeech,
                           onClick: () => {
                             handleUpdateChannel(
                               { voiceMode: 'free' },
@@ -348,6 +355,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                         {
                           id: 'forbiddenSpeech',
                           label: lang.tr.forbiddenSpeech,
+                          show: canChangeToForbiddenSpeech,
                           onClick: () => {
                             handleUpdateChannel(
                               { voiceMode: 'forbidden' },
@@ -360,8 +368,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                           id: 'queue',
                           label: lang.tr.queue,
                           icon: 'submenu',
-                          show: false,
-                          disabled: true,
+                          show: false, // canChangeToQueue
                           hasSubmenu: true,
                           onClick: () => {
                             handleUpdateChannel(
@@ -374,7 +381,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                             {
                               id: 'forbiddenQueue',
                               label: lang.tr.forbiddenQueue,
-                              disabled: channelVoiceMode === 'queue',
+                              // show: canChangeToForbiddenQueue,
                               onClick: () => {
                                 // handleUpdateChannel({ queueMode: 'forbidden' }, currentChannelId, serverId);
                               },
@@ -382,7 +389,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                             {
                               id: 'controlQueue',
                               label: lang.tr.controlQueue,
-                              disabled: channelVoiceMode === 'queue',
+                              // show: canChangeToControlQueue,
                               onClick: () => {
                                 // handleUpdateChannel({ queueMode: 'control' }, currentChannelId, serverId);
                               },

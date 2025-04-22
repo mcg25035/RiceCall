@@ -641,6 +641,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                           gender: memberGender,
                           permissionLevel: memberPermissionLevel,
                           contribution: memberContribution,
+                          currentServerId: memberCurrentServerId,
                           userId: memberUserId,
                           serverId: memberServerId,
                           createdAt: memberJoinDate,
@@ -648,46 +649,27 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                         const isCurrentUser = memberUserId === userId;
                         const canManageMember =
                           !isCurrentUser &&
+                          permissionLevel > 4 &&
                           permissionLevel > memberPermissionLevel &&
-                          permissionLevel > 3 &&
                           memberPermissionLevel > 1;
                         const canEditNickname =
-                          (isCurrentUser && permissionLevel > 1) ||
-                          canManageMember;
+                          canManageMember ||
+                          (isCurrentUser && permissionLevel > 1);
                         const canChangeToGuest =
-                          !isCurrentUser &&
-                          permissionLevel > memberPermissionLevel &&
-                          permissionLevel > 4 &&
-                          memberPermissionLevel !== 1;
+                          canManageMember && memberPermissionLevel !== 1;
                         const canChangeToMember =
-                          permissionLevel > 2 && memberPermissionLevel !== 2;
+                          canManageMember && memberPermissionLevel !== 2;
                         const canChangeToChannelAdmin =
-                          permissionLevel > 3 && memberPermissionLevel !== 3;
+                          canManageMember && memberPermissionLevel !== 3;
                         const canChangeToCategoryAdmin =
-                          permissionLevel > 4 && memberPermissionLevel !== 4;
+                          canManageMember && memberPermissionLevel !== 4;
                         const canChangeToAdmin =
-                          permissionLevel > 5 && memberPermissionLevel !== 5;
+                          canManageMember && memberPermissionLevel !== 5;
                         const canKick =
                           !isCurrentUser &&
                           permissionLevel > 4 &&
-                          permissionLevel > memberPermissionLevel;
-
-                        const removeLevelToMember = (
-                          label: string,
-                          currentLevel: number,
-                        ) => ({
-                          id: 'set-member',
-                          label,
-                          show:
-                            memberPermissionLevel === currentLevel &&
-                            canChangeToMember,
-                          onClick: () =>
-                            handleUpdateMember(
-                              { permissionLevel: 2 },
-                              memberUserId,
-                              memberServerId,
-                            ),
-                        });
+                          permissionLevel > memberPermissionLevel &&
+                          memberCurrentServerId === serverId;
 
                         return (
                           <tr
@@ -698,41 +680,42 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                 {
                                   id: 'direct-message',
                                   label: lang.tr.directMessage,
+                                  show: !isCurrentUser,
                                   onClick: () =>
                                     handleOpenDirectMessage(
                                       userId,
                                       memberUserId,
                                       memberName,
                                     ),
-                                  show: !isCurrentUser,
                                 },
                                 {
                                   id: 'view-profile',
                                   label: lang.tr.viewProfile,
+                                  show: !isCurrentUser,
                                   onClick: () =>
                                     handleOpenUserInfo(userId, memberUserId),
                                 },
                                 {
                                   id: 'apply-friend',
                                   label: lang.tr.addFriend,
+                                  show: !isCurrentUser,
                                   onClick: () =>
                                     handleOpenApplyFriend(userId, memberUserId),
-                                  show: !isCurrentUser,
                                 },
                                 {
                                   id: 'edit-nickname',
                                   label: lang.tr.editNickname,
+                                  show: canEditNickname,
                                   onClick: () =>
                                     handleOpenEditNickname(
                                       memberUserId,
                                       memberServerId,
                                     ),
-                                  show: canEditNickname,
                                 },
                                 {
                                   id: 'separator',
                                   label: '',
-                                  show: canManageMember,
+                                  show: canManageMember || canKick,
                                 },
                                 {
                                   id: 'kick',
@@ -752,6 +735,28 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                   hasSubmenu: true,
                                   submenuItems: [
                                     {
+                                      id: 'set-guest',
+                                      label: lang.tr.setGuest,
+                                      show: canChangeToGuest,
+                                      onClick: () =>
+                                        handleUpdateMember(
+                                          { permissionLevel: 1 },
+                                          memberUserId,
+                                          memberServerId,
+                                        ),
+                                    },
+                                    {
+                                      id: 'set-member',
+                                      label: lang.tr.setMember,
+                                      show: canChangeToMember,
+                                      onClick: () =>
+                                        handleUpdateMember(
+                                          { permissionLevel: 1 },
+                                          memberUserId,
+                                          memberServerId,
+                                        ),
+                                    },
+                                    {
                                       id: 'set-channel-admin',
                                       label: lang.tr.setChannelAdmin,
                                       show: canChangeToChannelAdmin,
@@ -762,11 +767,6 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                           memberServerId,
                                         ),
                                     },
-                                    removeLevelToMember(
-                                      lang.tr.removeChannelAdmin,
-                                      3,
-                                    ),
-
                                     {
                                       id: 'set-category-admin',
                                       label: lang.tr.setCategoryAdmin,
@@ -778,11 +778,6 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                           memberServerId,
                                         ),
                                     },
-                                    removeLevelToMember(
-                                      lang.tr.removeCategoryAdmin,
-                                      4,
-                                    ),
-
                                     {
                                       id: 'set-admin',
                                       label: lang.tr.setAdmin,
@@ -794,19 +789,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                           memberServerId,
                                         ),
                                     },
-                                    removeLevelToMember(lang.tr.removeAdmin, 5),
                                   ],
-                                },
-                                {
-                                  id: 'set-guest',
-                                  label: lang.tr.setGuest,
-                                  show: canChangeToGuest,
-                                  onClick: () =>
-                                    handleUpdateMember(
-                                      { permissionLevel: 1 },
-                                      memberUserId,
-                                      memberServerId,
-                                    ),
                                 },
                               ]);
                             }}
@@ -976,6 +959,9 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                           description: applicationDescription,
                           createdAt: applicationCreatedDate,
                         } = application;
+                        const isCurrentUser = applicationUserId === userId;
+                        const canAccept = !isCurrentUser && permissionLevel > 4;
+                        const canDeny = !isCurrentUser && permissionLevel > 4;
                         return (
                           <tr
                             key={applicationUserId}
@@ -984,6 +970,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                 {
                                   id: 'view-profile',
                                   label: lang.tr.viewProfile,
+                                  show: !isCurrentUser,
                                   onClick: () =>
                                     handleOpenUserInfo(
                                       userId,
@@ -993,6 +980,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                 {
                                   id: 'accept',
                                   label: lang.tr.acceptApplication,
+                                  show: canAccept,
                                   onClick: () => {
                                     handleDeleteMemberApplication(
                                       applicationUserId,
@@ -1008,6 +996,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                 {
                                   id: 'deny',
                                   label: lang.tr.denyApplication,
+                                  show: canDeny,
                                   onClick: () => {
                                     handleDeleteMemberApplication(
                                       applicationUserId,

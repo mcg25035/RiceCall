@@ -54,6 +54,7 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
     const friendsInServer = friendGroupFriends.filter(
       (fd) => fd.currentServerId,
     ).length;
+    const canManageFriendGroup = friendGroupId !== '';
 
     // Handlers
     const handleOpenEditFriendGroup = (
@@ -93,13 +94,13 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
               {
                 id: 'edit',
                 label: lang.tr.editFriendGroup,
-                show: friendGroupId !== '',
+                show: canManageFriendGroup,
                 onClick: () => handleOpenEditFriendGroup(friendGroupId, userId),
               },
               {
                 id: 'delete',
                 label: lang.tr.friendDeleteGroup,
-                show: friendGroupId !== '',
+                show: canManageFriendGroup,
                 onClick: () => handleDeleteFriendGroup(friendGroupId, userId),
               },
             ]);
@@ -169,7 +170,8 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(
       currentServerId: friendCurrentServerId,
     } = friend;
     const friendGrade = Math.min(56, friendLevel); // 56 is max level
-
+    const isCurrentUser = friendTargetId === userId;
+    const canManageFriend = !isCurrentUser;
     // Handlers
     const handleOpenDirectMessage = (
       userId: User['userId'],
@@ -255,6 +257,7 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(
               {
                 id: 'info',
                 label: lang.tr.viewProfile,
+                show: !isCurrentUser,
                 onClick: () => {
                   handleOpenUserInfo(userId, friendTargetId);
                 },
@@ -262,12 +265,14 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(
               {
                 id: 'edit',
                 label: lang.tr.editFriendGroup,
+                show: canManageFriend,
                 onClick: () =>
                   handleOpenEditFriend(friendUserId, friendTargetId),
               },
               {
                 id: 'delete',
                 label: lang.tr.deleteFriend,
+                show: canManageFriend,
                 onClick: () => handleDeleteFriend(friendUserId, friendTargetId),
               },
             ]);
