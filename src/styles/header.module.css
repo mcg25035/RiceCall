@@ -4,6 +4,11 @@
   -webkit-app-region: drag;
   justify-content: space-between;
   border: none;
+  min-height: 30px;
+}
+
+.header .big {
+  min-height: 40px;
 }
 
 .appIcon {
@@ -19,37 +24,9 @@
   left: 2.5rem;
 }
 
-.titleBox {
-  height: 30px;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  width: auto;
-  color: #fff;
-}
-
-.titleBox::before {
-  content: '';
-  display: inline-block;
-  min-width: 18px;
-  min-height: 18px;
-  background-image: url('../../public/rc_logo_small.png');
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: auto;
-}
-
-.big {
-  height: 40px;
-}
-
-.title {
-  margin-left: 5px;
-}
-
 .buttons,
 .mainTabs,
-.userStatus {
+.titleBox {
   -webkit-app-region: no-drag;
 }
 
@@ -345,42 +322,50 @@
   color: #0073c6;
 }
 
-/* User Status */
+/* Title */
 
-.userStatus {
+.titleBox {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  cursor: pointer;
-  position: absolute;
-  left: 2.5rem;
-  height: 40px;
+  padding: 0 10px;
+  gap: 5px;
 }
 
-.nameDisplay {
+.titleBox::before {
+  content: '';
+  display: inline-block;
+  min-width: 18px;
+  min-height: 18px;
+  background-image: url('../../public/rc_logo_small.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: auto;
+}
+
+.nameBox {
   text-shadow: 0 0 4px #fff9;
   line-height: 16px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
   max-width: 200px;
   max-height: 26px;
-  padding: 0px 2px 0px 3px;
-  margin: 0px -2px 0px 0px;
+  padding: 0px 2px;
   font-size: 12px;
   font-weight: bold;
   color: inherit;
 }
 
-.nameDisplay:hover {
+.nameBox:hover {
   color: #222;
   text-shadow: 0 0 4px #fff;
   background: #ffffff1f;
   border-radius: 3px;
 }
 
-.nameDisplay:active {
+.nameBox:active {
   color: #222;
   text-shadow: 0 0 4px #fff;
   background: #ffffff36;
