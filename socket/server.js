@@ -192,7 +192,6 @@ const serverHandler = {
       }
 
       // Emit data (to the operator)
-      io.to(socket.id).emit('serverUpdate', null);
       io.to(socket.id).emit('error', error);
 
       new Logger('Server').error(
@@ -304,7 +303,6 @@ const serverHandler = {
       }
 
       // Emit data (to the operator)
-      io.to(socket.id).emit('serverUpdate', null);
       io.to(socket.id).emit('error', error);
 
       new Logger('Server').error(

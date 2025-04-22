@@ -219,7 +219,6 @@ const channelHandler = {
 
       // Emit data (to the operator)
       io.to(socket.id).emit('error', error);
-      io.to(socket.id).emit('channelUpdate', null);
 
       new Logger('Channel').error(
         `Error connecting to channel: ${error.error_message} (${socket.id})`,
@@ -325,7 +324,6 @@ const channelHandler = {
 
       // Emit data (to the operator)
       io.to(socket.id).emit('error', error);
-      io.to(socket.id).emit('channelUpdate', null);
 
       new Logger('Channel').error(
         `Error disconnecting from channel: ${error.error_message} (${socket.id})`,

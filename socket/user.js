@@ -118,7 +118,6 @@ const userHandler = {
       }
 
       // Emit data (to the operator)
-      io.to(socket.id).emit('userUpdate', null);
       io.to(socket.id).emit('error', error);
 
       new Logger('WebSocket').error(
@@ -205,7 +204,6 @@ const userHandler = {
       }
 
       // Emit data (to the operator)
-      io.to(socket.id).emit('userUpdate', null);
       io.to(socket.id).emit('error', error);
 
       new Logger('WebSocket').error(
