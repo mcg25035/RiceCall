@@ -545,8 +545,8 @@ const UserTab: React.FC<UserTabProps> = React.memo(
     const canKick = canManageMember && memberCurrentServerId === serverId;
     const canMoveToChannel =
       canManageMember && memberCurrentChannelId !== currentChannelId;
-    const canMute = !isMutedByUser;
-    const canUnmute = isMutedByUser;
+    const canMute = !isCurrentUser && !isMutedByUser;
+    const canUnmute = !isCurrentUser && isMutedByUser;
 
     // Handlers
     const handleMuteUser = (userId: User['userId']) => {
