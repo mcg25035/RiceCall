@@ -116,7 +116,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
     const userFavoriteServers = userJoinedServers
       .filter((s) => s.favorite)
       .sort((a, b) => b.permissionLevel - a.permissionLevel);
-    const userRecentServers = userJoinedServers
+    const userRecentServers = userServers
       .filter((s) => s.recent)
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 4);
