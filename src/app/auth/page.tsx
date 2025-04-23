@@ -58,7 +58,13 @@ const Auth: React.FC = () => {
 
   // Effects
   useEffect(() => {
-    setTimeout(() => authService.autoLogin(), 1000); // Can be change to when socket is onReady not just specific time
+    authService.autoLogin();
+    window.addEventListener('storage', (e) => {
+      if (e.key == 'pageReloadFlag') {
+        localStorage.removeItem('pageReloadFlag');
+        location.reload();
+      }
+    });
   }, []);
 
   const getMainContent = () => {

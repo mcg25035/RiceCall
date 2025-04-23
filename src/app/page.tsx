@@ -417,6 +417,7 @@ const RootPageComponent = () => {
     if (!lang) return;
     const language = localStorage.getItem('language');
     if (language) lang.set(language as LanguageKey);
+    localStorage.setItem('pageReloadFlag', 'true');
   }, [lang]);
 
   const getMainContent = () => {
