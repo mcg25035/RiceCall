@@ -285,13 +285,13 @@
 }
 
 @media only screen and (width >= 500px) {
-  .myGroupsRoomItems {
+  .myServersRoomItems {
     width: 450px;
   }
 }
 
 @media only screen and (width >= 650px) {
-  .myGroupsRoomItems {
+  .myServersRoomItems {
     width: 650px;
   }
 }

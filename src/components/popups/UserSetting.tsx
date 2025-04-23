@@ -307,14 +307,14 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                     className={setting['button']}
                     onClick={() => setSelectedTabId('userSetting')}
                   >
-                    {'編輯資料' /** EDIT PROFILE **/}
+                    {lang.tr.editProfile}
                   </div>
                 </div>
               )}
               <div className={setting['userAboutMeShow']}>{userSignature}</div>
               <div className={setting['userProfileContent']}>
                 <div className={setting['title']}>
-                  {'最近訪問' /** LAST JOIN GROUP **/}
+                  {lang.tr.recentlyJoinServer}
                 </div>
                 {!ProfilePrivate && userRecentServers.length ? (
                   <div className={setting['serverItems']}>
@@ -354,18 +354,18 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                 ) : ProfilePrivate ? (
                   PrivateElement(
                     <>
-                      對方沒有對外
+                      {lang.tr.notPublicRecentServersTop}
                       <br />
-                      公開最近訪問
+                      {lang.tr.notPublicRecentServersBottom}
                     </>,
                   )
                 ) : (
-                  PrivateElement('最近沒訪問語音群')
+                  PrivateElement(lang.tr.noRecentServers)
                 )}
               </div>
               <div className={`${setting['userProfileContent']}`}>
                 <div className={setting['title']}>
-                  {'最近獲得' /** BADGE TITLE **/}
+                  {lang.tr.recentlyEarnedBadges}
                 </div>
                 <div className={setting['badgeViewer']}>
                   <BadgeListViewer badges={userBadges} maxDisplay={13} />
@@ -382,8 +382,8 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                     value={serversView}
                     onChange={(e) => setServersView(e.target.value)}
                   >
-                    <option value="joined">{'加入的群'}</option>
-                    <option value="favorite">{'收藏的群'}</option>
+                    <option value="joined">{lang.tr.joinedServers}</option>
+                    <option value="favorite">{lang.tr.favoriteServers}</option>
                   </select>
                 </div>
               </div>
@@ -392,13 +392,13 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                   ? ProfilePrivate
                     ? PrivateElement(
                         <>
-                          對方沒有對外公開
+                          {lang.tr.notPublicJoinedServersTop}
                           <br />
-                          加入的語音群
+                          {lang.tr.notPublicJoinedServersBottom}
                         </>,
                       )
                     : userJoinedServers.length === 0
-                    ? PrivateElement('沒有加入的語音群')
+                    ? PrivateElement(lang.tr.noJoinedServers)
                     : userJoinedServers.map((server) => (
                         <div
                           key={server.serverId}
@@ -429,7 +429,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                                 }`}
                               />
                               <div className={setting['contributionBox']}>
-                                <div>{'貢獻:'}</div>
+                                <div>{`${lang.tr.contribution}:`}</div>
                                 <div className={setting['contributionValue']}>
                                   {server.contribution}
                                 </div>
@@ -441,13 +441,13 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                   : ProfilePrivate
                   ? PrivateElement(
                       <>
-                        對方沒有對外公開
+                        {lang.tr.notPublicFavoriteServersTop}
                         <br />
-                        收藏的語音群
+                        {lang.tr.notPublicFavoriteServersBottom}
                       </>,
                     )
                   : userFavoriteServers.length === 0
-                  ? PrivateElement('沒有收藏的語音群')
+                  ? PrivateElement(lang.tr.noFavoriteServers)
                   : userFavoriteServers.map((server) => (
                       <div
                         key={server.serverId}
@@ -478,7 +478,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                               }`}
                             />
                             <div className={setting['contributionBox']}>
-                              <div>{'貢獻:'}</div>
+                              <div>{`${lang.tr.contribution}:`}</div>
                               <div className={setting['contributionValue']}>
                                 {server.contribution}
                               </div>
@@ -806,7 +806,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
               <div
                 className={`${grade['grade']} ${grade[`lv-${userGrade}`]}`}
                 title={
-                  `等級：${userLevel}級，積分：${userXP}，升級還需：${userRequiredXP}` /** LEVEL:{userLevel} EXP:{userXP} LEVEL UP REQUIRED:{userRequiredXP}**/
+                  `${lang.tr.level}：${userLevel}，${lang.tr.xp}：${userXP}，${lang.tr.xpDifference}：${userRequiredXP}` /** LEVEL:{userLevel} EXP:{userXP} LEVEL UP REQUIRED:{userRequiredXP}**/
                 }
               />
             </div>

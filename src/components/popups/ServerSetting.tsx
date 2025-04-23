@@ -379,7 +379,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
           <div className={setting['left']}>
             <div className={setting['tabs']}>
               {[
-                lang.tr.viewGroupInfo,
+                lang.tr.viewServerInfo,
                 lang.tr.announcement,
                 lang.tr.memberManagement,
                 lang.tr.accessPermission,
@@ -833,7 +833,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                         if (e.target.checked) setServerVisibility('public');
                       }}
                     />
-                    <div className={popup['label']}>{lang.tr.publicGroup}</div>
+                    <div className={popup['label']}>{lang.tr.publicServer}</div>
                   </div>
 
                   <div className={`${popup['inputBox']} ${popup['row']}`}>
@@ -850,10 +850,10 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                     />
                     <div>
                       <div className={popup['label']}>
-                        {lang.tr.semiPublicGroup}
+                        {lang.tr.semiPublicServer}
                       </div>
                       <div className={setting['hintText']}>
-                        {lang.tr.semiPublicGroupDescription}
+                        {lang.tr.semiPublicServerDescription}
                       </div>
                     </div>
                   </div>
@@ -872,10 +872,10 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                     />
                     <div>
                       <div className={popup['label']}>
-                        {lang.tr.privateGroup}
+                        {lang.tr.privateServer}
                       </div>
                       <div className={setting['hintText']}>
-                        {lang.tr.privateGroupDescription}
+                        {lang.tr.privateServerDescription}
                       </div>
                     </div>
                   </div>

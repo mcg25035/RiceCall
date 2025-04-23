@@ -691,7 +691,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
               },
               {
                 id: 'move-to-channel',
-                label: '移動至我的頻道', //lang.tr.moveToChannel
+                label: lang.tr.moveToChannel,
                 show: canMoveToChannel,
                 onClick: () =>
                   handleMoveToChannel(memberUserId, serverId, currentChannelId),
@@ -703,31 +703,31 @@ const UserTab: React.FC<UserTabProps> = React.memo(
               },
               {
                 id: 'forbid-voice',
-                label: '禁止此人語音', //lang.tr.forbidVoice
+                label: lang.tr.forbidVoice,
                 show: canManageMember,
                 onClick: () => {},
               },
               {
                 id: 'forbid-text',
-                label: '禁止文字', //lang.tr.forbidText
+                label: lang.tr.forbidText,
                 show: canManageMember,
                 onClick: () => {},
               },
               {
                 id: 'kick-channel',
-                label: '踢出頻道', //lang.tr.kickChannel
+                label: lang.tr.kickChannel,
                 show: canKick,
                 onClick: () => {}, // handleKickChannel(memberUserId, serverId),
               },
               {
                 id: 'kick-server',
-                label: '踢出群', //lang.tr.kickServer
+                label: lang.tr.kickServer,
                 show: canKick,
                 onClick: () => handleKickServer(memberUserId, serverId),
               },
               {
                 id: 'ban',
-                label: '封鎖', //lang.tr.ban
+                label: lang.tr.ban,
                 show: canManageMember,
                 onClick: () => {},
               },

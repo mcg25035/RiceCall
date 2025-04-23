@@ -75,9 +75,9 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
     const { userId } = initialData;
     const MAX_GROUPS =
       userLevel >= 16 ? 5 : userLevel >= 6 && userLevel < 16 ? 4 : 3;
-    const remainingGroups =
+    const remainingServers =
       MAX_GROUPS - userServers.filter((server) => server.owned).length;
-    const canCreate = remainingGroups > 0;
+    const canCreate = remainingServers > 0;
 
     // Handlers
     const handleCreateServer = (server: Partial<Server>) => {
@@ -134,7 +134,7 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
           <div className={popup['popupContainer']}>
             <div className={popup['popupTab']}>
               <div className={`${popup['item']} ${popup['active']}`}>
-                {lang.tr.selectGroupType}
+                {lang.tr.selectServerType}
               </div>
               <div className={`${popup['item']}`}>{lang.tr.fillInfo}</div>
             </div>
@@ -142,10 +142,10 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
             <div className={popup['popupBody']}>
               <div className={setting['body']}>
                 <div className={`${createServer['message']}`}>
-                  {`${lang.tr.remainingGroup1}${remainingGroups}${lang.tr.remainingGroup2}`}
+                  {`${lang.tr.remainingServer1} ${remainingServers} ${lang.tr.remainingServer2}`}
                 </div>
                 <label className={createServer['typeLabel']} data-key="60030">
-                  {lang.tr.selectGroupTypeDescription}
+                  {lang.tr.selectServerTypeDescription}
                 </label>
                 <div className={createServer['buttonGroup']}>
                   {SERVER_TYPES.map((type) => (
@@ -189,7 +189,7 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
           <div className={popup['popupContainer']}>
             <div className={popup['popupTab']}>
               <div className={`${popup['item']}`}>
-                {lang.tr.selectGroupType}
+                {lang.tr.selectServerType}
               </div>
               <div className={`${popup['item']}  ${popup['active']}`}>
                 {lang.tr.fillInfo}
@@ -244,7 +244,7 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
                 </div>
                 <div className={popup['inputGroup']}>
                   <div className={popup['inputBox']}>
-                    <div className={popup['label']}>{lang.tr.groupType}</div>
+                    <div className={popup['label']}>{lang.tr.serverType}</div>
                     <input
                       className={popup['input']}
                       type="text"
@@ -255,24 +255,24 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
 
                   <div className={popup['inputBox']}>
                     <div className={`${popup['label']} ${popup['required']}`}>
-                      {lang.tr.groupName}
+                      {lang.tr.serverName}
                     </div>
                     <input
                       className={popup['input']}
                       type="text"
                       value={serverName}
                       onChange={(e) => setServerName(e.target.value)}
-                      placeholder={lang.tr.groupNamePlaceholder}
+                      placeholder={lang.tr.serverNamePlaceholder}
                     />
                   </div>
 
                   <div className={popup['inputBox']}>
-                    <div className={popup['label']}>{lang.tr.groupSlogan}</div>
+                    <div className={popup['label']}>{lang.tr.serverSlogan}</div>
                     <textarea
                       className={popup['input']}
                       value={serverSlogan}
                       onChange={(e) => setServerSlogan(e.target.value)}
-                      placeholder={lang.tr.groupSloganPlaceholder}
+                      placeholder={lang.tr.serverSloganPlaceholder}
                     />
                   </div>
                 </div>

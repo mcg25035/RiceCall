@@ -416,7 +416,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
               data-key="30014"
               onClick={() => handleOpenCreateServer(userId)}
             >
-              {lang.tr.createGroup}
+              {lang.tr.createServers}
             </button>
             <button className={homePage['navegateItem']} data-key="60004">
               {lang.tr.personalExclusive}
@@ -440,7 +440,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             }}
           />
           <ServerListSection
-            title={lang.tr.myGroups}
+            title={lang.tr.myServers}
             servers={ownedServers}
             user={user}
             onServerClick={(server) => {
@@ -449,7 +449,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             }}
           />
           <ServerListSection
-            title={lang.tr.favoriteGroups}
+            title={lang.tr.favoriteServers}
             servers={favoriteServers}
             user={user}
             onServerClick={(server) => {
