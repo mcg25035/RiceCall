@@ -1,5 +1,6 @@
 {
-  "enabled": true,
+  "start": "2025-04-24T00:00:00.000Z",
+  "end": "2025-04-24T23:59:59.999Z",
   "serverId": "server-1",
   "channelId": "channel-1",
   "multiplier": 2
