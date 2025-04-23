@@ -108,12 +108,12 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
 
     // Refs
     const refreshed = useRef(false);
+    const searchRef = useRef<HTMLDivElement>(null);
 
     // States
     const [userServers, setUserServers] = useState<UserServer[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const searchRef = useRef<HTMLDivElement>(null);
     const [exactMatch, setExactMatch] = useState<Server | null>(null);
     const [personalResults, setPersonalResults] = useState<Server[]>([]);
     const [relatedResults, setRelatedResults] = useState<Server[]>([]);
