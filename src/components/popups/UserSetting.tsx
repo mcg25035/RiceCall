@@ -55,7 +55,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
     const CURRENT_DAY = TODAY.getDate();
     const MAIN_TABS = [
       { id: 'about', label: lang.tr.about },
-      { id: 'groups', label: lang.tr.groups },
+      { id: 'groups', label: lang.tr.servers },
       { id: 'userSetting', label: '' },
     ];
 

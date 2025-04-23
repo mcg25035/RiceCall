@@ -322,7 +322,7 @@ export interface Translation {
   guestTextGapTime: string;
   characters: string;
   seconds: string;
-  groups: string;
+  servers: string;
   male: string;
   female: string;
   taiwan: string;
