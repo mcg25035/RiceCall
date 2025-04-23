@@ -122,7 +122,7 @@ export interface Translation {
   channelName: string;
   friendApply: string;
   friendLabel: string;
-  friendSelectServer: string;
+  friendSelectGroup: string;
   friendApplySent: string;
   friendAddGroup: string;
   friendDeleteGroup: string;
