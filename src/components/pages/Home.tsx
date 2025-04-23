@@ -118,7 +118,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     const [personalResults, setPersonalResults] = useState<Server[]>([]);
     const [relatedResults, setRelatedResults] = useState<Server[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [loadingGroupID, setLoadingGroupID] = useState<string>();
+    const [loadingServerID, setLoadingServerID] = useState<string>();
 
     // Variables
     const { userId, name: userName, currentServerId } = user;
@@ -151,7 +151,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       });
       handleClearSearchState();
       setIsLoading(true);
-      setLoadingGroupID(serverDisplayId);
+      setLoadingServerID(serverDisplayId);
     };
 
     const handleUserServersUpdate = (data: UserServer[] | null) => {
@@ -261,7 +261,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       if (mainTab.selectedTabId == 'server') {
         if (!userServer) return;
         setIsLoading(false);
-        setLoadingGroupID('');
+        setLoadingServerID('');
         localStorage.removeItem('trigger-handle-server-select');
       }
     }, [userServer, isLoading, mainTab]);
@@ -291,7 +291,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
         const { serverDisplayId } = JSON.parse(newValue);
         mainTab.setSelectedTabId('home');
         setIsLoading(true);
-        setLoadingGroupID(serverDisplayId);
+        setLoadingServerID(serverDisplayId);
       };
       window.addEventListener('storage', handler);
       return () => window.removeEventListener('storage', handler);
@@ -435,7 +435,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
                 mainTab.setSelectedTabId('server');
               } else {
                 setIsLoading(true);
-                setLoadingGroupID(server.displayId);
+                setLoadingServerID(server.displayId);
               }
             }}
           />
@@ -445,7 +445,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             user={user}
             onServerClick={(server) => {
               setIsLoading(true);
-              setLoadingGroupID(server.displayId);
+              setLoadingServerID(server.displayId);
             }}
           />
           <ServerListSection
@@ -454,7 +454,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             user={user}
             onServerClick={(server) => {
               setIsLoading(true);
-              setLoadingGroupID(server.displayId);
+              setLoadingServerID(server.displayId);
             }}
           />
         </main>
@@ -465,8 +465,8 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             <div className={homePage['loadingBox']}>
               <div className={homePage['loadingTitleContain']}>
                 <div>{lang.tr.connectingServer}</div>
-                <div className={homePage['loadingGroupID']}>
-                  {loadingGroupID}
+                <div className={homePage['loadingServerID']}>
+                  {loadingServerID}
                 </div>
               </div>
               <div className={homePage['loadingGif']}></div>
