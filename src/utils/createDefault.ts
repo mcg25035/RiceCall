@@ -70,19 +70,19 @@ export const createDefault = {
     avatar: `${Date.now()}`,
     avatarUrl: `${process.env.NEXT_PUBLIC_SERVER_URL}/images/serverAvatars/`,
     announcement: '',
+    applyNotice: '',
     description: '',
     slogan: '',
     type: 'other',
     visibility: 'public',
     allowDirectMessage: true,
+    receiveApply: true,
     level: 0,
     wealth: 0,
     displayId: '',
     lobbyId: '',
     ownerId: '',
     createdAt: 0,
-    receiveApply: true,
-    applyNotice: '',
     ...overrides,
   }),
 
@@ -124,24 +124,23 @@ export const createDefault = {
   }),
 
   userMember: (overrides: Partial<UserMember> = {}): UserMember => ({
-    ...createDefault.member(),
     ...createDefault.server(),
+    ...createDefault.member(),
     ...overrides,
   }),
 
   serverMember: (overrides: Partial<ServerMember> = {}): ServerMember => ({
-    ...createDefault.member(),
     ...createDefault.user(),
+    ...createDefault.member(),
     ...overrides,
   }),
 
   friendApplication: (
     overrides: Partial<FriendApplication> = {},
   ): FriendApplication => ({
-    description: '',
-    applicationStatus: 'pending',
     senderId: '',
     receiverId: '',
+    description: '',
     ...createDefault.user(),
     ...overrides,
   }),
@@ -151,7 +150,6 @@ export const createDefault = {
   ): MemberApplication => ({
     serverId: '',
     description: '',
-    applicationStatus: 'pending',
     ...createDefault.user(),
     ...overrides,
   }),

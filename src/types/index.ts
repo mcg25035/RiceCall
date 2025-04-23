@@ -515,7 +515,6 @@ export type FriendApplication = User & {
   senderId: string;
   receiverId: string;
   description: string;
-  applicationStatus: 'pending' | 'accepted' | 'rejected';
   createdAt: number;
 };
 
@@ -543,7 +542,6 @@ export type MemberApplication = User & {
   userId: string;
   serverId: string;
   description: string;
-  applicationStatus: 'pending' | 'accepted' | 'rejected';
   createdAt: number;
 };
 
