@@ -7,7 +7,6 @@ import homePage from '@/styles/pages/home.module.css';
 
 // Components
 import ServerListViewer from '@/components/viewers/ServerList';
-import EventListViewer from '@/components/viewers/EventList';
 
 // Type
 import {
@@ -16,7 +15,6 @@ import {
   SocketServerEvent,
   User,
   UserServer,
-  Event,
 } from '@/types';
 
 // Providers
@@ -27,7 +25,6 @@ import { useMainTab } from '@/providers/MainTab';
 // Services
 import ipcService from '@/services/ipc.service';
 import refreshService from '@/services/refresh.service';
-import apiService from '@/services/api.service';
 
 export interface ServerListSectionProps {
   title: string;
@@ -122,8 +119,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     const [relatedResults, setRelatedResults] = useState<Server[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingGroupID, setLoadingGroupID] = useState<string>();
-    const [activeEvents, setActiveEvents] = useState<Event[]>([]);
-    const [isLoadingEvents, setIsLoadingEvents] = useState(true);
 
     // Variables
     const { userId, name: userName, currentServerId } = user;
@@ -221,56 +216,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       }
     }, []);
 
-    // 加载活动数据
-    const loadActiveEvents = async () => {
-      try {
-        setIsLoadingEvents(true);
-        const response = await apiService.get('/api/events?active=true');
-        const events = response;
-        if (events && Array.isArray(events)) {
-          // 只保留当前有效的活动（开始时间已到，结束时间未到）
-          const now = Date.now();
-          const activeEvents = events.filter(
-            (event) => event.startTime <= now && event.endTime > now,
-          );
-          setActiveEvents(activeEvents);
-        } else {
-          setActiveEvents([]);
-        }
-      } catch (error) {
-        console.error('獲取活動數據失敗:', error);
-        setActiveEvents([]);
-      } finally {
-        setIsLoadingEvents(false);
-      }
-    };
-
-    // 处理点击活动
-    const handleEventClick = (event: Event) => {
-      // 如果活动与特定服务器关联，可以连接到该服务器
-      if (event.serverId) {
-        // 查找服务器信息
-        const serverInfo = userServers.find(
-          (s) => s.serverId === event.serverId,
-        );
-        if (serverInfo) {
-          if (currentServerId === event.serverId) {
-            mainTab.setSelectedTabId('server');
-          } else {
-            setIsLoading(true);
-            setLoadingGroupID(serverInfo.displayId);
-            // 连接到服务器
-            if (socket) {
-              socket.send.connectServer({
-                serverId: event.serverId,
-                userId: userId,
-              });
-            }
-          }
-        }
-      }
-    };
-
     // Effects
     useEffect(() => {
       document.addEventListener('mousedown', handleClickOutside);
@@ -351,25 +296,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       window.addEventListener('storage', handler);
       return () => window.removeEventListener('storage', handler);
     }, [mainTab]);
-
-    // 加载活动数据
-    useEffect(() => {
-      if (display) {
-        loadActiveEvents();
-      }
-    }, [display]);
-
-    // 每分钟刷新一次活动数据（用于更新倒计时）
-    useEffect(() => {
-      if (!display) return;
-
-      const timer = setInterval(() => {
-        // 只刷新界面，不重新加载数据
-        setActiveEvents((prev) => [...prev]);
-      }, 60000);
-
-      return () => clearInterval(timer);
-    }, [display]);
 
     return (
       <div
@@ -500,14 +426,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
 
         {/* Main Content */}
         <main className={homePage['homeContent']}>
-          {/* 活動部分 - 移動到最上方 */}
-          {!isLoadingEvents && activeEvents.length > 0 && (
-            <EventListViewer
-              events={activeEvents}
-              onEventClick={handleEventClick}
-            />
-          )}
-
           <ServerListSection
             title={lang.tr.recentVisits}
             servers={recentServers}

@@ -34,7 +34,6 @@ export interface Translation {
   myGroups: string;
   favoriteGroups: string;
   createGroup: string;
-  currentEvents: string;
   fileSizeError: string;
   fileTypeError: string;
   updateServerError: string;
@@ -414,32 +413,6 @@ export type User = {
   lastActiveAt: number;
   createdAt: number;
   badges: Badge[];
-};
-
-export type Event = {
-  eventId: string;
-  name: string;
-  description: string;
-  type: 'xp_boost' | 'badge_collection' | 'special';
-  xpBoost: number;
-  startTime: number;
-  endTime: number;
-  badgeId: string | null;
-  badgeRequiredTime: number | null;
-  serverId: string | null;
-  channelId: string | null;
-  isActive: boolean;
-  createdAt: number;
-  badge?: Badge;
-  participant?: EventParticipant;
-};
-
-export type EventParticipant = {
-  userId: string;
-  eventId: string;
-  joinedAt: number;
-  totalTime: number;
-  badgeEarned: boolean;
 };
 
 export type UserServer = Server &
