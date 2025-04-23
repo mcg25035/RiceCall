@@ -1,5 +1,9 @@
 mod models;
+mod socket;
+mod utils;
+mod database;
 
+use dotenv::dotenv;
 fn main() {
-    println!("Hello, world!");
+    dotenv().ok();
 }
