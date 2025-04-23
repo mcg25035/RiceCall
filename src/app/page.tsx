@@ -16,6 +16,8 @@ import {
   Server,
   User,
   Channel,
+  Member,
+  UserServer,
 } from '@/types';
 
 // Pages
@@ -45,10 +47,10 @@ import authService from '@/services/auth.service';
 
 interface HeaderProps {
   user: User;
-  server: Server;
+  userServer: UserServer;
 }
 
-const Header: React.FC<HeaderProps> = React.memo(({ user, server }) => {
+const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
   // Hooks
   const socket = useSocket();
   const lang = useLanguage();
@@ -60,7 +62,7 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, server }) => {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   const { userId, name: userName, status: userStatus } = user;
-  const { serverId, name: serverName } = server;
+  const { serverId, name: serverName } = userServer;
 
   // Constants
   const MAIN_TABS = [
@@ -316,7 +318,7 @@ const RootPageComponent = () => {
 
   // States
   const [user, setUser] = useState<User>(createDefault.user());
-  const [server, setServer] = useState<Server>(createDefault.server());
+  const [server, setServer] = useState<UserServer>(createDefault.userServer());
   const [channel, setChannel] = useState<Channel>(createDefault.channel());
 
   // Handlers
@@ -332,6 +334,11 @@ const RootPageComponent = () => {
       mainTab.setSelectedTabId('home');
     }
     if (!data) data = createDefault.server();
+    setServer((prev) => ({ ...prev, ...data }));
+  };
+
+  const handleMemberUpdate = (data: Partial<Member> | null): void => {
+    if (!data) data = createDefault.member();
     setServer((prev) => ({ ...prev, ...data }));
   };
 
@@ -377,10 +384,11 @@ const RootPageComponent = () => {
     const eventHandlers = {
       [SocketServerEvent.USER_UPDATE]: handleUserUpdate,
       [SocketServerEvent.SERVER_UPDATE]: handleServerUpdate,
+      [SocketServerEvent.MEMBER_UPDATE]: handleMemberUpdate,
       [SocketServerEvent.CHANNEL_UPDATE]: handleCurrentChannelUpdate,
       [SocketServerEvent.PLAY_SOUND]: handlePlaySound,
-      [SocketServerEvent.ERROR]: handleError,
       [SocketServerEvent.OPEN_POPUP]: handleOpenPopup,
+      [SocketServerEvent.ERROR]: handleError,
     };
     const unsubscribe: (() => void)[] = [];
 
@@ -400,7 +408,7 @@ const RootPageComponent = () => {
     } else {
       mainTab.setSelectedTabId('home');
       setUser(createDefault.user());
-      setServer(createDefault.server());
+      setServer(createDefault.userServer());
       setChannel(createDefault.channel());
     }
   }, [socket.isConnected]);
@@ -417,14 +425,14 @@ const RootPageComponent = () => {
       <>
         <HomePage
           user={user}
-          server={server}
+          userServer={server}
           display={mainTab.selectedTabId === 'home'}
         />
         <FriendPage user={user} display={mainTab.selectedTabId === 'friends'} />
         <ExpandedProvider>
           <ServerPage
             user={user}
-            server={server}
+            userServer={server}
             channel={channel}
             display={mainTab.selectedTabId === 'server'}
           />
@@ -436,7 +444,7 @@ const RootPageComponent = () => {
   return (
     <WebRTCProvider>
       <div className="wrapper">
-        <Header user={user} server={server} />
+        <Header user={user} userServer={server} />
         {/* Main Content */}
         <div className="content">{getMainContent()}</div>
       </div>

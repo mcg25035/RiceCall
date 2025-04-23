@@ -6,11 +6,12 @@ import {
   MemberApplication,
   ServerMember,
   Permission,
-  UserMember,
+  UserServer,
   Member,
   Friend,
   UserFriend,
   FriendGroup,
+  UserServerStatus,
 } from '@/types';
 
 export const createDefault = {
@@ -123,9 +124,20 @@ export const createDefault = {
     ...overrides,
   }),
 
-  userMember: (overrides: Partial<UserMember> = {}): UserMember => ({
+  userServerStatus: (
+    overrides: Partial<UserServerStatus> = {},
+  ): UserServerStatus => ({
+    recent: false,
+    owned: false,
+    favorite: false,
+    timestamp: 0,
+    ...overrides,
+  }),
+
+  userServer: (overrides: Partial<UserServer> = {}): UserServer => ({
     ...createDefault.server(),
     ...createDefault.member(),
+    ...createDefault.userServerStatus(),
     ...overrides,
   }),
 

@@ -18,10 +18,10 @@ import {
   Server,
   Message,
   Channel,
-  Member,
   ServerMember,
   ChannelMessage,
   SocketServerEvent,
+  UserServer,
 } from '@/types';
 
 // Providers
@@ -33,18 +33,15 @@ import { useContextMenu } from '@/providers/ContextMenu';
 // Services
 import ipcService from '@/services/ipc.service';
 
-// Utils
-import { createDefault } from '@/utils/createDefault';
-
 interface ServerPageProps {
   user: User;
-  server: Server;
+  userServer: UserServer;
   channel: Channel;
   display: boolean;
 }
 
 const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
-  ({ user, server, channel, display }) => {
+  ({ user, userServer, channel, display }) => {
     // Hooks
     const lang = useLanguage();
     const socket = useSocket();
@@ -52,7 +49,6 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     const contextMenu = useContextMenu();
 
     // States
-    const [member, setMember] = useState<Member>(createDefault.member());
     const [serverChannels, setServerChannels] = useState<Channel[]>([]);
     const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
     const [channelMessages, setChannelMessages] = useState<
@@ -70,7 +66,10 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       serverId,
       name: serverName,
       announcement: serverAnnouncement,
-    } = server;
+      permissionLevel: userPermissionLevel,
+      lastJoinChannelTime: userLastJoinChannelTime,
+      lastMessageTime: userLastMessageTime,
+    } = userServer;
     const {
       channelId,
       bitrate: channelBitrate,
@@ -81,35 +80,28 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       guestTextWaitTime: channelGuestTextWaitTime,
       guestTextGapTime: channelGuestTextGapTime,
     } = channel;
-    const {
-      permissionLevel: memberPermissionLevel,
-      lastJoinChannelTime: memberLastJoinChannelTime,
-      lastMessageTime: memberLastMessageTime,
-    } = member;
     const activeServerMembers = serverMembers.filter(
       (mb) => mb.currentServerId === serverId,
     );
     const leftGapTime =
       channelGuestTextGapTime -
-      Math.floor((currentTime - memberLastJoinChannelTime) / 1000);
+      Math.floor((currentTime - userLastJoinChannelTime) / 1000);
     const leftWaitTime =
       channelGuestTextWaitTime -
-      Math.floor((currentTime - memberLastMessageTime) / 1000);
-    const isForbidByChatMode = channelForbidText && memberPermissionLevel < 3;
+      Math.floor((currentTime - userLastMessageTime) / 1000);
+    const isForbidByChatMode = channelForbidText && userPermissionLevel < 3;
     const isForbidByGuestText =
-      channelForbidGuestText && memberPermissionLevel === 1;
+      channelForbidGuestText && userPermissionLevel === 1;
     const isForbidByGuestTextGap =
-      channelGuestTextGapTime && leftGapTime > 0 && memberPermissionLevel === 1;
+      channelGuestTextGapTime && leftGapTime > 0 && userPermissionLevel === 1;
     const isForbidByGuestTextWait =
-      channelGuestTextWaitTime &&
-      leftWaitTime > 0 &&
-      memberPermissionLevel === 1;
+      channelGuestTextWaitTime && leftWaitTime > 0 && userPermissionLevel === 1;
     const textMaxLength =
-      memberPermissionLevel === 1 ? channelGuestTextMaxLength || 100 : 2000;
+      userPermissionLevel === 1 ? channelGuestTextMaxLength || 100 : 2000;
     const canChangeToFreeSpeech =
-      memberPermissionLevel > 4 && channelVoiceMode !== 'free';
+      userPermissionLevel > 4 && channelVoiceMode !== 'free';
     const canChangeToForbiddenSpeech =
-      memberPermissionLevel > 4 && channelVoiceMode !== 'forbidden';
+      userPermissionLevel > 4 && channelVoiceMode !== 'forbidden';
     // const canChangeToQueue =
     //   memberPermissionLevel > 4 && channelVoiceMode !== 'queue';
 
@@ -131,11 +123,6 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     ) => {
       if (!socket) return;
       socket.send.updateChannel({ channel, channelId, serverId });
-    };
-
-    const handleMemberUpdate = (data: Partial<Member> | null): void => {
-      if (!data) data = createDefault.member();
-      setMember((prev) => ({ ...prev, ...data }));
     };
 
     const handleServerChannelsUpdate = (data: Channel[] | null): void => {
@@ -204,7 +191,6 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       if (!socket) return;
 
       const eventHandlers = {
-        [SocketServerEvent.MEMBER_UPDATE]: handleMemberUpdate,
         [SocketServerEvent.SERVER_CHANNELS_UPDATE]: handleServerChannelsUpdate,
         [SocketServerEvent.SERVER_MEMBERS_UPDATE]: handleServerMembersUpdate,
         [SocketServerEvent.ON_MESSAGE]: handleOnMessagesUpdate,
@@ -269,8 +255,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
             style={{ width: `${sidebarWidth}px` }}
           >
             <ChannelListViewer
-              member={member}
-              server={server}
+              userServer={userServer}
               currentChannel={channel}
               serverMembers={activeServerMembers}
               serverChannels={serverChannels}
@@ -324,7 +309,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
             </div>
             <div className={styles['buttonArea']}>
               <div className={styles['buttons']}>
-                {memberPermissionLevel >= 3 && (
+                {userPermissionLevel >= 3 && (
                   <div
                     className={styles['voiceModeDropdown']}
                     onClick={(e) =>

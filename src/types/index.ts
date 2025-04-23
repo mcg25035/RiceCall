@@ -415,14 +415,6 @@ export type User = {
   badges: Badge[];
 };
 
-export type UserServer = Server &
-  Member & {
-    recent: boolean;
-    owned: boolean;
-    favorite: boolean;
-    timestamp: number;
-  };
-
 export type Server = {
   serverId: string;
   name: string;
@@ -554,11 +546,18 @@ export type InfoMessage = Message & {
   type: 'info';
 };
 
-export type UserMember = Member & Server;
+export type UserServerStatus = {
+  recent: boolean;
+  owned: boolean;
+  favorite: boolean;
+  timestamp: number;
+};
 
-export type ServerMember = Member & User;
+export type UserServer = Server & Member & UserServerStatus;
 
 export type UserFriend = Friend & User;
+
+export type ServerMember = User & Member;
 
 export type ContextMenuItem = {
   id: string;

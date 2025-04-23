@@ -95,12 +95,12 @@ const SearchResultItem: React.FC<{
 
 interface HomePageProps {
   user: User;
-  server: Server;
+  userServer: UserServer;
   display: boolean;
 }
 
 const HomePageComponent: React.FC<HomePageProps> = React.memo(
-  ({ user, server, display }) => {
+  ({ user, userServer, display }) => {
     // Hooks
     const lang = useLanguage();
     const socket = useSocket();
@@ -259,12 +259,12 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
 
     useEffect(() => {
       if (mainTab.selectedTabId == 'server') {
-        if (!server) return;
+        if (!userServer) return;
         setIsLoading(false);
         setLoadingGroupID('');
         localStorage.removeItem('trigger-handle-server-select');
       }
-    }, [server, isLoading, mainTab]);
+    }, [userServer, isLoading, mainTab]);
 
     useEffect(() => {
       if (!lang) return;
