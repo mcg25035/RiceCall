@@ -57,6 +57,16 @@ const ipcService = {
     }
   },
 
+  // Get socket connect state
+  getSocketStatus: async (): Promise<'connected' | 'disconnected'> => {
+    if (isElectron) {
+      return await ipcRenderer.send('get-socket-status');
+    } else {
+      console.warn('IPC not available - not in Electron environment');
+    }
+    return 'disconnected';
+  },
+
   // Initial data methods
   initialData: {
     request: (to: string, callback: (data: any) => void) => {
