@@ -86,7 +86,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       lastJoinChannelTime: memberLastJoinChannelTime,
       lastMessageTime: memberLastMessageTime,
     } = member;
-    const serverActiveMembers = serverMembers.filter(
+    const activeServerMembers = serverMembers.filter(
       (mb) => mb.currentServerId === serverId,
     );
     const leftGapTime =
@@ -239,7 +239,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
           details: `${lang.tr.in} ${serverName}`,
           state: `${lang.tr.chatWithMembers.replace(
             '{0}',
-            serverActiveMembers.length.toString(),
+            activeServerMembers.length.toString(),
           )}`,
           largeImageKey: 'app_icon',
           largeImageText: 'RC Voice',
@@ -254,7 +254,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
           ],
         });
       }
-    }, [lang, serverName, serverActiveMembers]);
+    }, [lang, serverName, activeServerMembers]);
 
     return (
       <div
@@ -272,7 +272,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
               member={member}
               server={server}
               currentChannel={channel}
-              serverMembers={serverMembers}
+              serverMembers={activeServerMembers}
               serverChannels={serverChannels}
             />
           </div>
