@@ -165,7 +165,9 @@ const UserInfoCard: React.FC<UserInfoCardProps> = React.memo(
 
               {/* Contribution */}
               <div className={userInfoCard['contributionBox']}>
-                <div className={userInfoCard['contributionIcon']}></div>
+                <div className={userInfoCard['contributionText']}>
+                  {lang.tr.contribution}:
+                </div>
                 <div className={userInfoCard['contributionValue']}>
                   {memberContributions}
                 </div>
