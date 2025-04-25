@@ -171,6 +171,18 @@
 
 .contributionBox {
   display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.contributionIcon {
+  margin: 0 2px;
+  min-width: 12px;
+  min-height: 12px;
+  background-image: url('../../public/card/icon_contribu.png');
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: auto;
 }
 
 .contributionValue {
