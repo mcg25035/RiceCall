@@ -696,7 +696,7 @@ const Database = {
         if (!account) return null;
         const res = await query(
           `SELECT 
-          accounts.*
+            accounts.*
           FROM accounts
           WHERE accounts.account = ?`,
           [account],
@@ -723,7 +723,7 @@ const Database = {
         if (!querys) return null;
         const res = await query(
           `SELECT 
-          accounts.user_id 
+            accounts.user_id 
           FROM accounts
           WHERE accounts.account = ?`,
           [querys],
@@ -750,9 +750,18 @@ const Database = {
         if (!userId) return null;
         const datas = await query(
           `SELECT 
-          users.*
-          FROM users
-          WHERE users.user_id = ?`,
+            u.*, 
+            ub.badge_id,
+            ub.order,
+            ub.created_at AS badge_created_at,
+            b.name AS badge_name,
+            b.description AS badge_description
+          FROM users AS u
+          LEFT JOIN user_badges AS ub
+            ON u.user_id = ub.user_id
+          LEFT JOIN badges AS b
+            ON ub.badge_id = b.badge_id
+          WHERE u.user_id = ?`,
           [userId],
         );
         const data = datas[0];
@@ -778,11 +787,11 @@ const Database = {
         if (!userId) return null;
         const datas = await query(
           `SELECT 
-          user_badges.*,
-          badges.*
+            user_badges.*,
+            badges.*
           FROM user_badges
           INNER JOIN badges
-          ON user_badges.badge_id = badges.badge_id
+            ON user_badges.badge_id = badges.badge_id
           WHERE user_badges.user_id = ?
           ORDER BY user_badges.\`order\`, user_badges.created_at DESC`,
           [userId],
@@ -808,7 +817,7 @@ const Database = {
         if (!userId) return null;
         const datas = await query(
           `SELECT 
-          friend_groups.*
+            friend_groups.*
           FROM friend_groups
           WHERE friend_groups.user_id = ?
           ORDER BY friend_groups.\`order\`, friend_groups.created_at DESC`,
@@ -835,16 +844,16 @@ const Database = {
         if (!userId) return null;
         const datas = await query(
           `SELECT 
-          user_servers.*,
-          servers.created_at AS server_created_at,
-          servers.*,
-          members.created_at AS member_created_at,
-          members.*
+            user_servers.*,
+            servers.created_at AS server_created_at,
+            servers.*,
+            members.created_at AS member_created_at,
+            members.*
           FROM user_servers
           INNER JOIN servers
-          ON user_servers.server_id = servers.server_id
+            ON user_servers.server_id = servers.server_id
           INNER JOIN members
-          ON user_servers.server_id = members.server_id
+            ON user_servers.server_id = members.server_id
           AND user_servers.user_id = members.user_id
           WHERE user_servers.user_id = ?
           ORDER BY user_servers.timestamp DESC`,
@@ -876,17 +885,25 @@ const Database = {
         if (!userId) return null;
         const datas = await query(
           `SELECT 
-          friends.user_id AS friend_user_id,
-          friends.created_at AS friend_created_at, 
-          friends.*, 
-          users.user_id AS user_user_id,
-          users.created_at AS user_created_at,
-          users.*
-          FROM friends 
-          INNER JOIN users
-          ON friends.target_id = users.user_id
-          WHERE friends.user_id = ?
-          ORDER BY friends.created_at DESC`,
+            f.user_id AS friend_user_id,
+            f.created_at AS friend_created_at, 
+            f.*, 
+            u.user_id AS user_user_id,
+            u.created_at AS user_created_at,
+            u.*,
+            ub.badge_id,
+            ub.created_at AS badge_created_at,
+            b.name AS badge_name,
+            b.description AS badge_description
+          FROM friends AS f
+          INNER JOIN users AS u
+            ON f.target_id = u.user_id
+          LEFT JOIN user_badges AS ub
+            ON u.user_id = ub.user_id
+          LEFT JOIN badges AS b
+            ON ub.badge_id = b.badge_id
+          WHERE f.user_id = ?
+          ORDER BY f.created_at DESC`,
           [userId],
         );
         if (!datas) return null;
@@ -919,13 +936,13 @@ const Database = {
         if (!userId) return null;
         const datas = await query(
           `SELECT 
-          friend_applications.created_at AS friend_application_created_at,
-          friend_applications.*,
-          users.created_at AS user_created_at,
-          users.*
+            friend_applications.created_at AS friend_application_created_at,
+            friend_applications.*,
+            users.created_at AS user_created_at,
+            users.*
           FROM friend_applications 
           INNER JOIN users 
-          ON friend_applications.sender_id = users.user_id
+            ON friend_applications.sender_id = users.user_id
           WHERE friend_applications.receiver_id = ?
           ORDER BY friend_applications.created_at DESC`,
           [userId],
@@ -956,7 +973,7 @@ const Database = {
         if (!querys) return null;
         const datas = await query(
           `SELECT 
-          servers.*
+            servers.*
           FROM servers 
           WHERE servers.name LIKE ? OR servers.display_id = ?
           ORDER BY servers.created_at DESC`,
@@ -983,7 +1000,7 @@ const Database = {
         if (!serverId) return null;
         const datas = await query(
           `SELECT 
-          servers.*
+            servers.*
           FROM servers 
           WHERE servers.server_id = ?`,
           [serverId],
@@ -1010,7 +1027,7 @@ const Database = {
         if (!serverId) return null;
         const datas = await query(
           `SELECT 
-          channels.*
+            channels.*
           FROM channels
           WHERE channels.server_id = ?
           ORDER BY channels.\`order\`, channels.created_at DESC`,
@@ -1037,15 +1054,23 @@ const Database = {
         if (!serverId) return null;
         const datas = await query(
           `SELECT 
-          members.created_at AS member_created_at,
-          members.*, 
-          users.created_at AS user_created_at,
-          users.*
-          FROM members 
-          INNER JOIN users 
-          ON members.user_id = users.user_id  
-          WHERE members.server_id = ?
-          ORDER BY members.created_at DESC`,
+            m.created_at AS member_created_at,
+            m.*, 
+            u.created_at AS user_created_at,
+            u.*,
+            ub.badge_id,
+            ub.created_at AS badge_created_at,
+            b.name AS badge_name,
+            b.description AS badge_description
+          FROM members AS m
+          INNER JOIN users AS u
+            ON m.user_id = u.user_id
+          LEFT JOIN user_badges AS ub
+            ON u.user_id = ub.user_id
+          LEFT JOIN badges AS b
+            ON ub.badge_id = b.badge_id
+          WHERE m.server_id = ?
+          ORDER BY m.created_at DESC`,
           [serverId],
         );
         if (!datas) return null;
@@ -1074,13 +1099,13 @@ const Database = {
         if (!serverId) return null;
         const datas = await query(
           `SELECT 
-          member_applications.created_at AS member_application_created_at,
-          member_applications.*,
-          users.created_at AS user_created_at,
-          users.*
+            member_applications.created_at AS member_application_created_at,
+            member_applications.*,
+            users.created_at AS user_created_at,
+            users.*
           FROM member_applications 
           INNER JOIN users 
-          ON member_applications.user_id = users.user_id
+            ON member_applications.user_id = users.user_id
           WHERE member_applications.server_id = ?
           ORDER BY member_applications.created_at DESC`,
           [serverId],
@@ -1111,7 +1136,7 @@ const Database = {
         if (!categoryId) return null;
         const datas = await query(
           `SELECT 
-          categories.*
+            categories.*
           FROM categories 
           WHERE categories.category_id = ?
           ORDER BY categories.\`order\`, categories.created_at DESC`,
@@ -1139,7 +1164,7 @@ const Database = {
         if (!channelId) return null;
         const datas = await query(
           `SELECT 
-          channels.*
+            channels.*
           FROM channels 
           WHERE channels.channel_id = ?
           ORDER BY channels.\`order\`, channels.created_at DESC`,
@@ -1167,7 +1192,7 @@ const Database = {
         if (!channelId) return null;
         const datas = await query(
           `SELECT 
-          channels.*
+            channels.*
           FROM channels 
           WHERE channels.category_id = ?
           ORDER BY channels.\`order\`, channels.created_at DESC`,
@@ -1194,7 +1219,7 @@ const Database = {
         if (!channelId) return null;
         const datas = await query(
           `SELECT 
-          users.*
+            users.*
           FROM users
           WHERE users.current_channel_id = ?
           ORDER BY users.created_at DESC`,
@@ -1221,7 +1246,7 @@ const Database = {
         if (!friendGroupId) return null;
         const datas = await query(
           `SELECT 
-          friend_groups.*
+            friend_groups.*
           FROM friend_groups 
           WHERE friend_groups.friend_group_id = ?`,
           [friendGroupId],
@@ -1248,15 +1273,15 @@ const Database = {
         if (!friendGroupId) return null;
         const datas = await query(
           `SELECT
-          friends.user_id AS friend_user_id,
-          friends.created_at AS friend_created_at,
-          friends.*,
-          users.user_id AS user_user_id,
-          users.created_at AS user_created_at,
-          users.*
+            friends.user_id AS friend_user_id,
+            friends.created_at AS friend_created_at,
+            friends.*,
+            users.user_id AS user_user_id,
+            users.created_at AS user_created_at,
+            users.*
           FROM friends 
           INNER JOIN users 
-          ON friends.target_id = users.user_id
+            ON friends.target_id = users.user_id
           WHERE friends.friend_group_id = ?
           ORDER BY friends.created_at DESC`,
           [friendGroupId],
@@ -1291,7 +1316,7 @@ const Database = {
         if (!userId || !serverId) return null;
         const datas = await query(
           `SELECT 
-          members.*
+            members.*
           FROM members 
           WHERE members.user_id = ?
           AND members.server_id = ?`,
@@ -1319,7 +1344,7 @@ const Database = {
         if (!userId || !serverId) return null;
         const datas = await query(
           `SELECT 
-          member_applications.*
+            member_applications.*
           FROM member_applications 
           WHERE member_applications.user_id = ?
           AND member_applications.server_id = ?`,
@@ -1347,7 +1372,7 @@ const Database = {
         if (!userId || !targetId) return null;
         const datas = await query(
           `SELECT 
-          friends.*
+            friends.*
           FROM friends 
           WHERE friends.user_id = ?
           AND friends.target_id = ?`,
@@ -1375,7 +1400,7 @@ const Database = {
         if (!senderId || !receiverId) return null;
         const datas = await query(
           `SELECT 
-          friend_applications.*
+            friend_applications.*
           FROM friend_applications 
           WHERE friend_applications.sender_id = ?
           AND friend_applications.receiver_id = ?`,
