@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import axios from 'axios';
-import { authService } from './auth.service';
 import { errorHandler, StandardizedError } from '@/utils/errorHandler';
-const API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
-const axiosInstance = axios.create({
-  baseURL: API_URL,
-});
+const API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
 type RequestOptions = {
   headers?: Record<string, string>;
@@ -17,55 +12,10 @@ type ApiRequestData = {
   [key: string]: any;
 };
 
-const setAuthHeader = (config: any) => {
-  const sessionId = localStorage.getItem('jwtToken');
-  if (sessionId) {
-    config.headers = {
-      ...config.headers,
-      Authorization: `Bearer ${sessionId}`,
-    };
-  }
-  return config;
-};
-
-// Add request interceptor to include token
-axiosInstance.interceptors.request.use(setAuthHeader, (error) =>
-  Promise.reject(error),
-);
-
-// Add response interceptor to handle token expiration
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    // If error is 401 and we haven't tried refreshing yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        // Call refresh token endpoint
-        const response = await apiService.get('/refresh-token');
-        const { sessionId } = response.data;
-
-        localStorage.setItem('jwtToken', sessionId);
-
-        // Retry the original request with new token
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        authService.logout();
-        window.location.href = '/auth';
-        return Promise.reject(refreshError);
-      }
-    }
-
-    return Promise.reject(error);
-  },
-);
-
 const handleResponse = async (response: Response): Promise<any> => {
   try {
     const data = await response.json();
+    console.log('data', data);
     if (!response.ok) {
       throw new StandardizedError(
         'ValidationError',
@@ -184,7 +134,6 @@ const apiService = {
       return null;
     }
   },
-  axiosInstance,
 };
 
 export default apiService;
