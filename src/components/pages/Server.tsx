@@ -33,15 +33,29 @@ import { useContextMenu } from '@/providers/ContextMenu';
 // Services
 import ipcService from '@/services/ipc.service';
 
+// Utils
+import { createDefault } from '@/utils/createDefault';
+
 interface ServerPageProps {
   user: User;
-  userServer: UserServer;
-  channel: Channel;
+  currentServer: UserServer;
+  serverMembers: ServerMember[];
+  serverChannels: Channel[];
+  currentChannel: Channel;
+  channelMessages: Record<Channel['channelId'], ChannelMessage[]>;
   display: boolean;
 }
 
 const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
-  ({ user, userServer, channel, display }) => {
+  ({
+    user,
+    currentServer,
+    serverMembers,
+    serverChannels,
+    currentChannel,
+    channelMessages,
+    display,
+  }) => {
     // Hooks
     const lang = useLanguage();
     const socket = useSocket();
@@ -49,11 +63,6 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     const contextMenu = useContextMenu();
 
     // States
-    const [serverChannels, setServerChannels] = useState<Channel[]>([]);
-    const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
-    const [channelMessages, setChannelMessages] = useState<
-      Record<Channel['channelId'], ChannelMessage[]>
-    >({});
     const [sidebarWidth, setSidebarWidth] = useState<number>(270);
     const [isResizing, setIsResizing] = useState<boolean>(false);
     const [showMicVolume, setShowMicVolume] = useState(false);
@@ -69,7 +78,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       permissionLevel: userPermissionLevel,
       lastJoinChannelTime: userLastJoinChannelTime,
       lastMessageTime: userLastMessageTime,
-    } = userServer;
+    } = currentServer;
     const {
       channelId,
       bitrate: channelBitrate,
@@ -79,7 +88,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       guestTextMaxLength: channelGuestTextMaxLength,
       guestTextWaitTime: channelGuestTextWaitTime,
       guestTextGapTime: channelGuestTextGapTime,
-    } = channel;
+    } = currentChannel;
     const activeServerMembers = serverMembers.filter(
       (mb) => mb.currentServerId === serverId,
     );
@@ -125,24 +134,6 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       socket.send.updateChannel({ channel, channelId, serverId });
     };
 
-    const handleServerChannelsUpdate = (data: Channel[] | null): void => {
-      if (!data) data = [];
-      setServerChannels(data);
-    };
-
-    const handleServerMembersUpdate = (data: ServerMember[] | null): void => {
-      if (!data) data = [];
-      setServerMembers(data);
-    };
-
-    const handleOnMessagesUpdate = (data: ChannelMessage): void => {
-      if (!data) return;
-      setChannelMessages((prev) => ({
-        ...prev,
-        [data.channelId]: [...(prev[data.channelId] || []), data],
-      }));
-    };
-
     const handleResize = useCallback(
       (e: MouseEvent) => {
         if (!isResizing) return;
@@ -186,26 +177,6 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
         window.removeEventListener('mouseup', () => setIsResizing(false));
       };
     }, [handleResize]);
-
-    useEffect(() => {
-      if (!socket) return;
-
-      const eventHandlers = {
-        [SocketServerEvent.SERVER_CHANNELS_UPDATE]: handleServerChannelsUpdate,
-        [SocketServerEvent.SERVER_MEMBERS_UPDATE]: handleServerMembersUpdate,
-        [SocketServerEvent.ON_MESSAGE]: handleOnMessagesUpdate,
-      };
-      const unsubscribe: (() => void)[] = [];
-
-      Object.entries(eventHandlers).map(([event, handler]) => {
-        const unsub = socket.on[event as SocketServerEvent](handler);
-        unsubscribe.push(unsub);
-      });
-
-      return () => {
-        unsubscribe.forEach((unsub) => unsub());
-      };
-    }, [socket]);
 
     useEffect(() => {
       if (!webRTC || !channelBitrate) return;
@@ -255,8 +226,8 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
             style={{ width: `${sidebarWidth}px` }}
           >
             <ChannelListViewer
-              userServer={userServer}
-              currentChannel={channel}
+              currentServer={currentServer}
+              currentChannel={currentChannel}
               serverMembers={activeServerMembers}
               serverChannels={serverChannels}
             />

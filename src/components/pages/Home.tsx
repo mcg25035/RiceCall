@@ -9,13 +9,7 @@ import homePage from '@/styles/pages/home.module.css';
 import ServerListViewer from '@/components/viewers/ServerList';
 
 // Type
-import {
-  PopupType,
-  Server,
-  SocketServerEvent,
-  User,
-  UserServer,
-} from '@/types';
+import { PopupType, SocketServerEvent, User, UserServer } from '@/types';
 
 // Providers
 import { useSocket } from '@/providers/Socket';
@@ -24,13 +18,12 @@ import { useMainTab } from '@/providers/MainTab';
 
 // Services
 import ipcService from '@/services/ipc.service';
-import refreshService from '@/services/refresh.service';
 
 export interface ServerListSectionProps {
   title: string;
-  servers: Server[];
+  servers: UserServer[];
   user: User;
-  onServerClick?: (server: Server) => void;
+  onServerClick?: (server: UserServer) => void;
 }
 
 const ServerListSection: React.FC<ServerListSectionProps> = ({
@@ -73,7 +66,7 @@ const ServerListSection: React.FC<ServerListSectionProps> = ({
 };
 
 const SearchResultItem: React.FC<{
-  server: Server;
+  server: UserServer;
   onClick: () => void;
 }> = ({ server, onClick }) => (
   <div className={homePage['dropdownItem']} onClick={onClick}>
@@ -95,12 +88,13 @@ const SearchResultItem: React.FC<{
 
 interface HomePageProps {
   user: User;
-  userServer: UserServer;
+  servers: UserServer[];
+  currentServer: UserServer;
   display: boolean;
 }
 
 const HomePageComponent: React.FC<HomePageProps> = React.memo(
-  ({ user, userServer, display }) => {
+  ({ user, servers, currentServer, display }) => {
     // Hooks
     const lang = useLanguage();
     const socket = useSocket();
@@ -111,12 +105,11 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     const searchRef = useRef<HTMLDivElement>(null);
 
     // States
-    const [userServers, setUserServers] = useState<UserServer[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [exactMatch, setExactMatch] = useState<Server | null>(null);
-    const [personalResults, setPersonalResults] = useState<Server[]>([]);
-    const [relatedResults, setRelatedResults] = useState<Server[]>([]);
+    const [exactMatch, setExactMatch] = useState<UserServer | null>(null);
+    const [personalResults, setPersonalResults] = useState<UserServer[]>([]);
+    const [relatedResults, setRelatedResults] = useState<UserServer[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingServerID, setLoadingServerID] = useState<string>();
 
@@ -124,11 +117,11 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     const { userId, name: userName, currentServerId } = user;
     const hasResults =
       exactMatch || personalResults.length > 0 || relatedResults.length > 0;
-    const recentServers = userServers
+    const recentServers = servers
       .filter((s) => s.recent)
       .sort((a, b) => b.timestamp - a.timestamp);
-    const favoriteServers = userServers.filter((s) => s.favorite);
-    const ownedServers = userServers.filter((s) => s.permissionLevel > 1);
+    const favoriteServers = servers.filter((s) => s.favorite);
+    const ownedServers = servers.filter((s) => s.permissionLevel > 1);
 
     // Handlers
     const handleSearchServer = (query: string) => {
@@ -141,8 +134,8 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     };
 
     const handleConnectServer = (
-      serverId: Server['serverId'],
-      serverDisplayId: Server['displayId'],
+      serverId: UserServer['serverId'],
+      serverDisplayId: UserServer['displayId'],
     ) => {
       if (!socket) return;
       socket.send.connectServer({
@@ -154,12 +147,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       setLoadingServerID(serverDisplayId);
     };
 
-    const handleUserServersUpdate = (data: UserServer[] | null) => {
-      if (!data) data = [];
-      setUserServers(data);
-    };
-
-    const handleServerSearch = (servers: Server[]) => {
+    const handleServerSearch = (servers: UserServer[]) => {
       if (!servers.length) {
         setExactMatch(null);
         setPersonalResults([]);
@@ -181,7 +169,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       setExactMatch(exact || null);
 
       const personal = sortedServers.filter((server) =>
-        userServers.some(
+        servers.some(
           (s) =>
             s.recent || s.favorite || s.owned || s.serverId === server.serverId,
         ),
@@ -228,7 +216,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
 
       const eventHandlers = {
         [SocketServerEvent.SERVER_SEARCH]: handleServerSearch,
-        [SocketServerEvent.USER_SERVERS_UPDATE]: handleUserServersUpdate,
       };
       const unsubscribe: (() => void)[] = [];
 
@@ -243,28 +230,13 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     }, [socket, searchQuery]);
 
     useEffect(() => {
-      if (!userId || refreshed.current) return;
-      const refresh = async () => {
-        refreshed.current = true;
-        Promise.all([
-          refreshService.userServers({
-            userId: userId,
-          }),
-        ]).then(([userServers]) => {
-          handleUserServersUpdate(userServers);
-        });
-      };
-      refresh();
-    }, [userId]);
-
-    useEffect(() => {
       if (mainTab.selectedTabId == 'server') {
-        if (!userServer) return;
+        if (!currentServer) return;
         setIsLoading(false);
         setLoadingServerID('');
         localStorage.removeItem('trigger-handle-server-select');
       }
-    }, [userServer, isLoading, mainTab]);
+    }, [currentServer, isLoading, mainTab]);
 
     useEffect(() => {
       if (!lang) return;

@@ -2,7 +2,10 @@
   "name": "ricecall",
   "version": "0.1.6",
   "private": false,
-  "main": "dist/main.js",
+  "main": "main.ts",
+  "exports": {
+    ".": "./dist/main.js"
+  },
   "description": "Ricecall is a voice chat app that allows you to chat with your friends.",
   "author": "null",
   "engines": {

@@ -37,6 +37,10 @@ export const createDefault = {
     lastActiveAt: 0,
     createdAt: 0,
     badges: [],
+    servers: [],
+    friends: [],
+    friendGroups: [],
+    friendApplications: [],
     ...overrides,
   }),
 
@@ -84,6 +88,9 @@ export const createDefault = {
     lobbyId: '',
     ownerId: '',
     createdAt: 0,
+    channels: [],
+    members: [],
+    memberApplications: [],
     ...overrides,
   }),
 

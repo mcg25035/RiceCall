@@ -24,9 +24,9 @@ const isElectron = !!ipcRenderer;
 
 const ipcService = {
   // Socket event methods
-  sendSocketEvent: (event: SocketClientEvent, data: any) => {
+  sendSocketEvent: (event: SocketClientEvent, ...args: any[]) => {
     if (isElectron) {
-      ipcRenderer.send(event, data);
+      ipcRenderer.send(event, ...args);
     } else {
       console.warn('IPC not available - not in Electron environment');
     }
@@ -39,10 +39,10 @@ const ipcService = {
       | 'reconnect'
       | 'reconnect_error'
       | 'disconnect',
-    callback: (data: any) => void,
+    callback: (...args: any[]) => void,
   ) => {
     if (isElectron) {
-      ipcRenderer.on(event, (_: any, data: any) => callback(data));
+      ipcRenderer.on(event, (_: any, ...args: any[]) => callback(...args));
     } else {
       console.warn('IPC not available - not in Electron environment');
     }

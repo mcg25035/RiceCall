@@ -16,8 +16,11 @@ import {
   Server,
   User,
   Channel,
-  Member,
   UserServer,
+  FriendGroup,
+  UserFriend,
+  ServerMember,
+  ChannelMessage,
 } from '@/types';
 
 // Pages
@@ -43,6 +46,7 @@ import { useMainTab } from '@/providers/MainTab';
 // Services
 import ipcService from '@/services/ipc.service';
 import authService from '@/services/auth.service';
+import refreshService from '@/services/refresh.service';
 
 interface HeaderProps {
   user: User;
@@ -317,8 +321,19 @@ const RootPageComponent = () => {
 
   // States
   const [user, setUser] = useState<User>(createDefault.user());
+  const [servers, setServers] = useState<UserServer[]>([]);
+  const [friends, setFriends] = useState<UserFriend[]>([]);
+  const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]);
   const [server, setServer] = useState<UserServer>(createDefault.userServer());
+  const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
+  const [serverChannels, setServerChannels] = useState<Channel[]>([]);
   const [channel, setChannel] = useState<Channel>(createDefault.channel());
+  const [channelMessages, setChannelMessages] = useState<
+    Record<Channel['channelId'], ChannelMessage[]>
+  >({});
+
+  // Variables
+  const { userId } = user;
 
   // Handlers
   const handleUserUpdate = (data: Partial<User> | null) => {
@@ -326,24 +341,137 @@ const RootPageComponent = () => {
     setUser((prev) => ({ ...prev, ...data }));
   };
 
-  const handleServerUpdate = (data: Partial<Server> | null) => {
-    if (data != null) {
-      if (data.serverId) mainTab.setSelectedTabId('server');
-    } else {
-      mainTab.setSelectedTabId('home');
-    }
-    if (!data) data = createDefault.server();
-    setServer((prev) => ({ ...prev, ...data }));
+  const handleServerAdd = (server: UserServer) => {
+    setServers((prev) => [...prev, server]);
   };
 
-  const handleMemberUpdate = (data: Partial<Member> | null): void => {
-    if (!data) data = createDefault.member();
-    setServer((prev) => ({ ...prev, ...data }));
+  const handleServerUpdate = (
+    id: UserServer['serverId'],
+    server: UserServer,
+  ) => {
+    setServers((prev) => prev.map((s) => (s.serverId === id ? server : s)));
   };
 
-  const handleCurrentChannelUpdate = (data: Partial<Channel> | null) => {
-    if (!data) data = createDefault.channel();
-    setChannel((prev) => ({ ...prev, ...data }));
+  const handleServerDelete = (id: UserServer['serverId']) => {
+    setServers((prev) => prev.filter((s) => s.serverId !== id));
+  };
+
+  const handleServersUpdate = (servers: UserServer[]) => setServers(servers);
+
+  const handleFriendAdd = (data: UserFriend) => {
+    setFriends((prev) => [...prev, data]);
+  };
+
+  const handleFriendUpdate = (
+    userId: UserFriend['userId'],
+    targetId: UserFriend['targetId'],
+    data: Partial<UserFriend>,
+  ) => {
+    setFriends((prev) =>
+      prev.map((item) =>
+        item.userId === userId && item.targetId === targetId
+          ? { ...item, ...data }
+          : item,
+      ),
+    );
+  };
+
+  const handleFriendDelete = (
+    userId: UserFriend['userId'],
+    targetId: UserFriend['targetId'],
+  ) => {
+    setFriends((prev) =>
+      prev.filter(
+        (item) => item.userId !== userId && item.targetId !== targetId,
+      ),
+    );
+  };
+
+  const handleFriendsUpdate = (friends: UserFriend[]) => setFriends(friends);
+
+  const handleFriendGroupAdd = (data: FriendGroup) => {
+    setFriendGroups((prev) => [...prev, data]);
+  };
+
+  const handleFriendGroupUpdate = (
+    id: FriendGroup['friendGroupId'],
+    data: Partial<FriendGroup>,
+  ) => {
+    setFriendGroups((prev) =>
+      prev.map((item) =>
+        item.friendGroupId === id ? { ...item, ...data } : item,
+      ),
+    );
+  };
+
+  const handleFriendGroupDelete = (id: FriendGroup['friendGroupId']) => {
+    setFriendGroups((prev) => prev.filter((item) => item.friendGroupId !== id));
+  };
+
+  const handleFriendGroupsUpdate = (friendGroups: FriendGroup[]) =>
+    setFriendGroups(friendGroups);
+
+  const handleMemberAdd = (data: ServerMember): void => {
+    setServerMembers((prev) => [...prev, data]);
+  };
+
+  const handleMemberUpdate = (
+    userId: ServerMember['userId'],
+    serverId: ServerMember['serverId'],
+    data: Partial<ServerMember>,
+  ): void => {
+    console.log('handleMemberUpdate', userId, serverId, data);
+    setServerMembers((prev) =>
+      prev.map((item) =>
+        item.userId === userId && item.serverId === serverId
+          ? { ...item, ...data }
+          : item,
+      ),
+    );
+  };
+
+  const handleMemberDelete = (
+    userId: ServerMember['userId'],
+    serverId: ServerMember['serverId'],
+  ): void => {
+    setServerMembers((prev) =>
+      prev.filter(
+        (item) => item.userId !== userId && item.serverId !== serverId,
+      ),
+    );
+  };
+
+  const handleMembersUpdate = (members: ServerMember[]) =>
+    setServerMembers(members);
+
+  const handleChannelAdd = (data: Channel): void => {
+    setServerChannels((prev) => [...prev, data]);
+  };
+
+  const handleChannelUpdate = (
+    id: Channel['channelId'],
+    data: Partial<Channel>,
+  ): void => {
+    setServerChannels((prev) =>
+      prev.map((item) => (item.channelId === id ? { ...item, ...data } : item)),
+    );
+  };
+
+  const handleChannelDelete = (id: Channel['channelId']): void => {
+    setServerChannels((prev) => prev.filter((item) => item.channelId !== id));
+  };
+
+  const handleChannelsUpdate = (channels: Channel[]) => {
+    console.log('handleChannelsUpdate', channels);
+    setServerChannels(channels);
+  };
+
+  const handleOnMessagesUpdate = (data: ChannelMessage): void => {
+    if (!data) return;
+    setChannelMessages((prev) => ({
+      ...prev,
+      [data.channelId]: [...(prev[data.channelId] || []), data],
+    }));
   };
 
   const handlePlaySound = (sound: string) => {
@@ -379,20 +507,57 @@ const RootPageComponent = () => {
 
   // Effects
   useEffect(() => {
+    const channel =
+      serverChannels.find((item) => item.channelId === user.currentChannelId) ||
+      createDefault.channel();
+    setChannel(channel);
+  }, [user.currentChannelId, serverChannels]);
+
+  useEffect(() => {
+    if (user.currentServerId) {
+      if (mainTab.selectedTabId === 'home') mainTab.setSelectedTabId('server');
+    } else {
+      if (mainTab.selectedTabId === 'server') mainTab.setSelectedTabId('home');
+    }
+    const server =
+      servers.find((item) => item.serverId === user.currentServerId) ||
+      createDefault.userServer();
+    setServer(server);
+  }, [user.currentServerId, servers]);
+
+  useEffect(() => {
     if (!socket) return;
 
     const eventHandlers = {
       [SocketServerEvent.USER_UPDATE]: handleUserUpdate,
+      [SocketServerEvent.SERVER_ADD]: handleServerAdd,
       [SocketServerEvent.SERVER_UPDATE]: handleServerUpdate,
+      [SocketServerEvent.SERVER_DELETE]: handleServerDelete,
+      [SocketServerEvent.SERVERS_UPDATE]: handleServersUpdate,
+      [SocketServerEvent.FRIEND_ADD]: handleFriendAdd,
+      [SocketServerEvent.FRIEND_UPDATE]: handleFriendUpdate,
+      [SocketServerEvent.FRIEND_DELETE]: handleFriendDelete,
+      [SocketServerEvent.FRIENDS_UPDATE]: handleFriendsUpdate,
+      [SocketServerEvent.FRIEND_GROUP_ADD]: handleFriendGroupAdd,
+      [SocketServerEvent.FRIEND_GROUP_UPDATE]: handleFriendGroupUpdate,
+      [SocketServerEvent.FRIEND_GROUP_DELETE]: handleFriendGroupDelete,
+      [SocketServerEvent.FRIEND_GROUPS_UPDATE]: handleFriendGroupsUpdate,
+      [SocketServerEvent.MEMBER_ADD]: handleMemberAdd,
       [SocketServerEvent.MEMBER_UPDATE]: handleMemberUpdate,
-      [SocketServerEvent.CHANNEL_UPDATE]: handleCurrentChannelUpdate,
+      [SocketServerEvent.MEMBER_DELETE]: handleMemberDelete,
+      [SocketServerEvent.MEMBERS_UPDATE]: handleMembersUpdate,
+      [SocketServerEvent.CHANNEL_ADD]: handleChannelAdd,
+      [SocketServerEvent.CHANNEL_UPDATE]: handleChannelUpdate,
+      [SocketServerEvent.CHANNEL_DELETE]: handleChannelDelete,
+      [SocketServerEvent.CHANNELS_UPDATE]: handleChannelsUpdate,
+      [SocketServerEvent.ON_MESSAGE]: handleOnMessagesUpdate,
       [SocketServerEvent.PLAY_SOUND]: handlePlaySound,
       [SocketServerEvent.OPEN_POPUP]: handleOpenPopup,
       [SocketServerEvent.ERROR]: handleError,
     };
     const unsubscribe: (() => void)[] = [];
 
-    Object.entries(eventHandlers).map(([event, handler]) => {
+    Object.entries(eventHandlers).forEach(([event, handler]) => {
       const unsub = socket.on[event as SocketServerEvent](handler);
       unsubscribe.push(unsub);
     });
@@ -401,6 +566,28 @@ const RootPageComponent = () => {
       unsubscribe.forEach((unsub) => unsub());
     };
   }, [socket]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const refresh = async () => {
+      Promise.all([
+        refreshService.userServers({
+          userId: userId,
+        }),
+        refreshService.userFriends({
+          userId: userId,
+        }),
+        refreshService.userFriendGroups({
+          userId: userId,
+        }),
+      ]).then(([userServers, userFriends, userFriendGroups]) => {
+        setServers(userServers || []);
+        setFriends(userFriends || []);
+        setFriendGroups(userFriendGroups || []);
+      });
+    };
+    refresh();
+  }, [userId]);
 
   useEffect(() => {
     if (socket.isConnected) {
@@ -426,15 +613,24 @@ const RootPageComponent = () => {
       <>
         <HomePage
           user={user}
-          userServer={server}
+          servers={servers}
+          currentServer={server}
           display={mainTab.selectedTabId === 'home'}
         />
-        <FriendPage user={user} display={mainTab.selectedTabId === 'friends'} />
+        <FriendPage
+          user={user}
+          friends={friends}
+          friendGroups={friendGroups}
+          display={mainTab.selectedTabId === 'friends'}
+        />
         <ExpandedProvider>
           <ServerPage
             user={user}
-            userServer={server}
-            channel={channel}
+            currentServer={server}
+            serverMembers={serverMembers}
+            serverChannels={serverChannels}
+            currentChannel={channel}
+            channelMessages={channelMessages}
             display={mainTab.selectedTabId === 'server'}
           />
         </ExpandedProvider>

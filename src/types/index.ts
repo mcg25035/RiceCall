@@ -431,6 +431,11 @@ export type User = {
   lastActiveAt: number;
   createdAt: number;
   badges: Badge[];
+  // These data will not save in database
+  servers: UserServer[];
+  friends: UserFriend[];
+  friendApplications: FriendApplication[];
+  friendGroups: FriendGroup[];
 };
 
 export type Server = {
@@ -452,6 +457,10 @@ export type Server = {
   lobbyId: string;
   ownerId: string;
   createdAt: number;
+  // These data will not save in database
+  channels: Channel[];
+  members: ServerMember[];
+  memberApplications: MemberApplication[];
 };
 
 export type BaseChannel = {
@@ -669,30 +678,47 @@ export enum SocketServerEvent {
   // User
   USER_SEARCH = 'userSearch',
   USER_UPDATE = 'userUpdate',
-  USER_FRIENDS_UPDATE = 'userFriendsUpdate',
-  USER_FRIEND_GROUPS_UPDATE = 'userFriendGroupsUpdate',
-  USER_FRIEND_APPLICATIONS_UPDATE = 'userFriendApplicationsUpdate',
-  USER_SERVERS_UPDATE = 'userServersUpdate',
   // Server
   SERVER_SEARCH = 'serverSearch',
+  SERVER_ADD = 'serverAdd',
   SERVER_UPDATE = 'serverUpdate',
-  SERVER_CHANNELS_UPDATE = 'serverChannelsUpdate',
-  SERVER_MEMBERS_UPDATE = 'serverMembersUpdate',
-  SERVER_MEMBER_APPLICATIONS_UPDATE = 'serverMemberApplicationsUpdate',
+  SERVER_DELETE = 'serverDelete',
+  SERVERS_UPDATE = 'serversUpdate',
   // Channel
+  CHANNEL_ADD = 'channelAdd',
   CHANNEL_UPDATE = 'channelUpdate',
+  CHANNEL_DELETE = 'channelDelete',
+  CHANNELS_UPDATE = 'channelsUpdate',
   // Category
+  CATEGORY_ADD = 'categoryAdd',
   CATEGORY_UPDATE = 'categoryUpdate',
+  CATEGORY_DELETE = 'categoryDelete',
+  CATEGORIES_UPDATE = 'categoriesUpdate',
   // Friend Group
+  FRIEND_GROUP_ADD = 'friendGroupAdd',
   FRIEND_GROUP_UPDATE = 'friendGroupUpdate',
+  FRIEND_GROUP_DELETE = 'friendGroupDelete',
+  FRIEND_GROUPS_UPDATE = 'friendGroupsUpdate',
   // Member
+  MEMBER_ADD = 'memberAdd',
   MEMBER_UPDATE = 'memberUpdate',
+  MEMBER_DELETE = 'memberDelete',
+  MEMBERS_UPDATE = 'membersUpdate',
   // Member Application
+  MEMBER_APPLICATION_ADD = 'memberApplicationAdd',
   MEMBER_APPLICATION_UPDATE = 'memberApplicationUpdate',
+  MEMBER_APPLICATION_DELETE = 'memberApplicationDelete',
+  MEMBER_APPLICATIONS_UPDATE = 'memberApplicationsUpdate',
   // Friend
+  FRIEND_ADD = 'friendAdd',
   FRIEND_UPDATE = 'friendUpdate',
+  FRIEND_DELETE = 'friendDelete',
+  FRIENDS_UPDATE = 'friendsUpdate',
   // Friend Application
+  FRIEND_APPLICATION_ADD = 'friendApplicationAdd',
   FRIEND_APPLICATION_UPDATE = 'friendApplicationUpdate',
+  FRIEND_APPLICATION_DELETE = 'friendApplicationDelete',
+  FRIEND_APPLICATIONS_UPDATE = 'friendApplicationsUpdate',
   // Message
   ON_MESSAGE = 'onMessage',
   ON_DIRECT_MESSAGE = 'onDirectMessage',

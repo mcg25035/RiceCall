@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 // CSS
 import friendPage from '@/styles/pages/friend.module.css';
@@ -11,7 +11,7 @@ import FriendListViewer from '@/components/viewers/FriendList';
 import BadgeListViewer from '@/components/viewers/BadgeList';
 
 // Types
-import { FriendGroup, SocketServerEvent, User, UserFriend } from '@/types';
+import { User, UserFriend, FriendGroup } from '@/types';
 
 // Providers
 import { useSocket } from '@/providers/Socket';
@@ -19,15 +19,16 @@ import { useLanguage } from '@/providers/Language';
 
 // Services
 import ipcService from '@/services/ipc.service';
-import refreshService from '@/services/refresh.service';
 
 interface FriendPageProps {
   user: User;
+  friends: UserFriend[];
+  friendGroups: FriendGroup[];
   display: boolean;
 }
 
 const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
-  ({ user, display }) => {
+  ({ user, friends, friendGroups, display }) => {
     // Hooks
     const lang = useLanguage();
     const socket = useSocket();
@@ -35,12 +36,7 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
     // Constants
     const MAXLENGTH = 300;
 
-    // Refs
-    const refreshed = useRef(false);
-
     // States
-    const [userFriendGroups, setUserFriendGroups] = useState<FriendGroup[]>([]);
-    const [userFriends, setUserFriends] = useState<UserFriend[]>([]);
     const [isComposing, setIsComposing] = useState<boolean>(false);
     const [sidebarWidth, setSidebarWidth] = useState<number>(270);
     const [isResizing, setIsResizing] = useState<boolean>(false);
@@ -69,16 +65,6 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
       socket.send.updateUser({ user: { signature }, userId });
     };
 
-    const handleUserFriendGroupsUpdate = (data: FriendGroup[] | null) => {
-      if (!data) data = [];
-      setUserFriendGroups(data);
-    };
-
-    const handleUserFriendsUpdate = (data: UserFriend[] | null) => {
-      if (!data) data = [];
-      setUserFriends(data);
-    };
-
     const handleResize = useCallback(
       (e: MouseEvent) => {
         if (!isResizing) return;
@@ -98,45 +84,6 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
         window.removeEventListener('mouseup', () => setIsResizing(false));
       };
     }, [handleResize]);
-
-    useEffect(() => {
-      if (!socket) return;
-
-      const eventHandlers = {
-        [SocketServerEvent.USER_FRIEND_GROUPS_UPDATE]:
-          handleUserFriendGroupsUpdate,
-        [SocketServerEvent.USER_FRIENDS_UPDATE]: handleUserFriendsUpdate,
-      };
-      const unsubscribe: (() => void)[] = [];
-
-      Object.entries(eventHandlers).map(([event, handler]) => {
-        const unsub = socket.on[event as SocketServerEvent](handler);
-        unsubscribe.push(unsub);
-      });
-
-      return () => {
-        unsubscribe.forEach((unsub) => unsub());
-      };
-    }, [socket]);
-
-    useEffect(() => {
-      if (!userId || refreshed.current) return;
-      const refresh = async () => {
-        refreshed.current = true;
-        Promise.all([
-          refreshService.userFriendGroups({
-            userId: userId,
-          }),
-          refreshService.userFriends({
-            userId: userId,
-          }),
-        ]).then(([userFriendGroups, userFriends]) => {
-          handleUserFriendGroupsUpdate(userFriendGroups);
-          handleUserFriendsUpdate(userFriends);
-        });
-      };
-      refresh();
-    }, [userId]);
 
     useEffect(() => {
       if (!lang) return;
@@ -222,8 +169,8 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
             style={{ width: `${sidebarWidth}px` }}
           >
             <FriendListViewer
-              friendGroups={userFriendGroups}
-              friends={userFriends}
+              friendGroups={friendGroups}
+              friends={friends}
               user={user}
             />
           </div>

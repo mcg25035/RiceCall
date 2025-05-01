@@ -37,107 +37,123 @@ type StoreSchema = {
 };
 const store = new Store<StoreSchema>();
 
-const SocketClientEvent = {
+enum SocketClientEvent {
   // User
-  SEARCH_USER: 'searchUser',
-  UPDATE_USER: 'updateUser',
+  SEARCH_USER = 'searchUser',
+  UPDATE_USER = 'updateUser',
   // Server
-  SEARCH_SERVER: 'searchServer',
-  CONNECT_SERVER: 'connectServer',
-  DISCONNECT_SERVER: 'disconnectServer',
-  CREATE_SERVER: 'createServer',
-  UPDATE_SERVER: 'updateServer',
-  DELETE_SERVER: 'deleteServer',
+  SEARCH_SERVER = 'searchServer',
+  CONNECT_SERVER = 'connectServer',
+  DISCONNECT_SERVER = 'disconnectServer',
+  CREATE_SERVER = 'createServer',
+  UPDATE_SERVER = 'updateServer',
+  DELETE_SERVER = 'deleteServer',
   // Category
-  CREATE_CATEGORY: 'createCategory',
-  UPDATE_CATEGORY: 'updateCategory',
-  DELETE_CATEGORY: 'deleteCategory',
+  CREATE_CATEGORY = 'createCategory',
+  UPDATE_CATEGORY = 'updateCategory',
+  DELETE_CATEGORY = 'deleteCategory',
   // Channel
-  CONNECT_CHANNEL: 'connectChannel',
-  DISCONNECT_CHANNEL: 'disconnectChannel',
-  CREATE_CHANNEL: 'createChannel',
-  UPDATE_CHANNEL: 'updateChannel',
-  UPDATE_CHANNELS: 'updateChannels',
-  DELETE_CHANNEL: 'deleteChannel',
+  CONNECT_CHANNEL = 'connectChannel',
+  DISCONNECT_CHANNEL = 'disconnectChannel',
+  CREATE_CHANNEL = 'createChannel',
+  UPDATE_CHANNEL = 'updateChannel',
+  UPDATE_CHANNELS = 'updateChannels',
+  DELETE_CHANNEL = 'deleteChannel',
   // Friend Group
-  CREATE_FRIEND_GROUP: 'createFriendGroup',
-  UPDATE_FRIEND_GROUP: 'updateFriendGroup',
-  DELETE_FRIEND_GROUP: 'deleteFriendGroup',
+  CREATE_FRIEND_GROUP = 'createFriendGroup',
+  UPDATE_FRIEND_GROUP = 'updateFriendGroup',
+  DELETE_FRIEND_GROUP = 'deleteFriendGroup',
   // Member
-  CREATE_MEMBER: 'createMember',
-  UPDATE_MEMBER: 'updateMember',
-  DELETE_MEMBER: 'deleteMember',
+  CREATE_MEMBER = 'createMember',
+  UPDATE_MEMBER = 'updateMember',
+  DELETE_MEMBER = 'deleteMember',
   // Friend
-  CREATE_FRIEND: 'createFriend',
-  UPDATE_FRIEND: 'updateFriend',
-  DELETE_FRIEND: 'deleteFriend',
+  CREATE_FRIEND = 'createFriend',
+  UPDATE_FRIEND = 'updateFriend',
+  DELETE_FRIEND = 'deleteFriend',
   // Member Application
-  CREATE_MEMBER_APPLICATION: 'createMemberApplication',
-  UPDATE_MEMBER_APPLICATION: 'updateMemberApplication',
-  DELETE_MEMBER_APPLICATION: 'deleteMemberApplication',
+  CREATE_MEMBER_APPLICATION = 'createMemberApplication',
+  UPDATE_MEMBER_APPLICATION = 'updateMemberApplication',
+  DELETE_MEMBER_APPLICATION = 'deleteMemberApplication',
   // Friend Application
-  CREATE_FRIEND_APPLICATION: 'createFriendApplication',
-  UPDATE_FRIEND_APPLICATION: 'updateFriendApplication',
-  DELETE_FRIEND_APPLICATION: 'deleteFriendApplication',
+  CREATE_FRIEND_APPLICATION = 'createFriendApplication',
+  UPDATE_FRIEND_APPLICATION = 'updateFriendApplication',
+  DELETE_FRIEND_APPLICATION = 'deleteFriendApplication',
   // Message
-  SEND_MESSAGE: 'message',
-  SEND_DIRECT_MESSAGE: 'directMessage',
+  SEND_MESSAGE = 'message',
+  SEND_DIRECT_MESSAGE = 'directMessage',
   // RTC
-  RTC_OFFER: 'RTCOffer',
-  RTC_ANSWER: 'RTCAnswer',
-  RTC_ICE_CANDIDATE: 'RTCIceCandidate',
+  RTC_OFFER = 'RTCOffer',
+  RTC_ANSWER = 'RTCAnswer',
+  RTC_ICE_CANDIDATE = 'RTCIceCandidate',
   // Echo
-  PING: 'ping',
-};
+  PING = 'ping',
+}
 
-const SocketServerEvent = {
+enum SocketServerEvent {
   // Notification
-  NOTIFICATION: 'notification', // not used yet
+  NOTIFICATION = 'notification', // not used yet
   // User
-  USER_SEARCH: 'userSearch',
-  USER_UPDATE: 'userUpdate',
-  USER_SERVERS_UPDATE: 'userServersUpdate',
-  USER_FRIEND_GROUPS_UPDATE: 'userFriendGroupsUpdate',
-  USER_FRIENDS_UPDATE: 'userFriendsUpdate',
-  USER_FRIEND_APPLICATIONS_UPDATE: 'userFriendApplicationsUpdate',
+  USER_SEARCH = 'userSearch',
+  USER_UPDATE = 'userUpdate',
   // Server
-  SERVER_SEARCH: 'serverSearch',
-  SERVER_UPDATE: 'serverUpdate',
-  SERVER_CHANNELS_UPDATE: 'serverChannelsUpdate',
-  SERVER_MEMBERS_UPDATE: 'serverMembersUpdate',
-  SERVER_MEMBER_APPLICATIONS_UPDATE: 'serverMemberApplicationsUpdate',
+  SERVER_SEARCH = 'serverSearch',
+  SERVER_ADD = 'serverAdd',
+  SERVER_UPDATE = 'serverUpdate',
+  SERVER_DELETE = 'serverDelete',
+  SERVERS_UPDATE = 'serversUpdate',
   // Channel
-  CHANNEL_UPDATE: 'channelUpdate',
+  CHANNEL_ADD = 'channelAdd',
+  CHANNEL_UPDATE = 'channelUpdate',
+  CHANNEL_DELETE = 'channelDelete',
+  CHANNELS_UPDATE = 'channelsUpdate',
   // Category
-  CATEGORY_UPDATE: 'categoryUpdate',
+  CATEGORY_ADD = 'categoryAdd',
+  CATEGORY_UPDATE = 'categoryUpdate',
+  CATEGORY_DELETE = 'categoryDelete',
+  CATEGORIES_UPDATE = 'categoriesUpdate',
   // Friend Group
-  FRIEND_GROUP_UPDATE: 'friendGroupUpdate',
+  FRIEND_GROUP_ADD = 'friendGroupAdd',
+  FRIEND_GROUP_UPDATE = 'friendGroupUpdate',
+  FRIEND_GROUP_DELETE = 'friendGroupDelete',
+  FRIEND_GROUPS_UPDATE = 'friendGroupsUpdate',
   // Member
-  MEMBER_UPDATE: 'memberUpdate',
+  MEMBER_ADD = 'memberAdd',
+  MEMBER_UPDATE = 'memberUpdate',
+  MEMBER_DELETE = 'memberDelete',
+  MEMBERS_UPDATE = 'membersUpdate',
   // Member Application
-  MEMBER_APPLICATION_UPDATE: 'memberApplicationUpdate',
+  MEMBER_APPLICATION_ADD = 'memberApplicationAdd',
+  MEMBER_APPLICATION_UPDATE = 'memberApplicationUpdate',
+  MEMBER_APPLICATION_DELETE = 'memberApplicationDelete',
   // Friend
-  FRIEND_UPDATE: 'friendUpdate',
+  FRIEND_ADD = 'friendAdd',
+  FRIEND_UPDATE = 'friendUpdate',
+  FRIEND_DELETE = 'friendDelete',
+  FRIENDS_UPDATE = 'friendsUpdate',
   // Friend Application
-  FRIEND_APPLICATION_UPDATE: 'friendApplicationUpdate',
-  // Direct Message
-  ON_MESSAGE: 'onMessage',
-  ON_DIRECT_MESSAGE: 'onDirectMessage',
-  // Popup
-  OPEN_POPUP: 'openPopup',
+  FRIEND_APPLICATION_ADD = 'friendApplicationAdd',
+  FRIEND_APPLICATION_UPDATE = 'friendApplicationUpdate',
+  FRIEND_APPLICATION_DELETE = 'friendApplicationDelete',
+  FRIEND_APPLICATIONS_UPDATE = 'friendApplicationsUpdate',
+  // Message
+  ON_MESSAGE = 'onMessage',
+  ON_DIRECT_MESSAGE = 'onDirectMessage',
   // RTC
-  RTC_OFFER: 'RTCOffer',
-  RTC_ANSWER: 'RTCAnswer',
-  RTC_ICE_CANDIDATE: 'RTCIceCandidate',
-  RTC_JOIN: 'RTCJoin',
-  RTC_LEAVE: 'RTCLeave',
-  // Error
-  ERROR: 'error',
+  RTC_OFFER = 'RTCOffer',
+  RTC_ANSWER = 'RTCAnswer',
+  RTC_ICE_CANDIDATE = 'RTCIceCandidate',
+  RTC_JOIN = 'RTCJoin',
+  RTC_LEAVE = 'RTCLeave',
   // Play
-  PLAY_SOUND: 'playSound',
+  PLAY_SOUND = 'playSound',
   // Echo
-  PONG: 'pong',
-};
+  PONG = 'pong',
+  // Error
+  ERROR = 'error',
+  // Popup
+  OPEN_POPUP = 'openPopup',
+}
 
 // Constants
 const DEV = process.argv.includes('--dev');
@@ -429,35 +445,32 @@ function connectSocket(token: string): Socket | null {
     },
   });
 
-  const ipcHandlers: Record<string, (event: string, data: any) => void> =
-    Object.values(SocketClientEvent).reduce((acc, event) => {
-      acc[event] = (_, data) => socket.emit(event, data);
-      return acc;
-    }, {} as Record<string, (event: string, data: any) => void>);
-
   socket.on('connect', () => {
     for (const event of Object.values(SocketClientEvent)) {
       ipcMain.removeAllListeners(event);
+    }
 
+    for (const event of Object.values(SocketServerEvent)) {
       socket.removeAllListeners(event);
     }
 
-    Object.entries(ipcHandlers).forEach(([event, handler]) => {
-      ipcMain.on(event, (_, data) => handler(event, data));
+    Object.values(SocketClientEvent).forEach((event) => {
+      ipcMain.on(event, (_, ...args) => socket.emit(event, ...args));
     });
 
     Object.values(SocketServerEvent).forEach((event) => {
-      socket.on(event, (data) => {
-        if (!userId && data && data.userId) {
-          userId = data.userId;
-        }
+      socket.on(event, (...args) => {
+        // if (!userId && args[0] && args[0].userId) {
+        //   userId = args[0].userId;
+        // }
+        console.log('socket.on', event, ...args);
         BrowserWindow.getAllWindows().forEach((window) => {
-          window.webContents.send(event, data);
+          window.webContents.send(event, ...args);
         });
       });
     });
 
-    console.info('Socket 連線成功');
+    console.info('Socket 連線成功111');
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('connect', null);
     });
@@ -501,7 +514,9 @@ function disconnectSocket(): Socket | null {
 
   for (const event of Object.values(SocketClientEvent)) {
     ipcMain.removeAllListeners(event);
+  }
 
+  for (const event of Object.values(SocketServerEvent)) {
     socketInstance.removeAllListeners(event);
   }
 
