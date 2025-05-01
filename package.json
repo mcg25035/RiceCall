@@ -2,27 +2,32 @@
   "name": "ricecall",
   "version": "0.1.6",
   "private": false,
-  "type": "module",
-  "main": "main.js",
+  "main": "dist/main.js",
   "description": "Ricecall is a voice chat app that allows you to chat with your friends.",
   "author": "null",
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "export": "next export",
     "start": "next start",
     "lint": "next lint",
-    "electron-dev": "concurrently \"npm run dev\" \"electron . --dev\"",
-    "electron-start": "electron .",
-    "electron-build": "next build && electron-builder",
-    "electron-build-win": "next build && electron-builder --win",
-    "electron-build-mac": "next build && electron-builder --mac",
-    "electron-build-linux": "next build && electron-builder --linux"
+    "build:main": "tsc -p tsconfig.electron.json",
+    "electron-dev": "concurrently \"npm run dev\" \"electron -r tsx . --dev\"",
+    "electron-build": "npm run build && npm run build:main && electron-builder",
+    "electron-build-win": "npm run build && npm run build:main && electron-builder --win",
+    "electron-build-mac": "npm run build && npm run build:main && electron-builder --mac",
+    "electron-build-linux": "npm run build && npm run build:main && electron-builder --linux",
+    "electron-start": "npm run build:main && electron ."
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@radix-ui/themes": "^3.2.0",
     "@reduxjs/toolkit": "^2.5.1",
+    "@types/discord-rpc": "^4.0.9",
     "axios": "^1.8.1",
     "discord-rpc": "^4.0.1",
     "dompurify": "^3.2.4",
@@ -40,7 +45,9 @@
     "react-redux": "^9.2.0",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.0",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "ts-node": "^11.0.0-beta.1",
+    "tsx": "^4.19.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -48,14 +55,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "concurrently": "^8.2.2",
-    "electron": "^29.1.0",
+    "electron": "^36.0.1",
     "electron-builder": "^25.1.8",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8",
     "stylelint": "^16.17.0",
     "stylelint-config-standard": "^37.0.0",
-    "tailwindcss": "^3.4.1",
     "typescript": "^5"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"

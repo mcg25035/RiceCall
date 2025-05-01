@@ -1,5 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import net from 'net';
+import DiscordRPC from 'discord-rpc';
+import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import serve from 'electron-serve';
+import Store from 'electron-store';
+import { io, Socket } from 'socket.io-client';
+import ElectronUpdater from 'electron-updater';
 import {
   app,
   BrowserWindow,
@@ -10,23 +17,25 @@ import {
   Menu,
   nativeImage,
 } from 'electron';
-import serve from 'electron-serve';
-import net from 'net';
-import DiscordRPC from 'discord-rpc';
-import { io } from 'socket.io-client';
-import electronUpdater from 'electron-updater';
-import Store from 'electron-store';
-import dotenv from 'dotenv';
+
 dotenv.config();
 
-let tray = null,
-  isLogin = false,
-  userId = null;
+let tray: Tray | null = null;
+let isLogin: boolean = false;
+let userId: string | null = null;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const { autoUpdater } = electronUpdater;
-const store = new Store();
+const __dirname = process.cwd();
+
+// AutoUpdater
+const { autoUpdater } = ElectronUpdater;
+
+// Store
+type StoreSchema = {
+  theme: string;
+  audioInputDevice: string;
+  audioOutputDevice: string;
+};
+const store = new Store<StoreSchema>();
 
 const SocketClientEvent = {
   // User
@@ -130,37 +139,23 @@ const SocketServerEvent = {
   PONG: 'pong',
 };
 
-let isDev = process.argv.includes('--dev');
+// Constants
+const DEV = process.argv.includes('--dev');
+const BASE_URI = DEV ? 'http://127.0.0.1:3000' : '';
 
-const appServe = app.isPackaged
-  ? serve({
-      directory: path.join(__dirname, './out'),
-    })
-  : !isDev
-  ? serve({
-      directory: path.join(__dirname, './out'),
-    })
-  : null;
+// Windows
+let mainWindow: BrowserWindow;
+let authWindow: BrowserWindow;
+let popups: Record<string, BrowserWindow> = {};
 
-let baseUri = '';
-
-if (isDev) {
-  baseUri = 'http://127.0.0.1:3000';
-}
-
-// Track windows
-let mainWindow = null;
-let authWindow = null;
-let popups = {};
-
-// Socket connection
+// Socket
 const WS_URL = process.env.NEXT_PUBLIC_SERVER_URL;
-let socketInstance = null;
+let socketInstance: Socket | null = null;
 
 // Discord RPC
-const clientId = '1242441392341516288';
-DiscordRPC.register(clientId);
-let rpc = null;
+const CLIENT_ID = '1242441392341516288';
+DiscordRPC.register(CLIENT_ID);
+let rpc: DiscordRPC.Client | null = null;
 
 const defaultPrecence = {
   details: '正在使用應用',
@@ -179,24 +174,26 @@ const defaultPrecence = {
   ],
 };
 
-function waitForPort(port) {
+if (app.isPackaged || !DEV) {
+  serve({ directory: path.join(__dirname, './out') });
+}
+
+// Functions
+function waitForPort(port: number) {
   return new Promise((resolve, reject) => {
     let timeout = 30000; // 30 seconds timeout
-    let timer;
 
     function tryConnect() {
       const client = new net.Socket();
 
       client.once('connect', () => {
-        clearTimeout(timer);
         client.destroy();
-        resolve();
+        resolve(null);
       });
 
       client.once('error', () => {
         client.destroy();
         if (timeout <= 0) {
-          clearTimeout(timer);
           reject(new Error('Timeout waiting for port'));
           return;
         }
@@ -210,7 +207,21 @@ function waitForPort(port) {
   });
 }
 
-function setAutoLaunch(enable) {
+function focusWindow() {
+  const window =
+    authWindow.isDestroyed() === false
+      ? authWindow
+      : mainWindow.isDestroyed() === false
+      ? mainWindow
+      : null;
+  if (window) {
+    if (window.isMinimized()) window.restore();
+    window.focus();
+  }
+}
+
+// Store Functions
+function setAutoLaunch(enable: boolean) {
   try {
     app.setLoginItemSettings({
       openAtLogin: enable,
@@ -221,7 +232,7 @@ function setAutoLaunch(enable) {
   }
 }
 
-function isAutoLaunchEnabled() {
+function isAutoLaunchEnabled(): boolean {
   try {
     const settings = app.getLoginItemSettings();
     return settings.openAtLogin;
@@ -231,19 +242,20 @@ function isAutoLaunchEnabled() {
   }
 }
 
-async function createMainWindow() {
+// Windows Functions
+async function createMainWindow(): Promise<BrowserWindow | null> {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.focus();
     return mainWindow;
   }
 
-  if (isDev) {
+  if (DEV) {
     try {
       await waitForPort(3000);
     } catch (err) {
       console.error('Failed to connect to Next.js server:', err);
       app.quit();
-      return;
+      return null;
     }
   }
 
@@ -265,12 +277,10 @@ async function createMainWindow() {
     },
   });
 
-  if (app.isPackaged || !isDev) {
-    appServe(mainWindow).then(() => {
-      mainWindow.loadURL('app://-');
-    });
+  if (app.isPackaged || !DEV) {
+    mainWindow.loadURL('app://-');
   } else {
-    mainWindow.loadURL(`${baseUri}`);
+    mainWindow.loadURL(`${BASE_URI}`);
     mainWindow.webContents.openDevTools();
   }
 
@@ -285,10 +295,6 @@ async function createMainWindow() {
     return { action: 'deny' };
   });
 
-  mainWindow.webContents.on('close', () => {
-    app.quit();
-  });
-
   return mainWindow;
 }
 
@@ -298,7 +304,7 @@ async function createAuthWindow() {
     return authWindow;
   }
 
-  if (isDev) {
+  if (DEV) {
     try {
       await waitForPort(3000);
     } catch (err) {
@@ -326,12 +332,10 @@ async function createAuthWindow() {
     },
   });
 
-  if (app.isPackaged || !isDev) {
-    appServe(authWindow).then(() => {
-      authWindow.loadURL('app://-/auth.html');
-    });
+  if (app.isPackaged || !DEV) {
+    authWindow.loadURL('app://-/auth.html');
   } else {
-    authWindow.loadURL(`${baseUri}/auth`);
+    authWindow.loadURL(`${BASE_URI}/auth`);
     authWindow.webContents.openDevTools();
   }
 
@@ -341,33 +345,32 @@ async function createAuthWindow() {
     );
   });
 
-  authWindow.webContents.on('close', () => {
-    app.quit();
-  });
-
   return authWindow;
 }
 
-async function createPopup(type, height, width, additionalData = {}) {
-  // 針對DirectMessage類型，使用targetId來區分不同的對話視窗
+async function createPopup(
+  type: string,
+  height: number,
+  width: number,
+  additionalData: Record<string, any> = {},
+): Promise<BrowserWindow | null> {
   let windowKey = type;
   if (type === 'directMessage' && additionalData.targetId) {
     windowKey = `${type}_${additionalData.targetId}`;
   }
 
-  // Track popup windows
   if (popups[windowKey] && !popups[windowKey].isDestroyed()) {
     popups[windowKey].focus();
     return popups[windowKey];
   }
 
-  if (isDev) {
+  if (DEV) {
     try {
       await waitForPort(3000);
     } catch (err) {
       console.error('Failed to connect to Next.js server:', err);
       app.quit();
-      return;
+      return null;
     }
   }
 
@@ -379,66 +382,68 @@ async function createPopup(type, height, width, additionalData = {}) {
     transparent: true,
     hasShadow: true,
     modal: true,
-    parent: null,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
 
-  if (app.isPackaged || !isDev) {
-    appServe(popups[windowKey]).then(() => {
-      popups[windowKey].loadURL(`app://-/popup.html?type=${type}`);
-    });
+  if (app.isPackaged || !DEV) {
+    popups[windowKey].loadURL(`app://-/popup.html?type=${type}`);
   } else {
-    popups[windowKey].loadURL(`${baseUri}/popup?type=${type}`);
+    popups[windowKey].loadURL(`${BASE_URI}/popup?type=${type}`);
     popups[windowKey].webContents.openDevTools();
   }
-
-  popups[windowKey].webContents.on('resize', (_, width, height) => {
-    popups[windowKey].webContents.setSize(width, height);
-  });
-
-  popups[windowKey].webContents.on('closed', () => {
-    popups[windowKey] = null;
-  });
 
   return popups[windowKey];
 }
 
-function connectSocket(token) {
+function closePopups() {
+  Object.values(popups).forEach((popup) => {
+    if (popup && !popup.isDestroyed()) {
+      popup.close();
+    }
+  });
+  popups = {};
+}
+
+// Socket Functions
+function connectSocket(token: string): Socket | null {
   if (!token) return null;
 
   if (socketInstance) {
-    socketInstance.disconnect();
-    socketInstance = disconnectSocket(socketInstance);
+    socketInstance = disconnectSocket();
   }
 
   const socket = io(WS_URL, {
     transports: ['websocket'],
     reconnection: true,
-    // reconnectionAttempts: 5,
+    reconnectionAttempts: -1,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
     autoConnect: false,
     query: {
       jwt: token,
+      token: token,
     },
   });
 
-  const ipcHandlers = Object.values(SocketClientEvent).reduce((acc, event) => {
-    acc[event] = (_, data) => socket.emit(event, data);
-    return acc;
-  }, {});
+  const ipcHandlers: Record<string, (event: string, data: any) => void> =
+    Object.values(SocketClientEvent).reduce((acc, event) => {
+      acc[event] = (_, data) => socket.emit(event, data);
+      return acc;
+    }, {} as Record<string, (event: string, data: any) => void>);
 
   socket.on('connect', () => {
-    Object.values(SocketClientEvent).forEach((event) => {
+    for (const event of Object.values(SocketClientEvent)) {
       ipcMain.removeAllListeners(event);
-    });
+
+      socket.removeAllListeners(event);
+    }
 
     Object.entries(ipcHandlers).forEach(([event, handler]) => {
-      ipcMain.on(event, handler);
+      ipcMain.on(event, (_, data) => handler(event, data));
     });
 
     Object.values(SocketServerEvent).forEach((event) => {
@@ -459,7 +464,7 @@ function connectSocket(token) {
   });
 
   socket.on('connect_error', (error) => {
-    console.error('Socket 連線失敗:', error);
+    console.error('Socket 連線失敗:', error.message);
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('connect_error', error);
     });
@@ -480,54 +485,44 @@ function connectSocket(token) {
   });
 
   socket.on('reconnect_error', (error) => {
-    console.error('Socket 重新連線失敗:', error);
+    console.error('Socket 重新連線失敗:', error.message);
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('reconnect_error', error);
     });
   });
 
-  socket.ipcHandlers = ipcHandlers;
+  socket.connect();
+
   return socket;
 }
 
-function disconnectSocket(socket) {
-  if (!socket) return null;
+function disconnectSocket(): Socket | null {
+  if (!socketInstance) return null;
 
-  if (socket.ipcHandlers) {
-    Object.entries(socket.ipcHandlers).forEach(([event, handler]) => {
-      ipcMain.removeListener(event, handler);
-    });
+  for (const event of Object.values(SocketClientEvent)) {
+    ipcMain.removeAllListeners(event);
+
+    socketInstance.removeAllListeners(event);
   }
 
-  Object.values(SocketServerEvent).forEach((event) => {
-    socket.off(event);
-  });
+  socketInstance.disconnect();
 
   return null;
 }
 
-async function setActivity(activity) {
-  if (!rpc) return;
-  try {
-    rpc.setActivity(activity);
-  } catch (error) {
-    console.error('設置Rich Presence時出錯:', error);
-    rpc.setActivity(defaultPrecence);
-  }
-}
-
+// Auto Updater
 function configureAutoUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowDowngrade = false;
 
-  if (isDev) {
+  if (DEV) {
     autoUpdater.forceDevUpdateConfig = true;
     autoUpdater.updateConfigPath = path.join(__dirname, 'dev-app-update.yml');
   }
 
-  autoUpdater.on('error', (error) => {
-    if (isDev && error.message.includes('dev-app-update.yml')) {
+  autoUpdater.on('error', (error: any) => {
+    if (DEV && error.message.includes('dev-app-update.yml')) {
       console.info('開發環境中跳過更新檢查');
       return;
     }
@@ -538,7 +533,7 @@ function configureAutoUpdater() {
     });
   });
 
-  autoUpdater.on('update-available', (info) => {
+  autoUpdater.on('update-available', (info: any) => {
     dialog.showMessageBox({
       type: 'info',
       title: '有新版本可用',
@@ -551,14 +546,14 @@ function configureAutoUpdater() {
     console.info('目前是最新版本');
   });
 
-  autoUpdater.on('download-progress', (progressObj) => {
+  autoUpdater.on('download-progress', (progressObj: any) => {
     let message = `下載速度: ${progressObj.bytesPerSecond}`;
     message = `${message} - 已下載 ${progressObj.percent}%`;
     message = `${message} (${progressObj.transferred}/${progressObj.total})`;
     console.info(message);
   });
 
-  autoUpdater.on('update-downloaded', (info) => {
+  autoUpdater.on('update-downloaded', (info: any) => {
     dialog
       .showMessageBox({
         type: 'info',
@@ -574,45 +569,60 @@ function configureAutoUpdater() {
   });
 }
 
-async function configureDiscordRPC() {
-  try {
-    rpc = new DiscordRPC.Client({ transport: 'ipc' });
-    await rpc.login({ clientId }).catch(() => {
-      console.warn('Discord RPC登錄失敗, 將不會顯示Discord Rich Presence');
-      rpc = null;
-    });
-
-    if (rpc) {
-      rpc.on('ready', () => {
-        setActivity(defaultPrecence);
-      });
-    }
-  } catch (error) {
-    console.error('Discord RPC初始化失敗:', error);
-    rpc = null;
-  }
-}
-
 const configureUpdateChecker = async () => {
+  setInterval(checkUpdate, 60 * 60 * 1000);
+};
+
+const checkUpdate = async () => {
   try {
-    if (!isDev) {
-      await autoUpdater.checkForUpdates();
-      setInterval(updateChecker, 60 * 60 * 1000);
-    }
+    if (DEV) return;
+    await autoUpdater.checkForUpdates();
   } catch (error) {
     console.error('定期檢查更新失敗:', error);
   }
 };
 
-// 托盤圖標設定
-function trayIcon(isGray = true) {
-  if (tray) {
-    tray.destroy();
+// Discord RPC Functions
+async function setActivity(presence: DiscordRPC.Presence) {
+  if (!rpc) return;
+  try {
+    await rpc.setActivity(presence);
+  } catch (error) {
+    await rpc.setActivity(defaultPrecence);
+
+    console.error('設置 Discord RPC 時出錯:', error);
   }
-  const iconPath = isGray ? 'tray_gray.ico' : 'tray.ico';
-  tray = new Tray(
-    nativeImage.createFromPath(path.join(__dirname, 'resources', iconPath)),
-  );
+}
+
+async function configureDiscordRPC() {
+  try {
+    rpc = new DiscordRPC.Client({ transport: 'ipc' });
+
+    await rpc.login({ clientId: CLIENT_ID }).catch(() => {
+      console.warn('Discord RPC 登錄失敗, 將不會顯示 Discord 狀態');
+      rpc = null;
+    });
+
+    if (!rpc) return;
+
+    rpc.on('ready', () => {
+      setActivity(defaultPrecence);
+    });
+  } catch (error) {
+    rpc = null;
+
+    console.error('Discord RPC 初始化失敗:', error);
+  }
+}
+
+// Tray Icon
+function trayIcon(isGray = true) {
+  if (tray) tray.destroy();
+
+  const iconPath = isGray ? 'resources/tray_gray.ico' : 'resources/tray.ico';
+
+  tray = new Tray(nativeImage.createFromPath(path.join(__dirname, iconPath)));
+
   tray.on('click', () => {
     if (mainWindow && authWindow.isVisible()) {
       authWindow.hide();
@@ -622,6 +632,7 @@ function trayIcon(isGray = true) {
       (authWindow || mainWindow)?.show();
     }
   });
+
   const contextMenu = Menu.buildFromTemplate([
     { label: '打開主視窗', type: 'normal', click: () => app.focus() },
     { type: 'separator' },
@@ -636,17 +647,9 @@ function trayIcon(isGray = true) {
     },
     { label: '退出', type: 'normal', click: () => app.quit() },
   ]);
+
   tray.setToolTip(`RiceCall v${app.getVersion()}`);
   tray.setContextMenu(contextMenu);
-}
-
-function closePopups() {
-  Object.values(popups).forEach((win) => {
-    if (win && !win.isDestroyed()) {
-      win.close();
-    }
-  });
-  popups = {};
 }
 
 app.on('ready', async () => {
@@ -663,11 +666,9 @@ app.on('ready', async () => {
 
   app.on('before-quit', () => {
     if (rpc) {
-      try {
-        rpc.destroy();
-      } catch (error) {
-        console.error('Discord RPC銷毀失敗:', error);
-      }
+      rpc.destroy().catch((error) => {
+        console.error('Discord RPC 銷毀失敗:', error);
+      });
     }
   });
 
@@ -679,28 +680,25 @@ app.on('ready', async () => {
   ipcMain.on('login', (_, token) => {
     mainWindow.show();
     authWindow.hide();
-    console.log(token);
     socketInstance = connectSocket(token);
-    socketInstance.connect();
     isLogin = true;
     trayIcon(false);
   });
-  ipcMain.on('logout', async () => {
+
+  ipcMain.on('logout', () => {
     if (rpc) {
-      try {
-        await rpc.clearActivity();
-      } catch (error) {
-        console.error('清除Discord狀態失敗:', error);
-      }
+      rpc.clearActivity().catch((error) => {
+        console.error('清除 Discord 狀態失敗:', error);
+      });
     }
     closePopups();
     mainWindow.hide();
     authWindow.show();
-    socketInstance.disconnect();
-    socketInstance = disconnectSocket(socketInstance);
+    socketInstance = disconnectSocket();
     isLogin = false;
     trayIcon(true);
   });
+
   ipcMain.on('get-socket-status', () => {
     return socketInstance && socketInstance.connected
       ? 'connected'
@@ -713,6 +711,7 @@ app.on('ready', async () => {
       window.webContents.send('request-initial-data', to);
     });
   });
+
   ipcMain.on('response-initial-data', (_, from, data) => {
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('response-initial-data', from, data);
@@ -720,9 +719,10 @@ app.on('ready', async () => {
   });
 
   // Popup handlers
-  ipcMain.on('open-popup', (event, type, height, width, additionalData) => {
+  ipcMain.on('open-popup', (_, type, height, width, additionalData) => {
     createPopup(type, height, width, additionalData);
   });
+
   ipcMain.on('popup-submit', (_, to) => {
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('popup-submit', to);
@@ -762,6 +762,7 @@ app.on('ready', async () => {
   ipcMain.on('set-auto-launch', (_, enable) => {
     setAutoLaunch(enable);
   });
+
   ipcMain.on('get-auto-launch', (event) => {
     event.reply('auto-launch-status', isAutoLaunchEnabled());
   });
@@ -777,6 +778,7 @@ app.on('ready', async () => {
       window.webContents.send('audio-device-status', type, deviceId);
     });
   });
+
   ipcMain.on('get-audio-device', (event, type) => {
     if (type === 'input') {
       event.reply('audio-device-status', type, store.get('audioInputDevice'));
@@ -805,6 +807,7 @@ app.whenReady().then(() => {
   const protocolClient = process.execPath;
   const args =
     process.platform === 'win32' ? [path.resolve(process.argv[1])] : undefined;
+
   app.setAsDefaultProtocolClient(
     'ricecall',
     app.isPackaged ? undefined : protocolClient,
@@ -812,7 +815,6 @@ app.whenReady().then(() => {
   );
 });
 
-// 防止多開
 if (!app.requestSingleInstanceLock()) {
   const hasDeepLink = process.argv.find((arg) => arg.startsWith('ricecall://'));
   if (hasDeepLink) {
@@ -832,7 +834,6 @@ if (!app.requestSingleInstanceLock()) {
   });
 }
 
-// macOS 處理 deeplink
 app.on('open-url', (event, url) => {
   event.preventDefault();
   console.log('接收到 deeplink (macOS open-url):', url);
@@ -840,7 +841,7 @@ app.on('open-url', (event, url) => {
 });
 
 // 集中處理 DeepLink
-async function handleDeepLink(url) {
+async function handleDeepLink(url: string) {
   if (!url) return;
   try {
     const { hostname } = new URL(url);
@@ -869,12 +870,12 @@ async function handleDeepLink(url) {
             (serverInfoList) => {
               // 對照DisplayId 如果找不到就不會進群也不會通知前端
               const matchedServer = serverInfoList.find(
-                (server) => server.displayId === serverId,
+                (server: any) => server.displayId === serverId,
               );
               if (matchedServer) {
                 mainWindow.show();
                 mainWindow.focus();
-                socketInstance.emit(SocketClientEvent.CONNECT_SERVER, {
+                socketInstance?.emit(SocketClientEvent.CONNECT_SERVER, {
                   userId,
                   serverId: matchedServer.serverId,
                 });
@@ -886,19 +887,5 @@ async function handleDeepLink(url) {
     }
   } catch (error) {
     console.error('解析deeplink錯誤:', error);
-  }
-}
-
-// 集中處理聚焦視窗
-function focusWindow() {
-  const window =
-    authWindow?.isDestroyed() === false
-      ? authWindow
-      : mainWindow?.isDestroyed() === false
-      ? mainWindow
-      : null;
-  if (window) {
-    if (window.isMinimized()) window.restore();
-    window.focus();
   }
 }
