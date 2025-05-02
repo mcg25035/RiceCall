@@ -175,6 +175,7 @@ export class ConnectServerService {
         return {
           openPopup: {
             type: 'applyMember',
+            id: 'applyMember',
             initialData: {
               serverId: this.serverId,
               userId: this.userId,

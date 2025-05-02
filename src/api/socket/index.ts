@@ -105,10 +105,10 @@ export default class SocketServer {
           if (socketId) {
             io.to(socketId).emit('openPopup', {
               type: 'dialogAlert',
+              id: 'alertDialog',
               initialData: {
-                title: '另一個設備已登入',
-                content: '請重新登入',
-                submitTo: 'dialogAlert',
+                title: '另一個設備已登入，請重新登入',
+                submitTo: 'alertDialog',
               },
             });
             io.to(socketId).disconnectSockets();
