@@ -60,9 +60,9 @@ export class CreateFriendApplicationService {
     });
 
     return {
-      friendApplicationAdd: await database.get.friendApplication(
-        this.senderId,
+      friendApplicationAdd: await database.get.userFriendApplication(
         this.receiverId,
+        this.senderId,
       ),
     };
   }

@@ -50,9 +50,9 @@ export class CreateMemberApplicationService {
     });
 
     return {
-      memberApplicationAdd: await database.get.memberApplication(
-        this.userId,
+      serverMemberApplicationAdd: await database.get.serverMemberApplication(
         this.serverId,
+        this.userId,
       ),
     };
   }

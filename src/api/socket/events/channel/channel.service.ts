@@ -171,7 +171,7 @@ export class ConnectChannelService {
 
     return {
       userUpdate: updatedUser,
-      memberUpdate: updatedUser,
+      serverMemberUpdate: updatedUser,
       actions,
     };
   }
@@ -233,7 +233,7 @@ export class DisconnectChannelService {
 
     return {
       userUpdate: updatedUser,
-      memberUpdate: updatedUser,
+      serverMemberUpdate: updatedUser,
       actions,
     };
   }
@@ -300,7 +300,7 @@ export class CreateChannelService {
     });
 
     return {
-      channelAdd: await database.get.channel(channelId),
+      serverChannelAdd: await database.get.channel(channelId),
     };
   }
 }
@@ -442,7 +442,7 @@ export class UpdateChannelService {
     await database.set.channel(this.channelId, this.update);
 
     return {
-      channelUpdate: this.update,
+      serverChannelUpdate: this.update,
       onMessage: messages,
     };
   }

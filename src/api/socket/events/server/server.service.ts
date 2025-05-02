@@ -210,8 +210,8 @@ export class ConnectServerService {
 
     return {
       serversUpdate: await database.get.userServers(this.userId),
-      channelsUpdate: await database.get.serverChannels(this.serverId),
-      membersUpdate: await database.get.serverMembers(this.serverId),
+      serverChannelsUpdate: await database.get.serverChannels(this.serverId),
+      serverMembersUpdate: await database.get.serverMembers(this.serverId),
       actions,
     };
   }

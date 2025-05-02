@@ -34,16 +34,17 @@ export class CreateMemberApplicationHandler extends SocketHandler {
         'CREATEMEMBERAPPLICATION',
       ).validate(data);
 
-      const { memberApplicationAdd } = await new CreateMemberApplicationService(
-        operatorId,
-        userId,
-        serverId,
-        memberApplication,
-      ).use();
+      const { serverMemberApplicationAdd } =
+        await new CreateMemberApplicationService(
+          operatorId,
+          userId,
+          serverId,
+          memberApplication,
+        ).use();
 
       this.io
         .to(`server_${serverId}`)
-        .emit('memberApplicationAdd', memberApplicationAdd);
+        .emit('serverMemberApplicationAdd', serverMemberApplicationAdd);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -80,7 +81,12 @@ export class UpdateMemberApplicationHandler extends SocketHandler {
 
       this.io
         .to(`server_${serverId}`)
-        .emit('memberApplicationUpdate', userId, serverId, memberApplication);
+        .emit(
+          'serverMemberApplicationUpdate',
+          userId,
+          serverId,
+          memberApplication,
+        );
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -116,7 +122,7 @@ export class DeleteMemberApplicationHandler extends SocketHandler {
 
       this.io
         .to(`server_${serverId}`)
-        .emit('memberApplicationDelete', userId, serverId);
+        .emit('serverMemberApplicationDelete', userId, serverId);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({

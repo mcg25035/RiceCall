@@ -76,8 +76,8 @@ export class ConnectServerHandler extends SocketHandler {
       const {
         openPopup,
         serversUpdate,
-        channelsUpdate,
-        membersUpdate,
+        serverChannelsUpdate,
+        serverMembersUpdate,
         actions,
       } = await new ConnectServerService(operatorId, userId, serverId).use();
 
@@ -89,8 +89,8 @@ export class ConnectServerHandler extends SocketHandler {
       if (targetSocket) {
         targetSocket.join(`server_${serverId}`);
         targetSocket.emit('serversUpdate', serversUpdate);
-        targetSocket.emit('channelsUpdate', channelsUpdate);
-        targetSocket.emit('membersUpdate', membersUpdate);
+        targetSocket.emit('serverChannelsUpdate', serverChannelsUpdate);
+        targetSocket.emit('serverMembersUpdate', serverMembersUpdate);
       }
 
       if (actions.length > 0) {
@@ -135,8 +135,8 @@ export class DisconnectServerHandler extends SocketHandler {
 
       if (targetSocket) {
         targetSocket.leave(`server_${serverId}`);
-        targetSocket.emit('channelsUpdate', []);
-        targetSocket.emit('membersUpdate', []);
+        targetSocket.emit('serverChannelsUpdate', []);
+        targetSocket.emit('serverMembersUpdate', []);
       }
 
       if (actions.length > 0) {

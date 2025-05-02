@@ -63,8 +63,11 @@ export class CreateFriendService {
     });
 
     return {
-      userFriendAdd: await database.get.friend(this.userId, this.targetId),
-      targetFriendAdd: await database.get.friend(this.targetId, this.userId),
+      userFriendAdd: await database.get.userFriend(this.userId, this.targetId),
+      targetFriendAdd: await database.get.userFriend(
+        this.targetId,
+        this.userId,
+      ),
     };
   }
 }

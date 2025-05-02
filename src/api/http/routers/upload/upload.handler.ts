@@ -27,7 +27,7 @@ export class UploadHandler extends HttpHandler {
         'UPLOAD',
       ).validate(data);
 
-      const ext = _file.split('.').pop(); // TODO: 修正
+      const ext = _file.split('.').pop(); // FIXME: this is not a good way to get the file extension
 
       const result = await new UploadService(
         _type,

@@ -37,20 +37,14 @@ export class CreateMemberHandler extends SocketHandler {
         'CREATEMEMBER',
       ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(userId);
-
-      const { serverUpdate, memberAdd } = await new CreateMemberService(
+      const { serverMemberAdd } = await new CreateMemberService(
         operatorId,
         userId,
         serverId,
         member,
       ).use();
 
-      if (targetSocket && targetSocket.rooms.has(`server_${serverId}`)) {
-        targetSocket.emit('serverUpdate', serverUpdate);
-      }
-
-      this.io.to(`server_${serverId}`).emit('memberAdd', memberAdd);
+      this.io.to(`server_${serverId}`).emit('serverMemberAdd', serverMemberAdd);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -88,7 +82,7 @@ export class UpdateMemberHandler extends SocketHandler {
 
       this.io
         .to(`server_${serverId}`)
-        .emit('memberUpdate', userId, serverId, member);
+        .emit('serverMemberUpdate', userId, serverId, member);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -120,7 +114,9 @@ export class DeleteMemberHandler extends SocketHandler {
 
       await new DeleteMemberService(operatorId, userId, serverId).use();
 
-      this.io.to(`server_${serverId}`).emit('memberDelete', userId, serverId);
+      this.io
+        .to(`server_${serverId}`)
+        .emit('serverMemberDelete', userId, serverId);
 
       if (targetSocket && targetSocket.rooms.has(`server_${serverId}`)) {
         targetSocket.emit('serverUpdate', {}); // TODO: Need to kick user from server

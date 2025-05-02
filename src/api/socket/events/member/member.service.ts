@@ -88,8 +88,10 @@ export class CreateMemberService {
     });
 
     return {
-      memberAdd: await database.get.member(this.userId, this.serverId),
-      serverUpdate: await database.get.serverMembers(this.serverId),
+      serverMemberAdd: await database.get.serverMember(
+        this.serverId,
+        this.userId,
+      ),
     };
   }
 }

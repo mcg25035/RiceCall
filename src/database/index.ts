@@ -856,6 +856,47 @@ export default class Database {
       }
     },
 
+    userServer: async (userId: string, serverId: string) => {
+      try {
+        if (!userId || !serverId) return null;
+        const datas = await this.query(
+          `SELECT 
+            user_servers.*,
+            servers.created_at AS server_created_at,
+            servers.*,
+            members.created_at AS member_created_at,
+            members.*
+            FROM user_servers
+            INNER JOIN servers
+              ON user_servers.server_id = servers.server_id
+            INNER JOIN members
+              ON user_servers.server_id = members.server_id
+            AND user_servers.user_id = members.user_id
+            WHERE user_servers.user_id = ?
+            AND user_servers.server_id = ?
+            ORDER BY user_servers.timestamp DESC`,
+          [userId, serverId],
+        );
+        if (!datas || datas.length === 0) return null;
+        const data = datas[0];
+        data.created_at = data.member_created_at;
+        delete data.server_created_at;
+        delete data.member_created_at;
+        return convertToCamelCase(data);
+      } catch (error: any) {
+        if (!(error instanceof StandardizedError)) {
+          error = new StandardizedError({
+            name: 'ServerError',
+            message: `查詢 userServer.${userId}-${serverId} 時發生無法預期的錯誤: ${error.message}`,
+            part: 'DATABASE',
+            tag: 'dATABASE.ERROR',
+            statusCode: 500,
+          });
+        }
+        throw error;
+      }
+    },
+
     userServers: async (userId: string) => {
       try {
         if (!userId) return null;
@@ -888,6 +929,57 @@ export default class Database {
           error = new StandardizedError({
             name: 'ServerError',
             message: `查詢 userServers.${userId} 時發生無法預期的錯誤: ${error.message}`,
+            part: 'DATABASE',
+            tag: 'dATABASE.ERROR',
+            statusCode: 500,
+          });
+        }
+        throw error;
+      }
+    },
+
+    userFriend: async (userId: string, targetId: string) => {
+      try {
+        if (!userId || !targetId) return null;
+        const datas = await this.query(
+          `SELECT 
+            f.user_id AS friend_user_id,
+            f.created_at AS friend_created_at, 
+            f.*, 
+            u.user_id AS user_user_id,
+            u.created_at AS user_created_at,
+            u.*,
+            ub.badge_id,
+            ub.created_at AS badge_created_at,
+            b.name AS badge_name,
+            b.description AS badge_description
+          FROM friends AS f
+          INNER JOIN users AS u
+            ON f.target_id = u.user_id
+          LEFT JOIN user_badges AS ub
+            ON u.user_id = ub.user_id
+          LEFT JOIN badges AS b
+            ON ub.badge_id = b.badge_id
+          WHERE f.user_id = ?
+          AND f.target_id = ?
+          ORDER BY f.created_at DESC`,
+          [userId, targetId],
+        );
+        if (!datas || datas.length === 0) return null;
+        const data = datas[0];
+        data.created_at = data.friend_created_at;
+        delete data.friend_created_at;
+        delete data.user_created_at;
+        data.user_id = data.friend_user_id;
+        delete data.friend_user_id;
+        data.target_id = data.user_user_id;
+        delete data.user_user_id;
+        return convertToCamelCase({ ...data, badges: [] });
+      } catch (error: any) {
+        if (!(error instanceof StandardizedError)) {
+          error = new StandardizedError({
+            name: 'ServerError',
+            message: `查詢 userFriend.${userId}-${targetId} 時發生無法預期的錯誤: ${error.message}`,
             part: 'DATABASE',
             tag: 'dATABASE.ERROR',
             statusCode: 500,
@@ -939,6 +1031,43 @@ export default class Database {
           error = new StandardizedError({
             name: 'ServerError',
             message: `查詢 userFriends.${userId} 時發生無法預期的錯誤: ${error.message}`,
+            part: 'DATABASE',
+            tag: 'dATABASE.ERROR',
+            statusCode: 500,
+          });
+        }
+        throw error;
+      }
+    },
+
+    userFriendApplication: async (userId: string, senderId: string) => {
+      try {
+        if (!userId || !senderId) return null;
+        const datas = await this.query(
+          `SELECT 
+            friend_applications.created_at AS friend_application_created_at,
+            friend_applications.*,
+            users.created_at AS user_created_at,
+            users.*
+          FROM friend_applications 
+          INNER JOIN users 
+            ON friend_applications.sender_id = users.user_id
+          WHERE friend_applications.receiver_id = ?
+          AND friend_applications.sender_id = ?
+          ORDER BY friend_applications.created_at DESC`,
+          [userId, senderId],
+        );
+        if (!datas || datas.length === 0) return null;
+        const data = datas[0];
+        data.created_at = data.friend_application_created_at;
+        delete data.friend_application_created_at;
+        delete data.user_created_at;
+        return convertToCamelCase(data);
+      } catch (error: any) {
+        if (!(error instanceof StandardizedError)) {
+          error = new StandardizedError({
+            name: 'ServerError',
+            message: `查詢 userFriendApplication.${userId}-${senderId} 時發生無法預期的錯誤: ${error.message}`,
             part: 'DATABASE',
             tag: 'dATABASE.ERROR',
             statusCode: 500,
@@ -1065,6 +1194,51 @@ export default class Database {
       }
     },
 
+    serverMember: async (serverId: string, userId: string) => {
+      try {
+        if (!serverId || !userId) return null;
+        const datas = await this.query(
+          `SELECT 
+            m.created_at AS member_created_at,
+            m.*, 
+            u.created_at AS user_created_at,
+            u.*,
+            ub.badge_id,
+            ub.created_at AS badge_created_at,
+            b.name AS badge_name,
+            b.description AS badge_description
+          FROM members AS m
+          INNER JOIN users AS u
+            ON m.user_id = u.user_id
+          LEFT JOIN user_badges AS ub
+            ON u.user_id = ub.user_id
+          LEFT JOIN badges AS b
+            ON ub.badge_id = b.badge_id
+          WHERE m.server_id = ?
+          AND m.user_id = ?
+          ORDER BY m.created_at DESC`,
+          [serverId, userId],
+        );
+        if (!datas || datas.length === 0) return null;
+        const data = datas[0];
+        data.created_at = data.member_created_at;
+        delete data.member_created_at;
+        delete data.user_created_at;
+        return convertToCamelCase({ ...data, badges: [] });
+      } catch (error: any) {
+        if (!(error instanceof StandardizedError)) {
+          error = new StandardizedError({
+            name: 'ServerError',
+            message: `查詢 serverMember.${serverId}-${userId} 時發生無法預期的錯誤: ${error.message}`,
+            part: 'DATABASE',
+            tag: 'dATABASE.ERROR',
+            statusCode: 500,
+          });
+        }
+        throw error;
+      }
+    },
+
     serverMembers: async (serverId: string) => {
       try {
         if (!serverId) return null;
@@ -1101,6 +1275,43 @@ export default class Database {
           error = new StandardizedError({
             name: 'ServerError',
             message: `查詢 serverMembers.${serverId} 時發生無法預期的錯誤: ${error.message}`,
+            part: 'DATABASE',
+            tag: 'dATABASE.ERROR',
+            statusCode: 500,
+          });
+        }
+        throw error;
+      }
+    },
+
+    serverMemberApplication: async (serverId: string, userId: string) => {
+      try {
+        if (!serverId || !userId) return null;
+        const datas = await this.query(
+          `SELECT 
+            member_applications.created_at AS member_application_created_at,
+            member_applications.*,
+            users.created_at AS user_created_at,
+            users.*
+          FROM member_applications 
+          INNER JOIN users 
+            ON member_applications.user_id = users.user_id
+          WHERE member_applications.server_id = ?
+          AND member_applications.user_id = ?
+          ORDER BY member_applications.created_at DESC`,
+          [serverId, userId],
+        );
+        if (!datas || datas.length === 0) return null;
+        const data = datas[0];
+        data.created_at = data.member_application_created_at;
+        delete data.member_application_created_at;
+        delete data.user_created_at;
+        return convertToCamelCase(data);
+      } catch (error: any) {
+        if (!(error instanceof StandardizedError)) {
+          error = new StandardizedError({
+            name: 'ServerError',
+            message: `查詢 serverMemberApplication.${serverId}-${userId} 時發生無法預期的錯誤: ${error.message}`,
             part: 'DATABASE',
             tag: 'dATABASE.ERROR',
             statusCode: 500,
@@ -1274,49 +1485,6 @@ export default class Database {
           error = new StandardizedError({
             name: 'ServerError',
             message: `查詢 friendGroup.${friendGroupId} 時發生無法預期的錯誤: ${error.message}`,
-            part: 'DATABASE',
-            tag: 'dATABASE.ERROR',
-            statusCode: 500,
-          });
-        }
-        throw error;
-      }
-    },
-
-    friendGroupFriends: async (friendGroupId: string) => {
-      try {
-        if (!friendGroupId) return null;
-        const datas = await this.query(
-          `SELECT
-            friends.user_id AS friend_user_id,
-            friends.created_at AS friend_created_at,
-            friends.*,
-            users.user_id AS user_user_id,
-            users.created_at AS user_created_at,
-            users.*
-          FROM friends 
-          INNER JOIN users 
-            ON friends.target_id = users.user_id
-          WHERE friends.friend_group_id = ?
-          ORDER BY friends.created_at DESC`,
-          [friendGroupId],
-        );
-        if (!datas || datas.length === 0) return null;
-        return datas.map((data: any) => {
-          data.created_at = data.friend_created_at;
-          delete data.friend_created_at;
-          delete data.user_created_at;
-          data.user_id = data.friend_user_id;
-          delete data.friend_user_id;
-          data.target_id = data.user_user_id;
-          delete data.user_user_id;
-          return convertToCamelCase({ ...data, badges: [] });
-        });
-      } catch (error: any) {
-        if (!(error instanceof StandardizedError)) {
-          error = new StandardizedError({
-            name: 'ServerError',
-            message: `查詢 friendGroupFriends.${friendGroupId} 時發生無法預期的錯誤: ${error.message}`,
             part: 'DATABASE',
             tag: 'dATABASE.ERROR',
             statusCode: 500,
