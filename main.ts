@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import net from 'net';
 import DiscordRPC from 'discord-rpc';
-import dotenv from 'dotenv';
 import path from 'path';
 import serve from 'electron-serve';
 import Store from 'electron-store';
@@ -17,8 +16,6 @@ import {
   Menu,
   nativeImage,
 } from 'electron';
-
-dotenv.config();
 
 let tray: Tray | null = null;
 let isLogin: boolean = false;

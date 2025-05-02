@@ -19,7 +19,7 @@
     "start": "next start",
     "lint": "next lint",
     "build:main": "tsc -p tsconfig.electron.json",
-    "electron-dev": "concurrently \"npm run dev\" \"electron -r tsx . --dev\"",
+    "electron-dev": "concurrently \"npm run dev\" \"electron -r tsx -r dotenv/config . --dev\"",
     "electron-build": "npm run build && npm run build:main && electron-builder",
     "electron-build-win": "npm run build && npm run build:main && electron-builder --win",
     "electron-build-mac": "npm run build && npm run build:main && electron-builder --mac",
@@ -49,7 +49,6 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.0",
     "socket.io-client": "^4.8.1",
-    "ts-node": "^11.0.0-beta.1",
     "tsx": "^4.19.4"
   },
   "devDependencies": {
