@@ -11,12 +11,14 @@ import AuthValidator from '@/middleware/auth.validator';
 import {
   ConnectUserHandler,
   DisconnectUserHandler,
+  SearchUserHandler,
   UpdateUserHandler,
 } from '@/api/socket/events/user/user.handler';
 import {
   ConnectServerHandler,
   CreateServerHandler,
   DisconnectServerHandler,
+  SearchServerHandler,
   UpdateServerHandler,
 } from '@/api/socket/events/server/server.handler';
 import {
@@ -141,11 +143,17 @@ export default class SocketServer {
       });
 
       // User
+      socket.on('searchUser', async (data) =>
+        new SearchUserHandler(io, socket).handle(data),
+      );
       socket.on('updateUser', async (data) => {
         new UpdateUserHandler(io, socket).handle(data);
       });
 
       // Server
+      socket.on('searchServer', async (data) =>
+        new SearchServerHandler(io, socket).handle(data),
+      );
       socket.on('connectServer', async (data) => {
         new ConnectServerHandler(io, socket).handle(data);
       });
