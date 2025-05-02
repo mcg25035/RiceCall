@@ -32,16 +32,24 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
     // Refs
     const refreshRef = useRef(false);
 
+    // States
+    const [member, setMember] = useState<Member>(createDefault.member());
+    const [user, setUser] = useState<User>(createDefault.user());
+
     // Variables
     const { userId, serverId } = initialData;
-
-    // States
-    const [memberNickname, setMemberNickname] = useState(
-      createDefault.member().nickname,
-    );
-    const [userName, setUserName] = useState(createDefault.user().name);
+    const { nickname: memberNickname } = member;
+    const { name: userName } = user;
 
     // Handlers
+    const handleMemberUpdate = (member: Member) => {
+      setMember(member);
+    };
+
+    const handleUserUpdate = (user: User) => {
+      setUser(user);
+    };
+
     const handleUpdateMember = (
       member: Partial<Member>,
       userId: User['userId'],
@@ -49,16 +57,6 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
     ) => {
       if (!socket) return;
       socket.send.updateMember({ member, userId, serverId });
-    };
-
-    const handleMemberUpdate = (data: Member | null) => {
-      if (!data) data = createDefault.member();
-      setMemberNickname(data.nickname);
-    };
-
-    const handleUserUpdate = (data: User | null) => {
-      if (!data) data = createDefault.user();
-      setUserName(data.name);
     };
 
     const handleClose = () => {
@@ -79,8 +77,8 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
             userId: userId,
           }),
         ]).then(([member, user]) => {
-          handleMemberUpdate(member);
-          handleUserUpdate(user);
+          if (member) handleMemberUpdate(member);
+          if (user) handleUserUpdate(user);
         });
       };
       refresh();
@@ -104,7 +102,10 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
                   type="text"
                   value={memberNickname || ''}
                   onChange={(e) => {
-                    setMemberNickname(e.target.value);
+                    setMember((prev) => ({
+                      ...prev,
+                      nickname: e.target.value,
+                    }));
                   }}
                 />
               </div>

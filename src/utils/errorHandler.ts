@@ -46,14 +46,13 @@ export class errorHandler {
       this.error.part
     })`;
 
-    ipcService.popup.open(PopupType.DIALOG_ERROR);
-    ipcService.popup.onSubmit('error', () => {
+    ipcService.popup.open(PopupType.DIALOG_ERROR, 'errorDialog');
+    ipcService.popup.onSubmit('errorDialog', () => {
       if (this.error.handler) this.error.handler();
     });
-    ipcService.initialData.onRequest(PopupType.DIALOG_ERROR, {
-      iconType: 'error',
+    ipcService.initialData.onRequest('errorDialog', {
       title: errorMessage,
-      submitTo: 'error',
+      submitTo: 'errorDialog',
     });
   }
 }

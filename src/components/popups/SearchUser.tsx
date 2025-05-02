@@ -37,13 +37,13 @@ const SearchUserPopup: React.FC<SearchUserPopupProps> = React.memo(
     };
 
     const handleUserSearch = useCallback(
-      (user: User | null) => {
-        if (!user) return;
-        if (user.userId === userId) return;
-        ipcService.popup.open(PopupType.APPLY_FRIEND);
+      (result: User | null) => {
+        if (!result) return;
+        if (result.userId === userId) return;
+        ipcService.popup.open(PopupType.APPLY_FRIEND, 'applyFriend');
         ipcService.initialData.onRequest(
-          PopupType.APPLY_FRIEND,
-          { userId: userId, targetId: user.userId },
+          'applyFriend',
+          { userId: userId, targetId: result.userId },
           () => handleClose(),
         );
       },

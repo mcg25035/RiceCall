@@ -95,6 +95,7 @@ const Popup = React.memo(() => {
   const windowRef = useRef<HTMLDivElement>(null);
 
   // States
+  const [id, setId] = useState<string | null>(null);
   const [type, setType] = useState<PopupType | null>(null);
   const [headerTitle, setHeaderTitle] = useState<string>('');
   const [headerButtons, setHeaderButtons] = useState<
@@ -108,16 +109,18 @@ const Popup = React.memo(() => {
     if (window.location.search) {
       const params = new URLSearchParams(window.location.search);
       const type = params.get('type') as PopupType;
+      const id = params.get('id') as string;
       setType(type || null);
+      setId(id || null);
     }
   }, []);
 
   useEffect(() => {
-    if (!type) return;
-    ipcService.initialData.request(type, (data) => {
+    if (!id) return;
+    ipcService.initialData.request(id, (data) => {
       setInitialData(data);
     });
-  }, [type]);
+  }, [id]);
 
   useEffect(() => {
     if (!initialData || !type) return;

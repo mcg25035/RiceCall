@@ -66,20 +66,20 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
     };
 
     const handleOpenWarning = (message: string, callback: () => void) => {
-      ipcService.popup.open(PopupType.DIALOG_ALERT);
-      ipcService.initialData.onRequest(PopupType.DIALOG_ALERT, {
-        iconType: 'warning',
+      ipcService.popup.open(PopupType.DIALOG_WARNING, 'warningDialog');
+      ipcService.initialData.onRequest('warningDialog', {
         title: message,
+        submitTo: 'warningDialog',
       });
-      ipcService.popup.onSubmit(PopupType.DIALOG_ALERT, callback);
+      ipcService.popup.onSubmit('warningDialog', callback);
     };
 
     const handleOpenEditFriendGroup = (
       friendGroupId: FriendGroup['friendGroupId'],
       userId: User['userId'],
     ) => {
-      ipcService.popup.open(PopupType.EDIT_FRIENDGROUP);
-      ipcService.initialData.onRequest(PopupType.EDIT_FRIENDGROUP, {
+      ipcService.popup.open(PopupType.EDIT_FRIENDGROUP, 'editFriendGroup');
+      ipcService.initialData.onRequest('editFriendGroup', {
         friendGroupId,
         userId,
       });
@@ -192,12 +192,12 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
   };
 
   const handleOpenWarning = (message: string, callback: () => void) => {
-    ipcService.popup.open(PopupType.DIALOG_ALERT);
-    ipcService.initialData.onRequest(PopupType.DIALOG_ALERT, {
-      iconType: 'warning',
+    ipcService.popup.open(PopupType.DIALOG_WARNING, 'warningDialog');
+    ipcService.initialData.onRequest('warningDialog', {
       title: message,
+      submitTo: 'warningDialog',
     });
-    ipcService.popup.onSubmit(PopupType.DIALOG_ALERT, callback);
+    ipcService.popup.onSubmit('warningDialog', callback);
   };
 
   const handleOpenDirectMessage = (
@@ -205,8 +205,11 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
     targetId: User['userId'],
     targetName: User['name'],
   ) => {
-    ipcService.popup.open(PopupType.DIRECT_MESSAGE, { targetId });
-    ipcService.initialData.onRequest(PopupType.DIRECT_MESSAGE, {
+    ipcService.popup.open(
+      PopupType.DIRECT_MESSAGE,
+      `directMessage-${targetId}`,
+    );
+    ipcService.initialData.onRequest(`directMessage-${targetId}`, {
       userId,
       targetId,
       targetName,
@@ -217,8 +220,8 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
     userId: User['userId'],
     targetId: User['userId'],
   ) => {
-    ipcService.popup.open(PopupType.USER_INFO);
-    ipcService.initialData.onRequest(PopupType.USER_INFO, {
+    ipcService.popup.open(PopupType.USER_INFO, `userInfo-${targetId}`);
+    ipcService.initialData.onRequest(`userInfo-${targetId}`, {
       userId,
       targetId,
     });
@@ -228,8 +231,8 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
     userId: User['userId'],
     targetId: User['userId'],
   ) => {
-    ipcService.popup.open(PopupType.EDIT_FRIEND);
-    ipcService.initialData.onRequest(PopupType.EDIT_FRIEND, {
+    ipcService.popup.open(PopupType.EDIT_FRIEND, 'editFriend');
+    ipcService.initialData.onRequest('editFriend', {
       userId,
       targetId,
     });
@@ -350,15 +353,15 @@ const FriendListViewer: React.FC<FriendListViewerProps> = React.memo(
 
     // Handlers
     const handleOpenSearchUser = (userId: User['userId']) => {
-      ipcService.popup.open(PopupType.SEARCH_USER);
-      ipcService.initialData.onRequest(PopupType.SEARCH_USER, {
+      ipcService.popup.open(PopupType.SEARCH_USER, 'searchUser');
+      ipcService.initialData.onRequest('searchUser', {
         userId,
       });
     };
 
     const handleOpenCreateFriendGroup = () => {
-      ipcService.popup.open(PopupType.CREATE_FRIENDGROUP);
-      ipcService.initialData.onRequest(PopupType.CREATE_FRIENDGROUP, {
+      ipcService.popup.open(PopupType.CREATE_FRIENDGROUP, 'createFriendGroup');
+      ipcService.initialData.onRequest('createFriendGroup', {
         userId,
       });
     };

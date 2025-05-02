@@ -34,28 +34,24 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
     const refreshRef = useRef(false);
 
     // States
-    const [parentName, setParentName] = useState<Channel['name']>(
-      createDefault.channel().name,
-    );
-    const [channelName, setChannelName] = useState<Channel['name']>(
-      createDefault.channel().name,
-    );
+    const [parent, setParent] = useState<Channel>(createDefault.channel());
+    const [channel, setChannel] = useState<Channel>(createDefault.channel());
 
     // Variables
     const { channelId, serverId } = initialData;
-
+    const { name: parentName } = parent;
+    const { name: channelName } = channel;
     // Handlers
+    const handleParentUpdate = (parent: Channel) => {
+      setParent(parent);
+    };
+
     const handleCreateChannel = (
       channel: Partial<Channel>,
       serverId: Server['serverId'],
     ) => {
       if (!socket) return;
       socket.send.createChannel({ channel, serverId });
-    };
-
-    const handleChannelUpdate = (data: Channel | null) => {
-      if (!data) data = createDefault.channel();
-      setParentName(data.name);
     };
 
     const handleClose = () => {
@@ -71,8 +67,8 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
           refreshService.channel({
             channelId: channelId,
           }),
-        ]).then(([channel]) => {
-          handleChannelUpdate(channel);
+        ]).then(([parent]) => {
+          if (parent) handleParentUpdate(parent);
         });
       };
       refresh();
@@ -93,7 +89,12 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
                   className={popup['input']}
                   type="text"
                   value={channelName}
-                  onChange={(e) => setChannelName(e.target.value)}
+                  onChange={(e) =>
+                    setChannel((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                   required
                 />
               </div>

@@ -65,24 +65,6 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
 
     // Effects
     useEffect(() => {
-      if (!socket) return;
-
-      const eventHandlers = {
-        [SocketServerEvent.USER_FRIEND_GROUPS_UPDATE]: handleFriendGroupUpdate,
-      };
-      const unsubscribe: (() => void)[] = [];
-
-      Object.entries(eventHandlers).map(([event, handler]) => {
-        const unsub = socket.on[event as SocketServerEvent](handler);
-        unsubscribe.push(unsub);
-      });
-
-      return () => {
-        unsubscribe.forEach((unsub) => unsub());
-      };
-    }, [socket]);
-
-    useEffect(() => {
       if (!friendGroupId || refreshRef.current) return;
       const refresh = async () => {
         refreshRef.current = true;

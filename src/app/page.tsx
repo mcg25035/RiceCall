@@ -99,16 +99,13 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
 
   const handleOpenUserSetting = (userId: User['userId']) => {
     const targetId = userId;
-    ipcService.popup.open(PopupType.USER_INFO);
-    ipcService.initialData.onRequest(PopupType.USER_INFO, {
-      userId,
-      targetId,
-    });
+    ipcService.popup.open(PopupType.USER_INFO, 'userSetting');
+    ipcService.initialData.onRequest('userSetting', { userId, targetId });
   };
 
   const handleOpenSystemSetting = () => {
-    ipcService.popup.open(PopupType.SYSTEM_SETTING);
-    ipcService.initialData.onRequest(PopupType.SYSTEM_SETTING, {});
+    ipcService.popup.open(PopupType.SYSTEM_SETTING, 'systemSetting');
+    ipcService.initialData.onRequest('systemSetting', {});
   };
 
   const handleLogout = () => {
@@ -336,9 +333,8 @@ const RootPageComponent = () => {
   const { userId } = user;
 
   // Handlers
-  const handleUserUpdate = (data: Partial<User> | null) => {
-    if (!data) data = createDefault.user();
-    setUser((prev) => ({ ...prev, ...data }));
+  const handleUserUpdate = (user: Partial<User>) => {
+    setUser((prev) => ({ ...prev, ...user }));
   };
 
   const handleServerAdd = (server: UserServer) => {
@@ -356,21 +352,23 @@ const RootPageComponent = () => {
     setServers((prev) => prev.filter((s) => s.serverId !== id));
   };
 
-  const handleServersUpdate = (servers: UserServer[]) => setServers(servers);
+  const handleServersUpdate = (servers: UserServer[]) => {
+    setServers(servers);
+  };
 
-  const handleFriendAdd = (data: UserFriend) => {
-    setFriends((prev) => [...prev, data]);
+  const handleFriendAdd = (friend: UserFriend) => {
+    setFriends((prev) => [...prev, friend]);
   };
 
   const handleFriendUpdate = (
     userId: UserFriend['userId'],
     targetId: UserFriend['targetId'],
-    data: Partial<UserFriend>,
+    friend: Partial<UserFriend>,
   ) => {
     setFriends((prev) =>
       prev.map((item) =>
         item.userId === userId && item.targetId === targetId
-          ? { ...item, ...data }
+          ? { ...item, ...friend }
           : item,
       ),
     );
@@ -382,24 +380,26 @@ const RootPageComponent = () => {
   ) => {
     setFriends((prev) =>
       prev.filter(
-        (item) => item.userId !== userId && item.targetId !== targetId,
+        (item) => !(item.userId === userId && item.targetId === targetId),
       ),
     );
   };
 
-  const handleFriendsUpdate = (friends: UserFriend[]) => setFriends(friends);
+  const handleFriendsUpdate = (friends: UserFriend[]) => {
+    setFriends(friends);
+  };
 
-  const handleFriendGroupAdd = (data: FriendGroup) => {
-    setFriendGroups((prev) => [...prev, data]);
+  const handleFriendGroupAdd = (friendGroup: FriendGroup) => {
+    setFriendGroups((prev) => [...prev, friendGroup]);
   };
 
   const handleFriendGroupUpdate = (
     id: FriendGroup['friendGroupId'],
-    data: Partial<FriendGroup>,
+    friendGroup: Partial<FriendGroup>,
   ) => {
     setFriendGroups((prev) =>
       prev.map((item) =>
-        item.friendGroupId === id ? { ...item, ...data } : item,
+        item.friendGroupId === id ? { ...item, ...friendGroup } : item,
       ),
     );
   };
@@ -408,23 +408,23 @@ const RootPageComponent = () => {
     setFriendGroups((prev) => prev.filter((item) => item.friendGroupId !== id));
   };
 
-  const handleFriendGroupsUpdate = (friendGroups: FriendGroup[]) =>
+  const handleFriendGroupsUpdate = (friendGroups: FriendGroup[]) => {
     setFriendGroups(friendGroups);
+  };
 
-  const handleMemberAdd = (data: ServerMember): void => {
-    setServerMembers((prev) => [...prev, data]);
+  const handleMemberAdd = (member: ServerMember): void => {
+    setServerMembers((prev) => [...prev, member]);
   };
 
   const handleMemberUpdate = (
     userId: ServerMember['userId'],
     serverId: ServerMember['serverId'],
-    data: Partial<ServerMember>,
+    member: Partial<ServerMember>,
   ): void => {
-    console.log('handleMemberUpdate', userId, serverId, data);
     setServerMembers((prev) =>
       prev.map((item) =>
         item.userId === userId && item.serverId === serverId
-          ? { ...item, ...data }
+          ? { ...item, ...member }
           : item,
       ),
     );
@@ -436,24 +436,27 @@ const RootPageComponent = () => {
   ): void => {
     setServerMembers((prev) =>
       prev.filter(
-        (item) => item.userId !== userId && item.serverId !== serverId,
+        (item) => !(item.userId === userId && item.serverId === serverId),
       ),
     );
   };
 
-  const handleMembersUpdate = (members: ServerMember[]) =>
+  const handleMembersUpdate = (members: ServerMember[]) => {
     setServerMembers(members);
+  };
 
-  const handleChannelAdd = (data: Channel): void => {
-    setServerChannels((prev) => [...prev, data]);
+  const handleChannelAdd = (channel: Channel): void => {
+    setServerChannels((prev) => [...prev, channel]);
   };
 
   const handleChannelUpdate = (
     id: Channel['channelId'],
-    data: Partial<Channel>,
+    channel: Partial<Channel>,
   ): void => {
     setServerChannels((prev) =>
-      prev.map((item) => (item.channelId === id ? { ...item, ...data } : item)),
+      prev.map((item) =>
+        item.channelId === id ? { ...item, ...channel } : item,
+      ),
     );
   };
 
@@ -462,15 +465,16 @@ const RootPageComponent = () => {
   };
 
   const handleChannelsUpdate = (channels: Channel[]) => {
-    console.log('handleChannelsUpdate', channels);
     setServerChannels(channels);
   };
 
-  const handleOnMessagesUpdate = (data: ChannelMessage): void => {
-    if (!data) return;
+  const handleOnMessagesUpdate = (channelMessage: ChannelMessage): void => {
     setChannelMessages((prev) => ({
       ...prev,
-      [data.channelId]: [...(prev[data.channelId] || []), data],
+      [channelMessage.channelId]: [
+        ...(prev[channelMessage.channelId] || []),
+        channelMessage,
+      ],
     }));
   };
 
@@ -493,12 +497,16 @@ const RootPageComponent = () => {
     new errorHandler(error).show();
   };
 
-  const handleOpenPopup = (data: { type: PopupType; initialData: any }) => {
-    ipcService.popup.open(data.type);
-    ipcService.initialData.onRequest(data.type, data.initialData);
-    ipcService.popup.onSubmit(data.type, () => {
-      switch (data.type) {
-        case PopupType.DIALOG_ALERT:
+  const handleOpenPopup = (popup: {
+    type: PopupType;
+    id: string; // FIXME: Server didn't return this
+    initialData: any;
+  }) => {
+    ipcService.popup.open(popup.type, popup.id);
+    ipcService.initialData.onRequest(popup.id, popup.initialData);
+    ipcService.popup.onSubmit(popup.id, () => {
+      switch (popup.id) {
+        case 'logout':
           ipcService.auth.logout();
           break;
       }

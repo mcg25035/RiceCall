@@ -36,7 +36,7 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
     const { userId, targetId } = initialData;
 
     // States
-    const [userFriendGroups, setUserFriendGroups] = useState<FriendGroup[]>([]);
+    const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]);
     const [friendGroup, setFriendGroup] = useState<Friend['friendGroupId']>(
       createDefault.friend().friendGroupId,
     );
@@ -55,9 +55,29 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
       socket.send.updateFriend({ friend, userId, targetId });
     };
 
-    const handleUserFriendGroupsUpdate = (data: FriendGroup[] | null) => {
-      if (!data) data = [];
-      setUserFriendGroups(data);
+    const handleFriendGroupAdd = (data: FriendGroup) => {
+      setFriendGroups((prev) => [...prev, data]);
+    };
+
+    const handleFriendGroupUpdate = (
+      id: FriendGroup['friendGroupId'],
+      data: Partial<FriendGroup>,
+    ) => {
+      setFriendGroups((prev) =>
+        prev.map((item) =>
+          item.friendGroupId === id ? { ...item, ...data } : item,
+        ),
+      );
+    };
+
+    const handleFriendGroupDelete = (id: FriendGroup['friendGroupId']) => {
+      setFriendGroups((prev) =>
+        prev.filter((item) => item.friendGroupId !== id),
+      );
+    };
+
+    const handleFriendGroupsUpdate = (friendGroups: FriendGroup[]) => {
+      setFriendGroups(friendGroups);
     };
 
     const handleFriendUpdate = (data: Friend | null) => {
@@ -70,8 +90,9 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
       if (!socket) return;
 
       const eventHandlers = {
-        [SocketServerEvent.USER_FRIEND_GROUPS_UPDATE]:
-          handleUserFriendGroupsUpdate,
+        [SocketServerEvent.FRIEND_GROUP_ADD]: handleFriendGroupAdd,
+        [SocketServerEvent.FRIEND_GROUP_UPDATE]: handleFriendGroupUpdate,
+        [SocketServerEvent.FRIEND_GROUP_DELETE]: handleFriendGroupDelete,
       };
       const unsubscribe: (() => void)[] = [];
 
@@ -97,9 +118,9 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
             userId: userId,
             targetId: targetId,
           }),
-        ]).then(([userFriendGroups, friend]) => {
-          handleUserFriendGroupsUpdate(userFriendGroups);
-          handleFriendUpdate(friend);
+        ]).then(([friendGroups, friend]) => {
+          if (friendGroups) handleFriendGroupsUpdate(friendGroups);
+          if (friend) handleFriendUpdate(friend);
         });
       };
       refresh();
@@ -123,7 +144,7 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
                     }}
                   >
                     <option value={''}>{lang.tr.none}</option>
-                    {userFriendGroups.map((group) => (
+                    {friendGroups.map((group) => (
                       <option
                         key={group.friendGroupId}
                         value={group.friendGroupId}

@@ -366,18 +366,12 @@ async function createAuthWindow() {
 
 async function createPopup(
   type: string,
+  id: string,
   height: number,
   width: number,
-  additionalData: Record<string, any> = {},
 ): Promise<BrowserWindow | null> {
-  let windowKey = type;
-  if (type === 'directMessage' && additionalData.targetId) {
-    windowKey = `${type}_${additionalData.targetId}`;
-  }
-
-  if (popups[windowKey] && !popups[windowKey].isDestroyed()) {
-    popups[windowKey].focus();
-    return popups[windowKey];
+  if (popups[id] && !popups[id].isDestroyed()) {
+    popups[id].destroy();
   }
 
   if (DEV) {
@@ -390,7 +384,7 @@ async function createPopup(
     }
   }
 
-  popups[windowKey] = new BrowserWindow({
+  popups[id] = new BrowserWindow({
     width: width ?? 800,
     height: height ?? 600,
     resizable: false,
@@ -405,13 +399,13 @@ async function createPopup(
   });
 
   if (app.isPackaged || !DEV) {
-    popups[windowKey].loadURL(`app://-/popup.html?type=${type}`);
+    popups[id].loadURL(`app://-/popup.html?type=${type}&id=${id}`);
   } else {
-    popups[windowKey].loadURL(`${BASE_URI}/popup?type=${type}`);
-    popups[windowKey].webContents.openDevTools();
+    popups[id].loadURL(`${BASE_URI}/popup?type=${type}&id=${id}`);
+    popups[id].webContents.openDevTools();
   }
 
-  return popups[windowKey];
+  return popups[id];
 }
 
 function closePopups() {
@@ -455,7 +449,10 @@ function connectSocket(token: string): Socket | null {
     }
 
     Object.values(SocketClientEvent).forEach((event) => {
-      ipcMain.on(event, (_, ...args) => socket.emit(event, ...args));
+      ipcMain.on(event, (_, ...args) => {
+        console.log('socket.emit', event, ...args);
+        socket.emit(event, ...args);
+      });
     });
 
     Object.values(SocketServerEvent).forEach((event) => {
@@ -470,7 +467,7 @@ function connectSocket(token: string): Socket | null {
       });
     });
 
-    console.info('Socket 連線成功111');
+    console.info('Socket 連線成功');
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('connect', null);
     });
@@ -734,11 +731,12 @@ app.on('ready', async () => {
   });
 
   // Popup handlers
-  ipcMain.on('open-popup', (_, type, height, width, additionalData) => {
-    createPopup(type, height, width, additionalData);
+  ipcMain.on('open-popup', (_, type, id, height, width) => {
+    createPopup(type, id, height, width);
   });
 
   ipcMain.on('popup-submit', (_, to) => {
+    console.log('popup-submit', to);
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('popup-submit', to);
     });

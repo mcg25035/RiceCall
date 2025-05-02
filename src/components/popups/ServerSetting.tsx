@@ -17,6 +17,7 @@ import {
   Member,
   User,
   SocketServerEvent,
+  UserServer,
 } from '@/types';
 
 // Providers
@@ -89,59 +90,37 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     const refreshRef = useRef(false);
 
     // States
-    const [serverName, setServerName] = useState<Server['name']>(
-      createDefault.server().name,
+    const [server, setServer] = useState<UserServer>(
+      createDefault.userServer(),
     );
-    const [serverAvatar, setServerAvatar] = useState<Server['avatar']>(
-      createDefault.server().avatar,
-    );
-    const [serverAvatarUrl, setServerAvatarUrl] = useState<Server['avatarUrl']>(
-      createDefault.server().avatarUrl,
-    );
-    const [serverAnnouncement, setServerAnnouncement] = useState<
-      Server['announcement']
-    >(createDefault.server().announcement);
-    const [serverDescription, setServerDescription] = useState<
-      Server['description']
-    >(createDefault.server().description);
-    const [serverType, setServerType] = useState<Server['type']>(
-      createDefault.server().type,
-    );
-    const [serverDisplayId, setServerDisplayId] = useState<Server['displayId']>(
-      createDefault.server().displayId,
-    );
-    const [serverSlogan, setServerSlogan] = useState<Server['slogan']>(
-      createDefault.server().slogan,
-    );
-    const [serverLevel, setServerLevel] = useState<Server['level']>(
-      createDefault.server().level,
-    );
-    const [serverWealth, setServerWealth] = useState<Server['wealth']>(
-      createDefault.server().wealth,
-    );
-    const [serverCreatedAt, setServerCreatedAt] = useState<Server['createdAt']>(
-      createDefault.server().createdAt,
-    );
-    const [serverVisibility, setServerVisibility] = useState<
-      Server['visibility']
-    >(createDefault.server().visibility);
     const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
     const [serverApplications, setServerApplications] = useState<
       MemberApplication[]
     >([]);
-    const [permissionLevel, setPermissionLevel] = useState<number>(0);
-
     const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
     const [sortState, setSortState] = useState<1 | -1>(-1);
     const [sortField, setSortField] = useState<string>('permissionLevel');
-
     const [searchText, setSearchText] = useState('');
-
     const [announcementPreview, setAnnouncementPreview] = useState('');
     const [showPreview, setShowPreview] = useState(false);
 
     // Variables
     const { serverId, userId } = initialData;
+    const {
+      name: serverName,
+      avatar: serverAvatar,
+      avatarUrl: serverAvatarUrl,
+      announcement: serverAnnouncement,
+      description: serverDescription,
+      type: serverType,
+      displayId: serverDisplayId,
+      slogan: serverSlogan,
+      level: serverLevel,
+      wealth: serverWealth,
+      createdAt: serverCreatedAt,
+      visibility: serverVisibility,
+      permissionLevel,
+    } = server;
     const filteredMembers = serverMembers.filter((member) => {
       const searchLower = searchText.toLowerCase();
       return (
@@ -167,6 +146,78 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     });
 
     // Handlers
+    const handleServerUpdate = (server: UserServer) => {
+      setServer(server);
+    };
+
+    const handleMemberAdd = (member: ServerMember): void => {
+      setServerMembers((prev) => [...prev, member]);
+    };
+
+    const handleMemberUpdate = (
+      userId: ServerMember['userId'],
+      serverId: ServerMember['serverId'],
+      member: Partial<ServerMember>,
+    ): void => {
+      setServerMembers((prev) =>
+        prev.map((item) =>
+          item.userId === userId && item.serverId === serverId
+            ? { ...item, ...member }
+            : item,
+        ),
+      );
+    };
+
+    const handleMemberDelete = (
+      userId: ServerMember['userId'],
+      serverId: ServerMember['serverId'],
+    ): void => {
+      setServerMembers((prev) =>
+        prev.filter(
+          (item) => item.userId !== userId && item.serverId !== serverId,
+        ),
+      );
+    };
+
+    const handleMembersUpdate = (members: ServerMember[]) => {
+      setServerMembers(members);
+    };
+
+    const handleMemberApplicationAdd = (application: MemberApplication) => {
+      setServerApplications((prev) => [...prev, application]);
+    };
+
+    const handleMemberApplicationUpdate = (
+      userId: User['userId'],
+      serverId: Server['serverId'],
+      application: Partial<MemberApplication>,
+    ) => {
+      setServerApplications((prev) =>
+        prev.map((item) =>
+          item.serverId === serverId && item.userId === userId
+            ? { ...item, ...application }
+            : item,
+        ),
+      );
+    };
+
+    const handleMemberApplicationDelete = (
+      userId: User['userId'],
+      serverId: Server['serverId'],
+    ) => {
+      setServerApplications((prev) =>
+        prev.filter(
+          (item) => item.userId !== userId && item.serverId !== serverId,
+        ),
+      );
+    };
+
+    const handleMemberApplicationsUpdate = (
+      applications: MemberApplication[],
+    ) => {
+      setServerApplications(applications);
+    };
+
     const handleSort = <T extends ServerMember | MemberApplication>(
       field: keyof T,
       array: T[],
@@ -212,45 +263,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       socket.send.updateMember({ member, userId, serverId });
     };
 
-    const handleServerUpdate = (data: Server | null) => {
-      if (!data) data = createDefault.server();
-      setServerName(data.name);
-      setServerAvatar(data.avatar);
-      setServerAvatarUrl(data.avatarUrl);
-      setServerAnnouncement(data.announcement);
-      setServerDescription(data.description);
-      setServerType(data.type);
-      setServerDisplayId(data.displayId);
-      setServerSlogan(data.slogan);
-      setServerLevel(data.level);
-      setServerWealth(data.wealth);
-      setServerCreatedAt(data.createdAt);
-      setServerVisibility(data.visibility);
-    };
-
-    const handleMembersUpdate = (data: ServerMember[] | null) => {
-      if (!data) data = [];
-      const sorted = [...data].sort(
-        (a, b) => b.permissionLevel - a.permissionLevel,
-      );
-      setServerMembers(sorted);
-    };
-
-    const handleMemberApplicationsUpdate = (
-      data: MemberApplication[] | null,
-    ) => {
-      if (!data) data = [];
-      setServerApplications(data);
-    };
-
-    const handleMemberUpdate = (data: Member | null) => {
-      if (!data) data = createDefault.member();
-      setPermissionLevel(data.permissionLevel);
-    };
-
     const handleOpenMemberApplySetting = () => {
-      ipcService.popup.open(PopupType.MEMBERAPPLY_SETTING);
-      ipcService.initialData.onRequest(PopupType.MEMBERAPPLY_SETTING, {
+      ipcService.popup.open(
+        PopupType.MEMBERAPPLY_SETTING,
+        'memberApplySetting',
+      );
+      ipcService.initialData.onRequest('memberApplySetting', {
         serverId,
       });
     };
@@ -259,8 +277,8 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       userId: User['userId'],
       targetId: User['userId'],
     ) => {
-      ipcService.popup.open(PopupType.APPLY_FRIEND);
-      ipcService.initialData.onRequest(PopupType.APPLY_FRIEND, {
+      ipcService.popup.open(PopupType.APPLY_FRIEND, 'applyFriend');
+      ipcService.initialData.onRequest('applyFriend', {
         userId,
         targetId,
       });
@@ -270,8 +288,8 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       userId: User['userId'],
       serverId: Server['serverId'],
     ) => {
-      ipcService.popup.open(PopupType.EDIT_NICKNAME);
-      ipcService.initialData.onRequest(PopupType.EDIT_NICKNAME, {
+      ipcService.popup.open(PopupType.EDIT_NICKNAME, 'editNickname');
+      ipcService.initialData.onRequest('editNickname', {
         serverId,
         userId,
       });
@@ -282,8 +300,11 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       targetId: User['userId'],
       targetName: User['name'],
     ) => {
-      ipcService.popup.open(PopupType.DIRECT_MESSAGE);
-      ipcService.initialData.onRequest(PopupType.DIRECT_MESSAGE, {
+      ipcService.popup.open(
+        PopupType.DIRECT_MESSAGE,
+        `directMessage-${targetId}`,
+      );
+      ipcService.initialData.onRequest(`directMessage-${targetId}`, {
         userId,
         targetId,
         targetName,
@@ -294,18 +315,18 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       userId: User['userId'],
       targetId: User['userId'],
     ) => {
-      ipcService.popup.open(PopupType.USER_INFO);
-      ipcService.initialData.onRequest(PopupType.USER_INFO, {
+      ipcService.popup.open(PopupType.USER_INFO, `userInfo-${targetId}`);
+      ipcService.initialData.onRequest(`userInfo-${targetId}`, {
         userId,
         targetId,
       });
     };
 
     const handleOpenErrorDialog = (message: string) => {
-      ipcService.popup.open(PopupType.DIALOG_ERROR);
-      ipcService.initialData.onRequest(PopupType.DIALOG_ERROR, {
+      ipcService.popup.open(PopupType.DIALOG_ERROR, 'errorDialog');
+      ipcService.initialData.onRequest('errorDialog', {
         title: message,
-        submitTo: PopupType.DIALOG_ERROR,
+        submitTo: 'errorDialog',
       });
     };
 
@@ -328,9 +349,14 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       if (!socket) return;
 
       const eventHandlers = {
-        [SocketServerEvent.SERVER_MEMBERS_UPDATE]: handleMembersUpdate,
-        [SocketServerEvent.SERVER_MEMBER_APPLICATIONS_UPDATE]:
-          handleMemberApplicationsUpdate,
+        [SocketServerEvent.MEMBER_ADD]: handleMemberAdd,
+        [SocketServerEvent.MEMBER_UPDATE]: handleMemberUpdate,
+        [SocketServerEvent.MEMBER_DELETE]: handleMemberDelete,
+        [SocketServerEvent.MEMBER_APPLICATION_ADD]: handleMemberApplicationAdd,
+        [SocketServerEvent.MEMBER_APPLICATION_UPDATE]:
+          handleMemberApplicationUpdate,
+        [SocketServerEvent.MEMBER_APPLICATION_DELETE]:
+          handleMemberApplicationDelete,
       };
       const unsubscribe: (() => void)[] = [];
 
@@ -362,11 +388,13 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
           refreshService.serverMemberApplications({
             serverId: serverId,
           }),
-        ]).then(([server, member, serverMembers, serverMemberApplications]) => {
-          handleServerUpdate(server);
-          handleMemberUpdate(member);
-          handleMembersUpdate(serverMembers);
-          handleMemberApplicationsUpdate(serverMemberApplications);
+        ]).then(([server, member, members, applications]) => {
+          if (server && member)
+            handleServerUpdate(
+              createDefault.userServer({ ...server, ...member }), // FIXME: Use another method to merge server and member
+            );
+          if (members) handleMembersUpdate(members);
+          if (applications) handleMemberApplicationsUpdate(applications);
         });
       };
       refresh();
@@ -411,7 +439,10 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                           type="text"
                           value={serverName}
                           onChange={(e) => {
-                            setServerName(e.target.value);
+                            setServer((prev) => ({
+                              ...prev,
+                              name: e.target.value,
+                            }));
                           }}
                         />
                       </div>
@@ -426,7 +457,10 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                         type="text"
                         value={serverSlogan}
                         onChange={(e) => {
-                          setServerSlogan(e.target.value);
+                          setServer((prev) => ({
+                            ...prev,
+                            slogan: e.target.value,
+                          }));
                         }}
                       />
                     </div>
@@ -436,7 +470,10 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                         <select
                           value={serverType}
                           onChange={(e) => {
-                            setServerType(e.target.value as Server['type']);
+                            setServer((prev) => ({
+                              ...prev,
+                              type: e.target.value as Server['type'],
+                            }));
                           }}
                         >
                           <option value="other">{lang.tr.other}</option>
@@ -482,8 +519,11 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                             formData,
                           );
                           if (data) {
-                            setServerAvatar(data.avatar);
-                            setServerAvatarUrl(data.avatarUrl);
+                            setServer((prev) => ({
+                              ...prev,
+                              avatar: data.avatar,
+                              avatarUrl: data.avatarUrl,
+                            }));
                           }
                         };
                         reader.readAsDataURL(file);
@@ -527,7 +567,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                     <div className={popup['label']}>{lang.tr.description}</div>
                     <textarea
                       value={serverDescription}
-                      onChange={(e) => setServerDescription(e.target.value)}
+                      onChange={(e) =>
+                        setServer((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </div>
@@ -570,7 +615,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                     <textarea
                       style={{ minHeight: '330px' }}
                       value={serverAnnouncement}
-                      onChange={(e) => setServerAnnouncement(e.target.value)}
+                      onChange={(e) =>
+                        setServer((prev) => ({
+                          ...prev,
+                          announcement: e.target.value,
+                        }))
+                      }
                     />
                   )}
                   <div className={popup['label']}>
@@ -830,7 +880,11 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       className="mr-3"
                       checked={serverVisibility === 'public'}
                       onChange={(e) => {
-                        if (e.target.checked) setServerVisibility('public');
+                        if (e.target.checked)
+                          setServer((prev) => ({
+                            ...prev,
+                            visibility: 'public',
+                          }));
                       }}
                     />
                     <div className={popup['label']}>{lang.tr.publicServer}</div>
@@ -845,7 +899,11 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       className="mr-3"
                       checked={serverVisibility === 'private'}
                       onChange={(e) => {
-                        if (e.target.checked) setServerVisibility('private');
+                        if (e.target.checked)
+                          setServer((prev) => ({
+                            ...prev,
+                            visibility: 'private',
+                          }));
                       }}
                     />
                     <div>
@@ -867,7 +925,11 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       className="mr-3"
                       checked={serverVisibility === 'invisible'}
                       onChange={(e) => {
-                        if (e.target.checked) setServerVisibility('invisible');
+                        if (e.target.checked)
+                          setServer((prev) => ({
+                            ...prev,
+                            visibility: 'invisible',
+                          }));
                       }}
                     />
                     <div>

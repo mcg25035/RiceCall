@@ -103,42 +103,58 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
       channelId: Channel['channelId'] | null,
       serverId: Server['serverId'],
     ) => {
-      ipcService.popup.open(PopupType.CREATE_CHANNEL);
-      ipcService.initialData.onRequest(PopupType.CREATE_CHANNEL, {
+      ipcService.popup.open(PopupType.CREATE_CHANNEL, 'createChannel');
+      ipcService.initialData.onRequest('createChannel', {
         userId,
         serverId,
         channelId,
       });
     };
 
-    const handleServerChannelsUpdate = (data: Channel[] | null): void => {
-      if (!data) data = [];
-      data = data.filter((ch) => !ch.isLobby);
-      setServerChannels(data);
-      data.forEach((ch) => {
+    const handleChannelAdd = (data: Channel): void => {
+      setServerChannels((prev) => [...prev, data]);
+    };
+
+    const handleChannelUpdate = (
+      id: Channel['channelId'],
+      data: Partial<Channel>,
+    ): void => {
+      setServerChannels((prev) =>
+        prev.map((item) =>
+          item.channelId === id ? { ...item, ...data } : item,
+        ),
+      );
+    };
+
+    const handleChannelDelete = (id: Channel['channelId']): void => {
+      setServerChannels((prev) => prev.filter((item) => item.channelId !== id));
+    };
+
+    const handleChannelsUpdate = (channels: Channel[]) => {
+      const filteredChannels = channels.filter((ch) => !ch.isLobby);
+      setServerChannels(filteredChannels);
+      filteredChannels.forEach((ch) => {
         map.current[ch.channelId] = ch.order;
       });
     };
 
     const handleOpenWarning = (message: string) => {
-      ipcService.popup.open(PopupType.DIALOG_WARNING);
-      ipcService.initialData.onRequest(PopupType.DIALOG_WARNING, {
-        iconType: 'warning',
+      ipcService.popup.open(PopupType.DIALOG_WARNING, 'deleteChannel');
+      ipcService.initialData.onRequest('deleteChannel', {
         title: message,
-        submitTo: PopupType.DIALOG_WARNING,
+        submitTo: 'deleteChannel',
       });
-      ipcService.popup.onSubmit(PopupType.DIALOG_WARNING, () => {
+      ipcService.popup.onSubmit('deleteChannel', () => {
         if (!selectedChannel) return;
         handleDeleteChannel(selectedChannel.channelId, serverId);
       });
     };
 
     const handleEditChannelName = () => {
-      ipcService.popup.open(PopupType.EDIT_CHANNEL_NAME);
-      ipcService.initialData.onRequest(
-        PopupType.EDIT_CHANNEL_NAME,
+      ipcService.popup.open(PopupType.EDIT_CHANNEL_NAME, 'editChannelName');
+      ipcService.initialData.onRequest('editChannelName', {
         selectedChannel,
-      );
+      });
     };
 
     const handleChangeOrder = (currentIndex: number, targetIndex: number) => {
@@ -195,7 +211,9 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
       if (!socket) return;
 
       const eventHandlers = {
-        [SocketServerEvent.SERVER_CHANNELS_UPDATE]: handleServerChannelsUpdate,
+        [SocketServerEvent.CHANNEL_ADD]: handleChannelAdd,
+        [SocketServerEvent.CHANNEL_UPDATE]: handleChannelUpdate,
+        [SocketServerEvent.CHANNEL_DELETE]: handleChannelDelete,
       };
       const unsubscribe: (() => void)[] = [];
 
@@ -217,8 +235,8 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
           refreshService.serverChannels({
             serverId,
           }),
-        ]).then(([userServers]) => {
-          handleServerChannelsUpdate(userServers);
+        ]).then(([channels]) => {
+          if (channels) handleChannelsUpdate(channels);
         });
       };
       refresh();

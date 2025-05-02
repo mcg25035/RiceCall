@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 // Types
-import { User, DirectMessage, SocketServerEvent, Badge } from '@/types';
+import { User, DirectMessage, SocketServerEvent, Badge, Server } from '@/types';
 
 // Providers
 // import { useLanguage } from '@/providers/Language';
@@ -40,26 +40,11 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
     const refreshRef = useRef(false);
 
     // States
-    const [userAvatarUrl, setUserAvatarUrl] = useState<User['avatar']>(
-      createDefault.user().avatar,
+    const [user, setUser] = useState<User>(createDefault.user());
+    const [target, setTarget] = useState<User>(createDefault.user());
+    const [targetCurrentServer, setTargetCurrentServer] = useState<Server>(
+      createDefault.server(),
     );
-    const [targetAvatarUrl, setTargetAvatarUrl] = useState<User['avatar']>(
-      createDefault.user().avatar,
-    );
-    const [targetLevel, setTargetLevel] = useState<User['level']>(
-      createDefault.user().level,
-    );
-    const [targetSignature, setTargetSignature] = useState<User['signature']>(
-      createDefault.user().signature,
-    );
-    const [targetVip, setTargetVip] = useState<User['vip']>(
-      createDefault.user().vip,
-    );
-    const [targetCurrentServerName, setTargetCurrentServerName] =
-      useState<string>();
-    const [targetCurrentServerId, setTargetCurrentServerId] =
-      useState<string>();
-    const [targetBadges, setTargetBadges] = useState<Badge[]>([]);
     const [directMessages, setDirectMessages] = useState<DirectMessage[]>([]);
     const [messageInput, setMessageInput] = useState<string>('');
     const [isComposing, setIsComposing] = useState<boolean>(false);
@@ -68,7 +53,18 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
 
     // Variables
     const { targetId, userId } = initialData;
+    const { avatarUrl: userAvatarUrl, level: userLevel } = user;
+    const {
+      avatarUrl: targetAvatarUrl,
+      level: targetLevel,
+      vip: targetVip,
+      signature: targetSignature,
+      currentServerId: targetCurrentServerId,
+      badges: targetBadges,
+    } = target;
+    const { name: targetCurrentServerName } = targetCurrentServer;
     const targetGrade = Math.min(56, targetLevel); // 56 is max level
+    const userGrade = Math.min(56, userLevel); // 56 is max level
 
     // Handlers
     const handleSendMessage = (
@@ -80,19 +76,12 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
       socket.send.directMessage({ directMessage, userId, targetId });
     };
 
-    const handleTargetUpdate = (data: User | null) => {
-      if (!data) data = createDefault.user();
-      setTargetAvatarUrl(data.avatarUrl);
-      setTargetLevel(data.level);
-      setTargetSignature(data.signature);
-      setTargetVip(data.vip);
-      setTargetCurrentServerId(data.currentServerId);
-      setTargetBadges(data.badges);
+    const handleTargetUpdate = (target: User) => {
+      setTarget(target);
     };
 
-    const handleUserUpdate = (data: User | null) => {
-      if (!data) data = createDefault.user();
-      setUserAvatarUrl(data.avatarUrl);
+    const handleUserUpdate = (user: User) => {
+      setUser(user);
     };
 
     const handleOnDirectMessage = (data: DirectMessage) => {
@@ -161,8 +150,8 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
             userId: userId,
           }),
         ]).then(([target, user]) => {
-          handleTargetUpdate(target);
-          handleUserUpdate(user);
+          if (target) handleTargetUpdate(target);
+          if (user) handleUserUpdate(user);
         });
       };
       refresh();
@@ -175,7 +164,7 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
           serverId: targetCurrentServerId,
         }),
       ]).then(([server]) => {
-        setTargetCurrentServerName(server?.name);
+        if (server) setTargetCurrentServer(server);
       });
     }, [targetCurrentServerId]);
 
@@ -233,7 +222,7 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
             <div className={directMessage['serverInArea']}>
               <div className={directMessage['serverInIcon']} />
               <div className={directMessage['serverInName']}>
-                {targetCurrentServerName || ''}
+                {targetCurrentServerName}
               </div>
             </div>
             <div className={directMessage['messageArea']}>
