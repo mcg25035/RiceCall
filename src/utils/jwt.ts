@@ -1,17 +1,16 @@
 import jwt from 'jsonwebtoken';
 
 // Config
-import config from '@/config';
-
-const JWT_SECRET = config.jwtSecret as jwt.Secret;
-const JWT_EXPIRES_IN = parseInt(config.jwtExpiresIn || '0');
+import { jwtConfig } from '@/config';
 
 export function generateJWT(data: any) {
-  const encoded = jwt.sign(data, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  const encoded = jwt.sign(data, jwtConfig.secret, {
+    expiresIn: jwtConfig.expiresIn,
+  });
   return encoded;
 }
 
 export function verifyJWT(token: string) {
-  const decoded = jwt.verify(token, JWT_SECRET) as any;
+  const decoded = jwt.verify(token, jwtConfig.secret) as any;
   return { valid: true, ...decoded };
 }

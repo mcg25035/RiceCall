@@ -1,8 +1,8 @@
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export const generateUniqueDisplayId = async (baseId = 20000000) => {
-  const servers = (await Database.get.all('servers')) || {};
+  const servers = (await database.get.all('servers')) || {};
   let displayId = baseId + Object.keys(servers).length;
 
   // Ensure displayId is unique

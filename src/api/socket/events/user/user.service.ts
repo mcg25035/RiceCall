@@ -4,7 +4,7 @@ import { Server, Socket } from 'socket.io';
 import StandardizedError from '@/error';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 // Handlers
 import {
@@ -23,7 +23,7 @@ export class SearchUserService {
 
   async use() {
     try {
-      const result = await Database.get.user(this.query);
+      const result = await database.get.user(this.query);
 
       return {
         userSearch: result,
@@ -48,7 +48,7 @@ export class ConnectUserService {
   async use() {
     try {
       const actions: any[] = [];
-      const user = await Database.get.user(this.userId);
+      const user = await database.get.user(this.userId);
 
       // Reconnect user to server and channel
       if (user.currentServerId) {
@@ -73,7 +73,7 @@ export class ConnectUserService {
         });
       }
 
-      await Database.set.user(this.userId, {
+      await database.set.user(this.userId, {
         lastActiveAt: Date.now(),
       });
 
@@ -100,7 +100,7 @@ export class DisconnectUserService {
 
   async use() {
     const actions: any[] = [];
-    const user = await Database.get.user(this.userId);
+    const user = await database.get.user(this.userId);
 
     // Disconnect user from server and channel
     if (user.currentServerId) {
@@ -125,7 +125,7 @@ export class DisconnectUserService {
       });
     }
 
-    await Database.set.user(this.userId, {
+    await database.set.user(this.userId, {
       lastActiveAt: Date.now(),
     });
 
@@ -158,7 +158,7 @@ export class UpdateUserService {
       });
     }
 
-    await Database.set.user(this.userId, this.update);
+    await database.set.user(this.userId, this.update);
 
     return {
       userUpdate: this.update,

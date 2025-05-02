@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 
 // Config
-import config from '@/config';
+import { appConfig } from '@/config';
 
 export default class ImagesService {
   constructor(private filePath: string[], private fileName: string) {
@@ -14,7 +14,7 @@ export default class ImagesService {
     const filePath = path.join(
       __dirname,
       ...this.filePath,
-      `${config.filePrefix}${this.fileName}`,
+      `${appConfig.filePrefix}${this.fileName}`,
     );
     const file = await fs.readFile(filePath);
 

@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import StandardizedError from '@/error';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class CreateFriendGroupService {
   constructor(
@@ -30,14 +30,14 @@ export class CreateFriendGroupService {
 
     // Create friend group
     const friendGroupId = uuidv4();
-    await Database.set.friendGroup(friendGroupId, {
+    await database.set.friendGroup(friendGroupId, {
       ...this.preset,
       userId: this.userId,
       createdAt: Date.now(),
     });
 
     return {
-      friendGroupAdd: await Database.get.friendGroup(friendGroupId),
+      friendGroupAdd: await database.get.friendGroup(friendGroupId),
     };
   }
 }
@@ -67,7 +67,7 @@ export class UpdateFriendGroupService {
     }
 
     // Update friend group
-    await Database.set.friendGroup(this.friendGroupId, this.update);
+    await database.set.friendGroup(this.friendGroupId, this.update);
 
     return {};
   }
@@ -96,7 +96,7 @@ export class DeleteFriendGroupService {
     }
 
     // Delete friend group
-    await Database.delete.friendGroup(this.friendGroupId);
+    await database.delete.friendGroup(this.friendGroupId);
 
     return {};
   }

@@ -1,5 +1,5 @@
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class RefreshMemberService {
   constructor(private userId: string, private serverId: string) {
@@ -8,7 +8,7 @@ export class RefreshMemberService {
   }
 
   async use() {
-    const member = await Database.get.member(this.userId, this.serverId);
+    const member = await database.get.member(this.userId, this.serverId);
     return member;
   }
 }

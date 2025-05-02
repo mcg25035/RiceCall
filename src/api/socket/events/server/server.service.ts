@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import StandardizedError from '@/error';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 // Utils
 import { generateUniqueDisplayId } from '@/utils';
@@ -23,7 +23,7 @@ export class SearchServerService {
   }
 
   async use() {
-    const result = await Database.get.server(this.query);
+    const result = await database.get.server(this.query);
 
     return {
       serverSearch: result,
@@ -39,8 +39,8 @@ export class CreateServerService {
 
   async use() {
     const actions: any[] = [];
-    const operator = await Database.get.user(this.operatorId);
-    const operatorServers = await Database.get.userServers(this.operatorId);
+    const operator = await database.get.user(this.operatorId);
+    const operatorServers = await database.get.userServers(this.operatorId);
 
     if (
       operatorServers &&
@@ -59,7 +59,7 @@ export class CreateServerService {
     // Create server
     const serverId = uuidv4();
     const displayId = await generateUniqueDisplayId();
-    await Database.set.server(serverId, {
+    await database.set.server(serverId, {
       ...this.server,
       displayId,
       ownerId: this.operatorId,
@@ -68,24 +68,24 @@ export class CreateServerService {
 
     // Create channel (lobby)
     const lobbyId = uuidv4();
-    await Database.set.channel(lobbyId, {
+    await database.set.channel(lobbyId, {
       name: '大廳',
       isLobby: true,
     });
 
     // Create member
-    await Database.set.member(this.operatorId, serverId, {
+    await database.set.member(this.operatorId, serverId, {
       permissionLevel: 6,
       createdAt: Date.now(),
     });
 
     // Create user-server
-    await Database.set.userServer(this.operatorId, serverId, {
+    await database.set.userServer(this.operatorId, serverId, {
       owned: true,
     });
 
     // Update Server (lobby)
-    await Database.set.server(serverId, {
+    await database.set.server(serverId, {
       lobbyId,
     });
 
@@ -118,7 +118,7 @@ export class UpdateServerService {
   }
 
   async use() {
-    const operatorMember = await Database.get.member(
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -134,7 +134,7 @@ export class UpdateServerService {
     }
 
     // Update server
-    await Database.set.server(this.serverId, this.update);
+    await database.set.server(this.serverId, this.update);
 
     return {};
   }
@@ -153,8 +153,8 @@ export class ConnectServerService {
 
   async use() {
     const actions: any[] = [];
-    const server = await Database.get.server(this.serverId);
-    const operatorMember = await Database.get.member(
+    const server = await database.get.server(this.serverId);
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -186,13 +186,13 @@ export class ConnectServerService {
 
     // Create new membership if there isn't one
     if (!operatorMember) {
-      await Database.set.member(this.userId, this.serverId, {
+      await database.set.member(this.userId, this.serverId, {
         permissionLevel: 1,
       });
     }
 
     // Update user-server
-    await Database.set.userServer(this.userId, this.serverId, {
+    await database.set.userServer(this.userId, this.serverId, {
       recent: true,
       timestamp: Date.now(),
     });
@@ -209,9 +209,9 @@ export class ConnectServerService {
     });
 
     return {
-      serversUpdate: await Database.get.userServers(this.userId),
-      channelsUpdate: await Database.get.serverChannels(this.serverId),
-      membersUpdate: await Database.get.serverMembers(this.serverId),
+      serversUpdate: await database.get.userServers(this.userId),
+      channelsUpdate: await database.get.serverChannels(this.serverId),
+      membersUpdate: await database.get.serverMembers(this.serverId),
       actions,
     };
   }
@@ -230,9 +230,9 @@ export class DisconnectServerService {
 
   async use() {
     const actions: any[] = [];
-    const user = await Database.get.user(this.userId);
-    const userMember = await Database.get.member(this.userId, this.serverId);
-    const operatorMember = await Database.get.member(
+    const user = await database.get.user(this.userId);
+    const userMember = await database.get.member(this.userId, this.serverId);
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );

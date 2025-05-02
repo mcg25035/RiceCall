@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // Config
-import config from '@/config';
+import { appConfig, serverConfig } from '@/config';
 
 // Systems
 import imageSystem from '@/systems/image';
@@ -24,13 +24,13 @@ export default class UploadService {
     const fullFileName = `${this.fileName}.${this.ext}`;
     const filePath = path.join(
       imageSystem.directory(this.type),
-      `${config.filePrefix}${fullFileName}`,
+      `${appConfig.filePrefix}${fullFileName}`,
     );
 
     const files = await fs.readdir(imageSystem.directory(this.type));
     const matchingFiles = files.filter(
       (file: string) =>
-        file.startsWith(`${config.filePrefix}${this.fileName}`) &&
+        file.startsWith(`${appConfig.filePrefix}${this.fileName}`) &&
         !file.startsWith('__'),
     );
 
@@ -50,7 +50,7 @@ export default class UploadService {
 
     return {
       avatar: fullFileName,
-      avatarUrl: `${config.serverUrl}:${config.serverPort}/images/${this.type}/${fullFileName}`,
+      avatarUrl: `${serverConfig.url}:${serverConfig.port}/images/${this.type}/${fullFileName}`,
     };
   }
 }

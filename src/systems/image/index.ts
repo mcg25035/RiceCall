@@ -2,11 +2,11 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // Config
-import globalConfig from '@/config';
+import { appConfig } from '@/config';
 import config from './config.json';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 // Utils
 import Logger from '@/utils/logger';
@@ -15,10 +15,10 @@ const imageSystem = {
   setup: async () => {
     try {
       // Ensure uploads directory exists
-      await fs.mkdir(globalConfig.uploadsDir, { recursive: true });
-      await fs.mkdir(globalConfig.serverAvatarDir, { recursive: true });
-      await fs.mkdir(globalConfig.userAvatarDir, { recursive: true });
-      await fs.mkdir(globalConfig.backupDir, { recursive: true });
+      await fs.mkdir(appConfig.uploadsDir, { recursive: true });
+      await fs.mkdir(appConfig.serverAvatarDir, { recursive: true });
+      await fs.mkdir(appConfig.userAvatarDir, { recursive: true });
+      await fs.mkdir(appConfig.backupDir, { recursive: true });
 
       // Set up cleanup interval
       setInterval(() => {
@@ -49,19 +49,19 @@ const imageSystem = {
   directory: (type: string) => {
     switch (type) {
       case 'server':
-        return path.join(__dirname, globalConfig.serverAvatarDir);
+        return path.join(__dirname, appConfig.serverAvatarDir);
       case 'user':
-        return path.join(__dirname, globalConfig.userAvatarDir);
+        return path.join(__dirname, appConfig.userAvatarDir);
       default:
-        return path.join(__dirname, globalConfig.uploadsDir);
+        return path.join(__dirname, appConfig.uploadsDir);
     }
   },
 
   cleanupUserAvatars: async () => {
     try {
-      const directory = path.join(__dirname, globalConfig.userAvatarDir);
+      const directory = path.join(__dirname, appConfig.userAvatarDir);
       const files = await fs.readdir(directory);
-      const data = (await Database.get.all('users')) || {};
+      const data = (await database.get.all('users')) || {};
       const avatarMap: Record<string, boolean> = {};
 
       Object.values(data).forEach((item: any) => {
@@ -71,8 +71,8 @@ const imageSystem = {
       });
 
       const unusedFiles = files.filter((file) => {
-        const isValidType = Object.keys(globalConfig.mimeTypes).some((ext) =>
-          file.endsWith(ext),
+        const isValidType = Object.keys(appConfig.allowedMimeTypes).some(
+          (ext) => file.endsWith(ext),
         );
         const isNotReserved = !file.startsWith('__');
         const fileNameWithoutExt = file.split('.')[0];
@@ -110,9 +110,9 @@ const imageSystem = {
 
   cleanupServerAvatars: async () => {
     try {
-      const directory = path.join(__dirname, globalConfig.serverAvatarDir);
+      const directory = path.join(__dirname, appConfig.serverAvatarDir);
       const files = await fs.readdir(directory);
-      const data = (await Database.get.all('servers')) || {};
+      const data = (await database.get.all('servers')) || {};
       const avatarMap: Record<string, boolean> = {};
 
       Object.values(data).forEach((item: any) => {
@@ -122,8 +122,8 @@ const imageSystem = {
       });
 
       const unusedFiles = files.filter((file) => {
-        const isValidType = Object.keys(globalConfig.mimeTypes).some((ext) =>
-          file.endsWith(ext),
+        const isValidType = Object.keys(appConfig.allowedMimeTypes).some(
+          (ext) => file.endsWith(ext),
         );
         const isNotReserved = !file.startsWith('__');
         const fileNameWithoutExt = file.split('.')[0];

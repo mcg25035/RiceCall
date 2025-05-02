@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import StandardizedError from '@/error';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 // Systems
 import xpSystem from '@/systems/xp';
@@ -37,12 +37,12 @@ export class ConnectChannelService {
 
   async use() {
     const actions: any[] = [];
-    const user = await Database.get.user(this.userId);
-    const server = await Database.get.server(this.serverId);
-    const channel = await Database.get.channel(this.channelId);
-    const channelUsers = await Database.get.channelUsers(this.channelId);
-    const userMember = await Database.get.member(this.userId, this.serverId);
-    const operatorMember = await Database.get.member(
+    const user = await database.get.user(this.userId);
+    const server = await database.get.server(this.serverId);
+    const channel = await database.get.channel(this.channelId);
+    const channelUsers = await database.get.channelUsers(this.channelId);
+    const userMember = await database.get.member(this.userId, this.serverId);
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -138,13 +138,13 @@ export class ConnectChannelService {
       currentChannelId: this.channelId,
       lastActiveAt: Date.now(),
     };
-    await Database.set.user(this.userId, updatedUser);
+    await database.set.user(this.userId, updatedUser);
 
     // Update Member
     const updatedMember = {
       lastJoinChannelTime: Date.now(),
     };
-    await Database.set.member(this.userId, this.serverId, updatedMember);
+    await database.set.member(this.userId, this.serverId, updatedMember);
 
     // Disconnect previous channel
     if (user.currentChannelId) {
@@ -192,8 +192,8 @@ export class DisconnectChannelService {
 
   async use() {
     const actions: any[] = [];
-    const userMember = await Database.get.member(this.userId, this.serverId);
-    const operatorMember = await Database.get.member(
+    const userMember = await database.get.member(this.userId, this.serverId);
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -218,7 +218,7 @@ export class DisconnectChannelService {
       currentChannelId: null,
       lastActiveAt: Date.now(),
     };
-    await Database.set.user(this.userId, updatedUser);
+    await database.set.user(this.userId, updatedUser);
 
     // Clear user xp interval
     await xpSystem.delete(this.userId);
@@ -251,9 +251,9 @@ export class CreateChannelService {
   }
 
   async use() {
-    const category = await Database.get.channel(this.channel.categoryId);
-    const serverChannels = await Database.get.serverChannels(this.serverId);
-    const operatorMember = await Database.get.member(
+    const category = await database.get.channel(this.channel.categoryId);
+    const serverChannels = await database.get.serverChannels(this.serverId);
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -279,14 +279,14 @@ export class CreateChannelService {
     }
 
     if (category && !category.categoryId) {
-      await Database.set.channel(category.channelId, {
+      await database.set.channel(category.channelId, {
         type: 'category',
       });
     }
 
     // Create new channel
     const channelId = uuidv4();
-    await Database.set.channel(channelId, {
+    await database.set.channel(channelId, {
       ...this.channel,
       serverId: this.serverId,
       order: serverChannels
@@ -300,7 +300,7 @@ export class CreateChannelService {
     });
 
     return {
-      channelAdd: await Database.get.channel(channelId),
+      channelAdd: await database.get.channel(channelId),
     };
   }
 }
@@ -320,8 +320,8 @@ export class UpdateChannelService {
 
   async use() {
     const messages: any[] = [];
-    const channel = await Database.get.channel(this.channelId);
-    const operatorMember = await Database.get.member(
+    const channel = await database.get.channel(this.channelId);
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -439,7 +439,7 @@ export class UpdateChannelService {
     }
 
     // Update channel
-    await Database.set.channel(this.channelId, this.update);
+    await database.set.channel(this.channelId, this.update);
 
     return {
       channelUpdate: this.update,
@@ -461,10 +461,10 @@ export class DeleteChannelService {
 
   async use() {
     const actions: any[] = [];
-    const channel = await Database.get.channel(this.channelId);
-    const channelUsers = await Database.get.channelUsers(this.channelId);
-    const channelChildren = await Database.get.channelChildren(this.channelId);
-    const operatorMember = await Database.get.member(
+    const channel = await database.get.channel(this.channelId);
+    const channelUsers = await database.get.channelUsers(this.channelId);
+    const channelChildren = await database.get.channelChildren(this.channelId);
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -480,22 +480,22 @@ export class DeleteChannelService {
     }
 
     if (channel.categoryId) {
-      const categoryChildren = await Database.get.channelChildren(
+      const categoryChildren = await database.get.channelChildren(
         channel.categoryId,
       );
       if (categoryChildren && categoryChildren.length <= 1) {
-        await Database.set.channel(channel.categoryId, {
+        await database.set.channel(channel.categoryId, {
           type: 'channel',
         });
       }
     }
 
     if (channelChildren && channelChildren.length) {
-      const serverChannels = await Database.get.serverChannels(this.serverId);
+      const serverChannels = await database.get.serverChannels(this.serverId);
       await Promise.all(
         channelChildren.map(
           async (child: any, index: number) =>
-            await Database.set.channel(child.channelId, {
+            await database.set.channel(child.channelId, {
               categoryId: null,
               order: serverChannels ? serverChannels.length + index : 0,
             }),
@@ -504,7 +504,7 @@ export class DeleteChannelService {
     }
 
     if (channelUsers && channelUsers.length) {
-      const server = await Database.get.server(this.serverId);
+      const server = await database.get.server(this.serverId);
       channelUsers.map((user: any) =>
         actions.push({
           handler: (io: Server, socket: Socket) =>
@@ -519,7 +519,7 @@ export class DeleteChannelService {
     }
 
     // Delete channel
-    await Database.delete.channel(this.channelId);
+    await database.delete.channel(this.channelId);
 
     return {
       actions,

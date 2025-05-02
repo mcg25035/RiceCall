@@ -2,10 +2,10 @@ import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 // Config
-import config from '@/config';
+import { serverConfig } from '@/config';
 
 export default class RegisterService {
   constructor(
@@ -21,16 +21,16 @@ export default class RegisterService {
   async use() {
     // Create user data
     const userId = uuidv4();
-    await Database.set.user(userId, {
+    await database.set.user(userId, {
       name: this.username,
       avatar: userId,
-      avatarUrl: `data:image/png;base64,${config.serverUrl}:${config.serverPort}/images/userAvatars/`,
+      avatarUrl: `data:image/png;base64,${serverConfig.url}:${serverConfig.port}/images/userAvatars/`,
       createdAt: Date.now(),
     });
 
     // Create account password list
     const hashedPassword = await bcrypt.hash(this.password, 10);
-    await Database.set.account(this.account, {
+    await database.set.account(this.account, {
       password: hashedPassword,
       userId: userId,
     });

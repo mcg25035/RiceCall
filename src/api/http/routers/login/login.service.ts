@@ -7,7 +7,7 @@ import StandardizedError from '@/error';
 import { generateJWT } from '@/utils/jwt';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export default class LoginService {
   constructor(private account: string, private password: string) {
@@ -16,7 +16,7 @@ export default class LoginService {
   }
 
   async use() {
-    const data = await Database.get.account(this.account);
+    const data = await database.get.account(this.account);
     if (!data) {
       throw new StandardizedError({
         name: 'ValidationError',
@@ -41,7 +41,7 @@ export default class LoginService {
       });
     }
 
-    const user = await Database.get.user(data.userId);
+    const user = await database.get.user(data.userId);
     if (!user) {
       throw new StandardizedError({
         name: 'ValidationError',
@@ -52,7 +52,7 @@ export default class LoginService {
       });
     }
 
-    await Database.set.user(data.userId, {
+    await database.set.user(data.userId, {
       lastActiveAt: Date.now(),
     });
 

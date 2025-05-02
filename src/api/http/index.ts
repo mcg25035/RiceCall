@@ -283,7 +283,7 @@ export default class HttpServer {
     });
 
     server.listen(this.port, () => {
-      console.log(`Server is running on port ${this.port}`);
+      new Logger('Server').info(`Server is running on port ${this.port}`);
     });
 
     server.on('error', (error: any) => {

@@ -1,7 +1,5 @@
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.join(__dirname, '../.env') });
+// Config
+import { serverConfig } from '@/config';
 
 // Error
 import StandardizedError from '@/error';
@@ -15,11 +13,17 @@ import HttpServer from '@/api/http';
 // Socket Server
 import SocketServer from '@/api/socket';
 
+// Database
+import Database from '@/database';
+
 // HTTP Server
-const httpServer = new HttpServer(4500).setup();
+export const httpServer = new HttpServer(serverConfig.port).setup();
 
 // Socket Server
-const socketServer = new SocketServer(httpServer).setup();
+export const socketServer = new SocketServer(httpServer).setup();
+
+// Database
+export const database = new Database();
 
 // Error Handling
 process.on('uncaughtException', (error: any) => {

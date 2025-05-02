@@ -1,5 +1,5 @@
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class RefreshUserService {
   constructor(private userId: string) {
@@ -7,7 +7,7 @@ export class RefreshUserService {
   }
 
   async use() {
-    const user = await Database.get.user(this.userId);
+    const user = await database.get.user(this.userId);
     return user;
   }
 }
@@ -18,7 +18,7 @@ export class RefreshUserFriendApplicationsService {
   }
 
   async use() {
-    const userFriendApplications = await Database.get.userFriendApplications(
+    const userFriendApplications = await database.get.userFriendApplications(
       this.userId,
     );
     return userFriendApplications;
@@ -31,7 +31,7 @@ export class RefreshUserFriendGroupsService {
   }
 
   async use() {
-    const userFriendGroups = await Database.get.userFriendGroups(this.userId);
+    const userFriendGroups = await database.get.userFriendGroups(this.userId);
     return userFriendGroups;
   }
 }
@@ -42,7 +42,7 @@ export class RefreshUserFriendsService {
   }
 
   async use() {
-    const userFriends = await Database.get.userFriends(this.userId);
+    const userFriends = await database.get.userFriends(this.userId);
     return userFriends;
   }
 }
@@ -53,7 +53,7 @@ export class RefreshUserServersService {
   }
 
   async use() {
-    const userServers = await Database.get.userServers(this.userId);
+    const userServers = await database.get.userServers(this.userId);
     return userServers;
   }
 }

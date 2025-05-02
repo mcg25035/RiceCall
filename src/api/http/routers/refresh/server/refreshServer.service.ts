@@ -1,5 +1,5 @@
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class RefreshServerService {
   constructor(private serverId: string) {
@@ -7,7 +7,7 @@ export class RefreshServerService {
   }
 
   async use() {
-    const server = await Database.get.server(this.serverId);
+    const server = await database.get.server(this.serverId);
     return server;
   }
 }
@@ -18,7 +18,7 @@ export class RefreshServerChannelsService {
   }
 
   async use() {
-    const serverChannels = await Database.get.serverChannels(this.serverId);
+    const serverChannels = await database.get.serverChannels(this.serverId);
     return serverChannels;
   }
 }
@@ -30,7 +30,7 @@ export class RefreshServerMemberApplicationsService {
 
   async use() {
     const serverMemberApplications =
-      await Database.get.serverMemberApplications(this.serverId);
+      await database.get.serverMemberApplications(this.serverId);
     return serverMemberApplications;
   }
 }
@@ -41,7 +41,7 @@ export class RefreshServerMembersService {
   }
 
   async use() {
-    const serverMembers = await Database.get.serverMembers(this.serverId);
+    const serverMembers = await database.get.serverMembers(this.serverId);
     return serverMembers;
   }
 }

@@ -2,7 +2,7 @@
 import StandardizedError from '@/error';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class CreateMemberApplicationService {
   constructor(
@@ -18,7 +18,7 @@ export class CreateMemberApplicationService {
   }
 
   async use() {
-    const operatorMember = await Database.get.member(
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -44,13 +44,13 @@ export class CreateMemberApplicationService {
     }
 
     // Create member application
-    await Database.set.memberApplication(this.userId, this.serverId, {
+    await database.set.memberApplication(this.userId, this.serverId, {
       ...this.preset,
       createdAt: Date.now(),
     });
 
     return {
-      memberApplicationAdd: await Database.get.memberApplication(
+      memberApplicationAdd: await database.get.memberApplication(
         this.userId,
         this.serverId,
       ),
@@ -72,7 +72,7 @@ export class UpdateMemberApplicationService {
   }
 
   async use() {
-    const operatorMember = await Database.get.member(
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -90,7 +90,7 @@ export class UpdateMemberApplicationService {
     }
 
     // Update member application
-    await Database.set.memberApplication(
+    await database.set.memberApplication(
       this.userId,
       this.serverId,
       this.update,
@@ -112,7 +112,7 @@ export class DeleteMemberApplicationService {
   }
 
   async use() {
-    const operatorMember = await Database.get.member(
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -130,7 +130,7 @@ export class DeleteMemberApplicationService {
     }
 
     // Delete member application
-    await Database.delete.memberApplication(this.userId, this.serverId);
+    await database.delete.memberApplication(this.userId, this.serverId);
 
     return {};
   }

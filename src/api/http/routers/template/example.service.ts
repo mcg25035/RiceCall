@@ -1,5 +1,5 @@
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export default class ExampleService {
   // TODO: change service name

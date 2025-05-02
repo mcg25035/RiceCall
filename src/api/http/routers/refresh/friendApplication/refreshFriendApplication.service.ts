@@ -1,5 +1,5 @@
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class RefreshFriendApplicationService {
   constructor(private senderId: string, private receiverId: string) {
@@ -8,7 +8,7 @@ export class RefreshFriendApplicationService {
   }
 
   async use() {
-    const friendApplication = await Database.get.friendApplication(
+    const friendApplication = await database.get.friendApplication(
       this.senderId,
       this.receiverId,
     );

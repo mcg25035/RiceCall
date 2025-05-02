@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import StandardizedError from '@/error';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class CreateMemberService {
   constructor(
@@ -20,8 +20,8 @@ export class CreateMemberService {
   }
 
   async use() {
-    const server = await Database.get.server(this.serverId);
-    const operatorMember = await Database.get.member(
+    const server = await database.get.server(this.serverId);
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -82,14 +82,14 @@ export class CreateMemberService {
     }
 
     // Create member
-    await Database.set.member(this.userId, this.serverId, {
+    await database.set.member(this.userId, this.serverId, {
       ...this.preset,
       createdAt: Date.now(),
     });
 
     return {
-      memberAdd: await Database.get.member(this.userId, this.serverId),
-      serverUpdate: await Database.get.serverMembers(this.serverId),
+      memberAdd: await database.get.member(this.userId, this.serverId),
+      serverUpdate: await database.get.serverMembers(this.serverId),
     };
   }
 }
@@ -108,8 +108,8 @@ export class UpdateMemberService {
   }
 
   async use() {
-    const userMember = await Database.get.member(this.userId, this.serverId);
-    const operatorMember = await Database.get.member(
+    const userMember = await database.get.member(this.userId, this.serverId);
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -214,7 +214,7 @@ export class UpdateMemberService {
     }
 
     // Update member
-    await Database.set.member(this.userId, this.serverId, this.update);
+    await database.set.member(this.userId, this.serverId, this.update);
 
     return {};
   }
@@ -232,8 +232,8 @@ export class DeleteMemberService {
   }
 
   async use() {
-    const userMember = await Database.get.member(this.userId, this.serverId);
-    const operatorMember = await Database.get.member(
+    const userMember = await database.get.member(this.userId, this.serverId);
+    const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
     );
@@ -279,7 +279,7 @@ export class DeleteMemberService {
     }
 
     // Delete member
-    await Database.delete.member(this.userId, this.serverId);
+    await database.delete.member(this.userId, this.serverId);
 
     return {};
   }

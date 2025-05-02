@@ -1,5 +1,5 @@
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class RefreshChannelService {
   constructor(private channelId: string) {
@@ -7,7 +7,7 @@ export class RefreshChannelService {
   }
 
   async use() {
-    const channel = await Database.get.channel(this.channelId);
+    const channel = await database.get.channel(this.channelId);
     return channel;
   }
 }

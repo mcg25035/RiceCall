@@ -2,7 +2,7 @@
 import Logger from '@/utils/logger';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 // Config
 import config from './config.json';
@@ -130,21 +130,21 @@ const xpSystem = {
 
   obtainXp: async (userId: string) => {
     try {
-      const user = await Database.get.user(userId);
+      const user = await database.get.user(userId);
       if (!user) {
         new Logger('XPSystem').warn(
           `User(${userId}) not found, cannot obtain XP`,
         );
         return false;
       }
-      const server = await Database.get.server(user.currentServerId);
+      const server = await database.get.server(user.currentServerId);
       if (!server) {
         new Logger('XPSystem').warn(
           `Server(${user.currentServerId}) not found, cannot obtain XP`,
         );
         return false;
       }
-      const member = await Database.get.member(user.userId, server.serverId);
+      const member = await database.get.member(user.userId, server.serverId);
       if (!member) {
         new Logger('XPSystem').warn(
           `User(${user.userId}) not found in server(${server.serverId}), cannot update contribution`,
@@ -177,19 +177,19 @@ const xpSystem = {
         xp: user.xp,
         requiredXp: xpSystem.getRequiredXP(user.level),
       };
-      await Database.set.user(user.userId, updatedUser);
+      await database.set.user(user.userId, updatedUser);
 
       // Update member contribution if in a server
       const updatedMember = {
         contribution: member.contribution,
       };
-      await Database.set.member(user.userId, server.serverId, updatedMember);
+      await database.set.member(user.userId, server.serverId, updatedMember);
 
       // Update server wealth
       const updatedServer = {
         wealth: server.wealth,
       };
-      await Database.set.server(server.serverId, updatedServer);
+      await database.set.server(server.serverId, updatedServer);
 
       new Logger('XPSystem').info(
         `User(${userId}) obtained ${config.BASE_XP * vipBoost} XP and ${

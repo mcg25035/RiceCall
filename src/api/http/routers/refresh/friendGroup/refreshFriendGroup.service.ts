@@ -1,5 +1,5 @@
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class RefreshFriendGroupService {
   constructor(private friendGroupId: string) {
@@ -7,7 +7,7 @@ export class RefreshFriendGroupService {
   }
 
   async use() {
-    const friendGroup = await Database.get.friendGroup(this.friendGroupId);
+    const friendGroup = await database.get.friendGroup(this.friendGroupId);
     return friendGroup;
   }
 }

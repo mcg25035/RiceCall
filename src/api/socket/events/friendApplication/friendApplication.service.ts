@@ -2,7 +2,7 @@
 import StandardizedError from '@/error';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class CreateFriendApplicationService {
   constructor(
@@ -18,7 +18,7 @@ export class CreateFriendApplicationService {
   }
 
   async use() {
-    const friendApplication = await Database.get.friendApplication(
+    const friendApplication = await database.get.friendApplication(
       this.senderId,
       this.receiverId,
     );
@@ -54,13 +54,13 @@ export class CreateFriendApplicationService {
     }
 
     // Create friend application
-    await Database.set.friendApplication(this.senderId, this.receiverId, {
+    await database.set.friendApplication(this.senderId, this.receiverId, {
       ...this.preset,
       createdAt: Date.now(),
     });
 
     return {
-      friendApplicationAdd: await Database.get.friendApplication(
+      friendApplicationAdd: await database.get.friendApplication(
         this.senderId,
         this.receiverId,
       ),
@@ -93,7 +93,7 @@ export class UpdateFriendApplicationService {
     }
 
     // Update friend application
-    await Database.set.friendApplication(
+    await database.set.friendApplication(
       this.senderId,
       this.receiverId,
       this.update,
@@ -126,7 +126,7 @@ export class DeleteFriendApplicationService {
     }
 
     // Delete friend application
-    await Database.delete.friendApplication(this.senderId, this.receiverId);
+    await database.delete.friendApplication(this.senderId, this.receiverId);
 
     return {};
   }

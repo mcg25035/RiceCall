@@ -2,7 +2,7 @@
 import StandardizedError from '@/error';
 
 // Database
-import Database from '@/database';
+import { database } from '@/index';
 
 export class CreateFriendService {
   constructor(
@@ -18,7 +18,7 @@ export class CreateFriendService {
   }
 
   async use() {
-    const friend = await Database.get.friend(this.userId, this.targetId);
+    const friend = await database.get.friend(this.userId, this.targetId);
 
     if (friend) {
       throw new StandardizedError({
@@ -51,20 +51,20 @@ export class CreateFriendService {
     }
 
     // Create friend
-    await Database.set.friend(this.userId, this.targetId, {
+    await database.set.friend(this.userId, this.targetId, {
       ...this.preset,
       createdAt: Date.now(),
     });
 
     // Create friend (reverse)
-    await Database.set.friend(this.targetId, this.userId, {
+    await database.set.friend(this.targetId, this.userId, {
       ...this.preset,
       createdAt: Date.now(),
     });
 
     return {
-      userFriendAdd: await Database.get.friend(this.userId, this.targetId),
-      targetFriendAdd: await Database.get.friend(this.targetId, this.userId),
+      userFriendAdd: await database.get.friend(this.userId, this.targetId),
+      targetFriendAdd: await database.get.friend(this.targetId, this.userId),
     };
   }
 }
@@ -94,7 +94,7 @@ export class UpdateFriendService {
     }
 
     // Update friend
-    await Database.set.friend(this.userId, this.targetId, this.update);
+    await database.set.friend(this.userId, this.targetId, this.update);
 
     return {};
   }
@@ -123,10 +123,10 @@ export class DeleteFriendService {
     }
 
     // Delete friend
-    await Database.delete.friend(this.userId, this.targetId);
+    await database.delete.friend(this.userId, this.targetId);
 
     // Delete friend (reverse)
-    await Database.delete.friend(this.targetId, this.userId);
+    await database.delete.friend(this.targetId, this.userId);
 
     return {};
   }
