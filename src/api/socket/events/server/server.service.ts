@@ -153,6 +153,7 @@ export class ConnectServerService {
 
   async use() {
     const actions: any[] = [];
+    const user = await database.get.user(this.userId);
     const server = await database.get.server(this.serverId);
     const operatorMember = await database.get.member(
       this.operatorId,
@@ -198,21 +199,20 @@ export class ConnectServerService {
       timestamp: Date.now(),
     });
 
-    // Connect to the server's lobby channel
-    actions.push({
-      handler: (io: Server, socket: Socket) =>
-        new ConnectChannelHandler(io, socket),
-      data: {
-        userId: this.userId,
+    // Join lobby
+    actions.push(async (io: Server, socket: Socket) => {
+      await new ConnectChannelHandler(io, socket).handle({
         channelId: server.lobbyId,
         serverId: this.serverId,
-      },
+        userId: this.userId,
+      });
     });
 
     return {
       serversUpdate: await database.get.userServers(this.userId),
       serverChannelsUpdate: await database.get.serverChannels(this.serverId),
       serverMembersUpdate: await database.get.serverMembers(this.serverId),
+      currentServerId: user.currentServerId,
       actions,
     };
   }
@@ -270,19 +270,16 @@ export class DisconnectServerService {
 
     // Leave current channel
     if (user.currentChannelId) {
-      actions.push({
-        handler: (io: Server, socket: Socket) =>
-          new DisconnectChannelHandler(io, socket),
-        data: {
+      actions.push(async (io: Server, socket: Socket) => {
+        await new DisconnectChannelHandler(io, socket).handle({
           userId: this.userId,
           channelId: user.currentChannelId,
           serverId: user.currentServerId,
-        },
+        });
       });
     }
 
     return {
-      serverUpdate: null,
       actions,
     };
   }

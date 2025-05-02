@@ -44,30 +44,39 @@ export class ConnectChannelHandler extends SocketHandler {
 
       const targetSocket = SocketServer.getSocket(userId);
 
-      const { userUpdate, serverMemberUpdate, actions } =
-        await new ConnectChannelService(
-          operatorId,
-          userId,
-          channelId,
-          serverId,
-          password,
-        ).use();
+      const {
+        userUpdate,
+        serverMemberUpdate,
+        serverUpdate,
+        currentChannelId,
+        actions,
+      } = await new ConnectChannelService(
+        operatorId,
+        userId,
+        channelId,
+        serverId,
+        password,
+      ).use();
 
       if (targetSocket) {
+        if (currentChannelId) {
+          targetSocket.leave(`channel_${currentChannelId}`);
+          targetSocket
+            .to(`channel_${currentChannelId}`)
+            .emit('playSound', 'leave');
+        }
+
         targetSocket.emit('userUpdate', userUpdate);
+        targetSocket.emit('serverUpdate', serverUpdate);
         targetSocket.join(`channel_${channelId}`);
         targetSocket.to(`channel_${channelId}`).emit('playSound', 'join');
-      }
-
-      if (actions.length > 0) {
-        for (const action of actions) {
-          await action.handler(this.io, this.socket).handle(action.data);
-        }
       }
 
       this.io
         .to(`server_${serverId}`)
         .emit('serverMemberUpdate', userId, serverId, serverMemberUpdate);
+
+      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -141,7 +150,7 @@ export class CreateChannelHandler extends SocketHandler {
         'CREATECHANNEL',
       ).validate(data);
 
-      const { serverChannelAdd } = await new CreateChannelService(
+      const { serverChannelAdd, actions } = await new CreateChannelService(
         operatorId,
         serverId,
         channel,
@@ -150,6 +159,8 @@ export class CreateChannelHandler extends SocketHandler {
       this.io
         .to(`server_${serverId}`)
         .emit('serverChannelAdd', serverChannelAdd);
+
+      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -177,7 +188,7 @@ export class UpdateChannelHandler extends SocketHandler {
         'UPDATECHANNEL',
       ).validate(data);
 
-      const { onMessage, serverChannelUpdate } = await new UpdateChannelService(
+      const { onMessage } = await new UpdateChannelService(
         operatorId,
         serverId,
         channelId,
@@ -186,8 +197,8 @@ export class UpdateChannelHandler extends SocketHandler {
 
       this.io.to(`channel_${channelId}`).emit('onMessage', onMessage);
       this.io
-        .to(`channel_${channelId}`)
-        .emit('serverChannelUpdate', channelId, serverChannelUpdate);
+        .to(`server_${serverId}`)
+        .emit('serverChannelUpdate', channelId, channel);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -214,14 +225,13 @@ export class UpdateChannelsHandler extends SocketHandler {
       ).validate(data);
 
       await Promise.all(
-        channels.map(
-          async (channel: any) =>
-            await new UpdateChannelHandler(this.io, this.socket).handle({
-              channelId: channel.channelId,
-              serverId,
-              channel,
-            }),
-        ),
+        channels.map(async (channel: any) => {
+          await new UpdateChannelHandler(this.io, this.socket).handle({
+            channelId: channel.channelId,
+            serverId,
+            channel,
+          });
+        }),
       );
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
@@ -250,9 +260,15 @@ export class DeleteChannelHandler extends SocketHandler {
         'DELETECHANNEL',
       ).validate(data);
 
-      await new DeleteChannelService(operatorId, serverId, channelId).use();
+      const { actions } = await new DeleteChannelService(
+        operatorId,
+        serverId,
+        channelId,
+      ).use();
 
       this.io.to(`server_${serverId}`).emit('serverChannelDelete', channelId);
+
+      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({

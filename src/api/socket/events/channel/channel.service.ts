@@ -13,7 +13,7 @@ import xpSystem from '@/systems/xp';
 // Handlers
 import {
   ConnectChannelHandler,
-  DisconnectChannelHandler,
+  UpdateChannelHandler,
 } from '@/api/socket/events/channel/channel.handler';
 import {
   RTCJoinHandler,
@@ -67,6 +67,15 @@ export class ConnectChannelService {
             message: '該頻道為唯獨頻道',
             part: 'CONNECTCHANNEL',
             tag: 'CHANNEL_IS_READONLY',
+            statusCode: 403,
+          });
+        }
+        if (user.currentChannelId === this.channelId) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '用戶已經在該頻道中',
+            part: 'CONNECTCHANNEL',
+            tag: 'PERMISSION_DENIED',
             statusCode: 403,
           });
         }
@@ -146,32 +155,22 @@ export class ConnectChannelService {
     };
     await database.set.member(this.userId, this.serverId, updatedMember);
 
-    // Disconnect previous channel
     if (user.currentChannelId) {
-      // Leave RTC channel
-      actions.push({
-        handler: (io: Server, socket: Socket) =>
-          new RTCLeaveHandler(io, socket),
-        data: {
-          channelId: user.currentChannelId,
-        },
-      });
-    } else {
       // Setup user xp interval
       await xpSystem.create(this.userId);
     }
 
-    // Join RTC channel
-    actions.push({
-      handler: (io: Server, socket: Socket) => new RTCJoinHandler(io, socket),
-      data: {
+    actions.push(async (io: Server, socket: Socket) => {
+      await new RTCJoinHandler(io, socket).handle({
         channelId: this.channelId,
-      },
+      });
     });
 
     return {
       userUpdate: updatedUser,
-      serverMemberUpdate: updatedUser,
+      serverMemberUpdate: { ...updatedUser, ...updatedMember },
+      serverUpdate: updatedMember,
+      currentChannelId: user.currentChannelId,
       actions,
     };
   }
@@ -192,6 +191,7 @@ export class DisconnectChannelService {
 
   async use() {
     const actions: any[] = [];
+    const user = await database.get.user(this.userId);
     const userMember = await database.get.member(this.userId, this.serverId);
     const operatorMember = await database.get.member(
       this.operatorId,
@@ -199,10 +199,28 @@ export class DisconnectChannelService {
     );
 
     if (this.operatorId !== this.userId) {
+      if (user.currentChannelId !== this.channelId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '用戶不在該頻道中',
+          part: 'DISCONNECTCHANNEL',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+      if (user.currentServerId !== this.serverId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '用戶不在該語音群中',
+          part: 'DISCONNECTCHANNEL',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
       if (
         operatorMember.permissionLevel < 5 ||
         operatorMember.permissionLevel <= userMember.permissionLevel
-      )
+      ) {
         throw new StandardizedError({
           name: 'PermissionError',
           message: '你沒有足夠的權限踢除其他用戶',
@@ -210,6 +228,7 @@ export class DisconnectChannelService {
           tag: 'PERMISSION_DENIED',
           statusCode: 403,
         });
+      }
     }
 
     // Update user
@@ -223,18 +242,15 @@ export class DisconnectChannelService {
     // Clear user xp interval
     await xpSystem.delete(this.userId);
 
-    // Leave RTC channel
-    actions.push({
-      handler: (io: Server, socket: Socket) => new RTCLeaveHandler(io, socket),
-      data: {
+    actions.push(async (io: Server, socket: Socket) => {
+      await new RTCLeaveHandler(io, socket).handle({
         channelId: this.channelId,
-      },
+      });
     });
 
     return {
       userUpdate: updatedUser,
       serverMemberUpdate: updatedUser,
-      actions,
     };
   }
 }
@@ -251,6 +267,7 @@ export class CreateChannelService {
   }
 
   async use() {
+    const actions: any[] = [];
     const category = await database.get.channel(this.channel.categoryId);
     const serverChannels = await database.get.serverChannels(this.serverId);
     const operatorMember = await database.get.member(
@@ -279,28 +296,34 @@ export class CreateChannelService {
     }
 
     if (category && !category.categoryId) {
-      await database.set.channel(category.channelId, {
+      const channel = {
         type: 'category',
+      };
+      actions.push(async (io: Server, socket: Socket) => {
+        await new UpdateChannelHandler(io, socket).handle({
+          channelId: category.channelId,
+          serverId: this.serverId,
+          channel,
+        });
       });
     }
+
+    const categoryChannels = serverChannels?.filter(
+      (ch) => ch.categoryId === this.channel.categoryId,
+    );
 
     // Create new channel
     const channelId = uuidv4();
     await database.set.channel(channelId, {
       ...this.channel,
       serverId: this.serverId,
-      order: serverChannels
-        ? serverChannels.filter((ch: any) =>
-            this.channel.categoryId
-              ? ch.categoryId === this.channel.categoryId
-              : !ch.categoryId,
-          ).length
-        : 0,
+      order: (categoryChannels?.length || 0) + 1, // 1 is for lobby (-1 ~ serverChannels.length - 1)
       createdAt: Date.now(),
     });
 
     return {
       serverChannelAdd: await database.get.channel(channelId),
+      actions,
     };
   }
 }
@@ -442,7 +465,6 @@ export class UpdateChannelService {
     await database.set.channel(this.channelId, this.update);
 
     return {
-      serverChannelUpdate: this.update,
       onMessage: messages,
     };
   }
@@ -463,7 +485,8 @@ export class DeleteChannelService {
     const actions: any[] = [];
     const channel = await database.get.channel(this.channelId);
     const channelUsers = await database.get.channelUsers(this.channelId);
-    const channelChildren = await database.get.channelChildren(this.channelId);
+    const serverChannels = await database.get.serverChannels(this.serverId);
+    const server = await database.get.server(this.serverId);
     const operatorMember = await database.get.member(
       this.operatorId,
       this.serverId,
@@ -479,43 +502,52 @@ export class DeleteChannelService {
       });
     }
 
-    if (channel.categoryId) {
-      const categoryChildren = await database.get.channelChildren(
-        channel.categoryId,
-      );
-      if (categoryChildren && categoryChildren.length <= 1) {
-        await database.set.channel(channel.categoryId, {
-          type: 'channel',
+    const channelChildren = serverChannels?.filter(
+      (ch) => ch.categoryId === this.channelId,
+    );
+    const categoryChildren = serverChannels?.filter(
+      (ch) => ch.categoryId === channel.categoryId,
+    );
+
+    if (categoryChildren && categoryChildren.length <= 1) {
+      const categoryUpdate = {
+        type: 'channel',
+      };
+      actions.push(async (io: Server, socket: Socket) => {
+        await new UpdateChannelHandler(io, socket).handle({
+          channelId: channel.categoryId,
+          serverId: this.serverId,
+          channel: categoryUpdate,
         });
-      }
+      });
     }
 
-    if (channelChildren && channelChildren.length) {
-      const serverChannels = await database.get.serverChannels(this.serverId);
-      await Promise.all(
-        channelChildren.map(
-          async (child: any, index: number) =>
-            await database.set.channel(child.channelId, {
-              categoryId: null,
-              order: serverChannels ? serverChannels.length + index : 0,
-            }),
-        ),
-      );
+    if (channelChildren) {
+      channelChildren.map((child, index) => {
+        const channelUpdate = {
+          categoryId: null,
+          order: (categoryChildren?.length || 0) + 1 + index, // 1 is for lobby (-1 ~ serverChannels.length - 1)
+        };
+        actions.push(async (io: Server, socket: Socket) => {
+          await new UpdateChannelHandler(io, socket).handle({
+            channelId: child.channelId,
+            serverId: this.serverId,
+            channel: channelUpdate,
+          });
+        });
+      });
     }
 
-    if (channelUsers && channelUsers.length) {
-      const server = await database.get.server(this.serverId);
-      channelUsers.map((user: any) =>
-        actions.push({
-          handler: (io: Server, socket: Socket) =>
-            new ConnectChannelHandler(io, socket),
-          data: {
-            userId: user.userId,
+    if (channelUsers) {
+      channelUsers.map((user: any) => {
+        actions.push(async (io: Server, socket: Socket) => {
+          await new ConnectChannelHandler(io, socket).handle({
             channelId: server.lobbyId,
             serverId: this.serverId,
-          },
-        }),
-      );
+            userId: user.userId,
+          });
+        });
+      });
     }
 
     // Delete channel

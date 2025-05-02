@@ -78,6 +78,7 @@ export class ConnectServerHandler extends SocketHandler {
         serversUpdate,
         serverChannelsUpdate,
         serverMembersUpdate,
+        currentServerId,
         actions,
       } = await new ConnectServerService(operatorId, userId, serverId).use();
 
@@ -87,17 +88,17 @@ export class ConnectServerHandler extends SocketHandler {
       }
 
       if (targetSocket) {
+        if (currentServerId) {
+          targetSocket.leave(`server_${currentServerId}`);
+        }
+
         targetSocket.join(`server_${serverId}`);
         targetSocket.emit('serversUpdate', serversUpdate);
         targetSocket.emit('serverChannelsUpdate', serverChannelsUpdate);
         targetSocket.emit('serverMembersUpdate', serverMembersUpdate);
       }
 
-      if (actions.length > 0) {
-        for (const action of actions) {
-          await action.handler(this.io, this.socket).handle(action.data);
-        }
-      }
+      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -139,11 +140,7 @@ export class DisconnectServerHandler extends SocketHandler {
         targetSocket.emit('serverMembersUpdate', []);
       }
 
-      if (actions.length > 0) {
-        for (const action of actions) {
-          await action.handler(this.io, this.socket).handle(action.data);
-        }
-      }
+      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({

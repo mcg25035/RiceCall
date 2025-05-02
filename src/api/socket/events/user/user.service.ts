@@ -50,29 +50,17 @@ export class ConnectUserService {
       const actions: any[] = [];
       const user = await database.get.user(this.userId);
 
-      // Reconnect user to server and channel
+      // Reconnect user to server
       if (user.currentServerId) {
-        actions.push({
-          handler: (io: Server, socket: Socket) =>
-            new ConnectServerHandler(io, socket),
-          data: {
+        actions.push(async (io: Server, socket: Socket) => {
+          await new ConnectServerHandler(io, socket).handle({
             userId: user.userId,
             serverId: user.currentServerId,
-          },
-        });
-      }
-      if (user.currentChannelId) {
-        actions.push({
-          handler: (io: Server, socket: Socket) =>
-            new ConnectChannelHandler(io, socket),
-          data: {
-            userId: user.userId,
-            channelId: user.currentChannelId,
-            serverId: user.currentServerId,
-          },
+          });
         });
       }
 
+      // Update user
       await database.set.user(this.userId, {
         lastActiveAt: Date.now(),
       });
@@ -104,27 +92,15 @@ export class DisconnectUserService {
 
     // Disconnect user from server and channel
     if (user.currentServerId) {
-      actions.push({
-        handler: (io: Server, socket: Socket) =>
-          new DisconnectServerHandler(io, socket),
-        data: {
+      actions.push(async (io: Server, socket: Socket) => {
+        await new DisconnectServerHandler(io, socket).handle({
           userId: user.userId,
           serverId: user.currentServerId,
-        },
-      });
-    }
-    if (user.currentChannelId) {
-      actions.push({
-        handler: (io: Server, socket: Socket) =>
-          new DisconnectChannelHandler(io, socket),
-        data: {
-          userId: user.userId,
-          channelId: user.currentChannelId,
-          serverId: user.currentServerId,
-        },
+        });
       });
     }
 
+    // Update user
     await database.set.user(this.userId, {
       lastActiveAt: Date.now(),
     });

@@ -68,11 +68,7 @@ export class ConnectUserHandler extends SocketHandler {
 
       this.socket.emit('userUpdate', userUpdate);
 
-      if (actions.length > 0) {
-        for (const action of actions) {
-          await action.handler(this.io, this.socket).handle(action.data);
-        }
-      }
+      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -101,11 +97,7 @@ export class DisconnectUserHandler extends SocketHandler {
 
       this.socket.emit('userUpdate', userUpdate);
 
-      if (actions.length > 0) {
-        for (const action of actions) {
-          await action.handler(this.io, this.socket).handle(action.data);
-        }
-      }
+      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
