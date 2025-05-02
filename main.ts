@@ -45,10 +45,6 @@ enum SocketClientEvent {
   CREATE_SERVER = 'createServer',
   UPDATE_SERVER = 'updateServer',
   DELETE_SERVER = 'deleteServer',
-  // Category
-  CREATE_CATEGORY = 'createCategory',
-  UPDATE_CATEGORY = 'updateCategory',
-  DELETE_CATEGORY = 'deleteCategory',
   // Channel
   CONNECT_CHANNEL = 'connectChannel',
   DISCONNECT_CHANNEL = 'disconnectChannel',
@@ -93,36 +89,11 @@ enum SocketServerEvent {
   // User
   USER_SEARCH = 'userSearch',
   USER_UPDATE = 'userUpdate',
-  // Server
-  SERVER_SEARCH = 'serverSearch',
-  SERVER_ADD = 'serverAdd',
-  SERVER_UPDATE = 'serverUpdate',
-  SERVER_DELETE = 'serverDelete',
-  SERVERS_UPDATE = 'serversUpdate',
-  // Channel
-  CHANNEL_ADD = 'channelAdd',
-  CHANNEL_UPDATE = 'channelUpdate',
-  CHANNEL_DELETE = 'channelDelete',
-  CHANNELS_UPDATE = 'channelsUpdate',
-  // Category
-  CATEGORY_ADD = 'categoryAdd',
-  CATEGORY_UPDATE = 'categoryUpdate',
-  CATEGORY_DELETE = 'categoryDelete',
-  CATEGORIES_UPDATE = 'categoriesUpdate',
   // Friend Group
   FRIEND_GROUP_ADD = 'friendGroupAdd',
   FRIEND_GROUP_UPDATE = 'friendGroupUpdate',
   FRIEND_GROUP_DELETE = 'friendGroupDelete',
   FRIEND_GROUPS_UPDATE = 'friendGroupsUpdate',
-  // Member
-  MEMBER_ADD = 'memberAdd',
-  MEMBER_UPDATE = 'memberUpdate',
-  MEMBER_DELETE = 'memberDelete',
-  MEMBERS_UPDATE = 'membersUpdate',
-  // Member Application
-  MEMBER_APPLICATION_ADD = 'memberApplicationAdd',
-  MEMBER_APPLICATION_UPDATE = 'memberApplicationUpdate',
-  MEMBER_APPLICATION_DELETE = 'memberApplicationDelete',
   // Friend
   FRIEND_ADD = 'friendAdd',
   FRIEND_UPDATE = 'friendUpdate',
@@ -133,6 +104,27 @@ enum SocketServerEvent {
   FRIEND_APPLICATION_UPDATE = 'friendApplicationUpdate',
   FRIEND_APPLICATION_DELETE = 'friendApplicationDelete',
   FRIEND_APPLICATIONS_UPDATE = 'friendApplicationsUpdate',
+  // Server
+  SERVER_SEARCH = 'serverSearch',
+  SERVER_ADD = 'serverAdd',
+  SERVER_UPDATE = 'serverUpdate',
+  SERVER_DELETE = 'serverDelete',
+  SERVERS_UPDATE = 'serversUpdate',
+  // Channel
+  SERVER_CHANNEL_ADD = 'serverChannelAdd',
+  SERVER_CHANNEL_UPDATE = 'serverChannelUpdate',
+  SERVER_CHANNEL_DELETE = 'serverChannelDelete',
+  SERVER_CHANNELS_UPDATE = 'serverChannelsUpdate',
+  // Member
+  SERVER_MEMBER_ADD = 'serverMemberAdd',
+  SERVER_MEMBER_UPDATE = 'serverMemberUpdate',
+  SERVER_MEMBER_DELETE = 'serverMemberDelete',
+  SERVER_MEMBERS_UPDATE = 'serverMembersUpdate',
+  // Member Application
+  SERVER_MEMBER_APPLICATION_ADD = 'serverMemberApplicationAdd',
+  SERVER_MEMBER_APPLICATION_UPDATE = 'serverMemberApplicationUpdate',
+  SERVER_MEMBER_APPLICATION_DELETE = 'serverMemberApplicationDelete',
+  SERVER_MEMBER_APPLICATIONS_UPDATE = 'serverMemberApplicationsUpdate',
   // Message
   ON_MESSAGE = 'onMessage',
   ON_DIRECT_MESSAGE = 'onDirectMessage',

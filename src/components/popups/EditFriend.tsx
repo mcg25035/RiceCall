@@ -32,27 +32,17 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
     // Refs
     const refreshRef = useRef(false);
 
-    // Variables
-    const { userId, targetId } = initialData;
-
     // States
     const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]);
-    const [friendGroup, setFriendGroup] = useState<Friend['friendGroupId']>(
-      createDefault.friend().friendGroupId,
-    );
+    const [friend, setFriend] = useState<Friend>(createDefault.friend());
+
+    // Variables
+    const { userId, targetId } = initialData;
+    const { friendGroupId } = friend;
 
     // Handlers
     const handleClose = () => {
       ipcService.window.close();
-    };
-
-    const handleUpdateFriend = (
-      friend: Partial<Friend>,
-      userId: User['userId'],
-      targetId: User['userId'],
-    ) => {
-      if (!socket) return;
-      socket.send.updateFriend({ friend, userId, targetId });
     };
 
     const handleFriendGroupAdd = (data: FriendGroup) => {
@@ -76,13 +66,13 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
       );
     };
 
-    const handleFriendGroupsUpdate = (friendGroups: FriendGroup[]) => {
-      setFriendGroups(friendGroups);
-    };
-
-    const handleFriendUpdate = (data: Friend | null) => {
-      if (!data) data = createDefault.friend();
-      setFriendGroup(data.friendGroupId);
+    const handleUpdateFriend = (
+      friend: Partial<Friend>,
+      userId: User['userId'],
+      targetId: User['userId'],
+    ) => {
+      if (!socket) return;
+      socket.send.updateFriend({ friend, userId, targetId });
     };
 
     // Effects
@@ -119,8 +109,12 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
             targetId: targetId,
           }),
         ]).then(([friendGroups, friend]) => {
-          if (friendGroups) handleFriendGroupsUpdate(friendGroups);
-          if (friend) handleFriendUpdate(friend);
+          if (friendGroups) {
+            setFriendGroups(friendGroups);
+          }
+          if (friend) {
+            setFriend(friend);
+          }
         });
       };
       refresh();
@@ -138,9 +132,12 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
                 <div className={popup['selectBox']}>
                   <select
                     className={popup['input']}
-                    value={friendGroup || ''}
+                    value={friendGroupId || ''}
                     onChange={(e) => {
-                      setFriendGroup(e.target.value);
+                      setFriend((prev) => ({
+                        ...prev,
+                        friendGroupId: e.target.value,
+                      }));
                     }}
                   >
                     <option value={''}>{lang.tr.none}</option>
@@ -164,7 +161,7 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
             className={`${popup['button']}`}
             onClick={() => {
               handleUpdateFriend(
-                { friendGroupId: friendGroup },
+                { friendGroupId: friendGroupId },
                 userId,
                 targetId,
               );

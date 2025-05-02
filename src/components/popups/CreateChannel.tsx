@@ -41,10 +41,6 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
     const { channelId, serverId } = initialData;
     const { name: parentName } = parent;
     const { name: channelName } = channel;
-    // Handlers
-    const handleParentUpdate = (parent: Channel) => {
-      setParent(parent);
-    };
 
     const handleCreateChannel = (
       channel: Partial<Channel>,
@@ -68,7 +64,9 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
             channelId: channelId,
           }),
         ]).then(([parent]) => {
-          if (parent) handleParentUpdate(parent);
+          if (parent) {
+            setParent(parent);
+          }
         });
       };
       refresh();

@@ -42,14 +42,6 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
     const { name: userName } = user;
 
     // Handlers
-    const handleMemberUpdate = (member: Member) => {
-      setMember(member);
-    };
-
-    const handleUserUpdate = (user: User) => {
-      setUser(user);
-    };
-
     const handleUpdateMember = (
       member: Partial<Member>,
       userId: User['userId'],
@@ -69,16 +61,20 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
       const refresh = async () => {
         refreshRef.current = true;
         Promise.all([
+          refreshService.user({
+            userId: userId,
+          }),
           refreshService.member({
             userId: userId,
             serverId: serverId,
           }),
-          refreshService.user({
-            userId: userId,
-          }),
-        ]).then(([member, user]) => {
-          if (member) handleMemberUpdate(member);
-          if (user) handleUserUpdate(user);
+        ]).then(([user, member]) => {
+          if (user) {
+            setUser(user);
+          }
+          if (member) {
+            setMember(member);
+          }
         });
       };
       refresh();

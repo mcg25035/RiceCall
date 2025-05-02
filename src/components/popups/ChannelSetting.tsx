@@ -55,10 +55,6 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
     } = channel;
 
     // Handlers
-    const handleChannelUpdate = (channel: Channel) => {
-      setChannel(channel);
-    };
-
     const handleUpdateChannel = (
       channel: Partial<Channel>,
       channelId: Channel['channelId'],
@@ -82,7 +78,9 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
             channelId: channelId,
           }),
         ]).then(([channel]) => {
-          if (channel) handleChannelUpdate(channel);
+          if (channel) {
+            setChannel(channel);
+          }
         });
       };
       refresh();

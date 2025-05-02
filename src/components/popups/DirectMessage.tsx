@@ -75,14 +75,6 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
       socket.send.directMessage({ directMessage, userId, targetId });
     };
 
-    const handleTargetUpdate = (target: User) => {
-      setTarget(target);
-    };
-
-    const handleUserUpdate = (user: User) => {
-      setUser(user);
-    };
-
     const handleOnDirectMessage = (data: DirectMessage) => {
       if (!data) return;
       // !! THIS IS IMPORTANT !!
@@ -149,8 +141,12 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
             userId: userId,
           }),
         ]).then(([target, user]) => {
-          if (target) handleTargetUpdate(target);
-          if (user) handleUserUpdate(user);
+          if (target) {
+            setTarget(target);
+          }
+          if (user) {
+            setUser(user);
+          }
         });
       };
       refresh();

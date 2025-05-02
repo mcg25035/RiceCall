@@ -48,10 +48,6 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
       socket.send.updateServer({ server, serverId });
     };
 
-    const handleServerUpdate = (server: Server) => {
-      setServer(server);
-    };
-
     const handleClose = () => {
       ipcService.window.close();
     };
@@ -66,7 +62,9 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
             serverId: serverId,
           }),
         ]).then(([server]) => {
-          if (server) handleServerUpdate(server);
+          if (server) {
+            setServer(server);
+          }
         });
       };
       refresh();

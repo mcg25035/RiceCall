@@ -36,9 +36,8 @@ const ApplyMemberPopup: React.FC<ApplyMemberPopupProps> = React.memo(
     // State
     const [section, setSection] = useState<number>(0);
     const [server, setServer] = useState<Server>(createDefault.server());
-    const [application, setApplication] = useState<MemberApplication>(
-      createDefault.memberApplication(),
-    );
+    const [memberApplication, setMemberApplication] =
+      useState<MemberApplication>(createDefault.memberApplication());
 
     // Variables
     const { userId, serverId } = initialData;
@@ -48,18 +47,9 @@ const ApplyMemberPopup: React.FC<ApplyMemberPopupProps> = React.memo(
       displayId: serverDisplayId,
       applyNotice: serverApplyNotice,
     } = server;
-    const { description: applicationDescription } = application;
+    const { description: applicationDescription } = memberApplication;
 
     // Handlers
-    const handleServerUpdate = (server: Server) => {
-      setServer(server);
-    };
-
-    const handleMemberApplicationUpdate = (application: MemberApplication) => {
-      setSection(1);
-      setApplication(application);
-    };
-
     const handleCreatMemberApplication = (
       memberApplication: Partial<MemberApplication>,
       userId: User['userId'],
@@ -101,9 +91,14 @@ const ApplyMemberPopup: React.FC<ApplyMemberPopupProps> = React.memo(
             userId: userId,
             serverId: serverId,
           }),
-        ]).then(([server, application]) => {
-          if (server) handleServerUpdate(server);
-          if (application) handleMemberApplicationUpdate(application);
+        ]).then(([server, memberApplication]) => {
+          if (server) {
+            setServer(server);
+          }
+          if (memberApplication) {
+            setSection(1);
+            setMemberApplication(memberApplication);
+          }
         });
       };
       refresh();
@@ -149,7 +144,7 @@ const ApplyMemberPopup: React.FC<ApplyMemberPopupProps> = React.memo(
                     <textarea
                       rows={2}
                       onChange={(e) =>
-                        setApplication((prev) => ({
+                        setMemberApplication((prev) => ({
                           ...prev,
                           description: e.target.value,
                         }))

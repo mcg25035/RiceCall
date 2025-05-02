@@ -51,7 +51,7 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
 
     // States
     const [user, setUser] = useState<User>(createDefault.user());
-    const [userServers, setUserServers] = useState<UserServer[]>([]);
+    const [servers, setServers] = useState<UserServer[]>([]);
     const [server, setServer] = useState<Server>(createDefault.server());
     const [section, setSection] = useState<number>(0);
 
@@ -67,18 +67,10 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
     } = server;
     const MAX_GROUPS =
       userLevel >= 16 ? 5 : userLevel >= 6 && userLevel < 16 ? 4 : 3;
-    const remainingServers =
-      MAX_GROUPS - userServers.filter((server) => server.owned).length;
+    const remainingServers = MAX_GROUPS - servers.filter((s) => s.owned).length;
     const canCreate = remainingServers > 0;
 
     // Handlers
-    const handleUserUpdate = (user: User) => {
-      setUser(user);
-    };
-
-    const handleUserServersUpdate = (userServers: UserServer[]) => {
-      setUserServers(userServers);
-    };
 
     const handleCreateServer = (server: Partial<Server>) => {
       if (!socket) return;
@@ -109,9 +101,13 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
           refreshService.userServers({
             userId: userId,
           }),
-        ]).then(([user, userServers]) => {
-          if (user) handleUserUpdate(user);
-          if (userServers) handleUserServersUpdate(userServers);
+        ]).then(([user, servers]) => {
+          if (user) {
+            setUser(user);
+          }
+          if (servers) {
+            setServers(servers);
+          }
         });
       };
       refresh();

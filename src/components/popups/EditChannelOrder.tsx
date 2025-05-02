@@ -79,6 +79,25 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
     const canAdd = !isLobby && !selectedChannel?.categoryId;
 
     // Handlers
+    const handleServerChannelAdd = (data: Channel): void => {
+      setServerChannels((prev) => [...prev, data]);
+    };
+
+    const handleServerChannelUpdate = (
+      id: Channel['channelId'],
+      data: Partial<Channel>,
+    ): void => {
+      setServerChannels((prev) =>
+        prev.map((item) =>
+          item.channelId === id ? { ...item, ...data } : item,
+        ),
+      );
+    };
+
+    const handleServerChannelDelete = (id: Channel['channelId']): void => {
+      setServerChannels((prev) => prev.filter((item) => item.channelId !== id));
+    };
+
     const handleUpdateChannels = (
       channels: Partial<Channel>[],
       serverId: Server['serverId'],
@@ -108,33 +127,6 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
         userId,
         serverId,
         channelId,
-      });
-    };
-
-    const handleChannelAdd = (data: Channel): void => {
-      setServerChannels((prev) => [...prev, data]);
-    };
-
-    const handleChannelUpdate = (
-      id: Channel['channelId'],
-      data: Partial<Channel>,
-    ): void => {
-      setServerChannels((prev) =>
-        prev.map((item) =>
-          item.channelId === id ? { ...item, ...data } : item,
-        ),
-      );
-    };
-
-    const handleChannelDelete = (id: Channel['channelId']): void => {
-      setServerChannels((prev) => prev.filter((item) => item.channelId !== id));
-    };
-
-    const handleChannelsUpdate = (channels: Channel[]) => {
-      const filteredChannels = channels.filter((ch) => !ch.isLobby);
-      setServerChannels(filteredChannels);
-      filteredChannels.forEach((ch) => {
-        map.current[ch.channelId] = ch.order;
       });
     };
 
@@ -211,9 +203,9 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
       if (!socket) return;
 
       const eventHandlers = {
-        [SocketServerEvent.CHANNEL_ADD]: handleChannelAdd,
-        [SocketServerEvent.CHANNEL_UPDATE]: handleChannelUpdate,
-        [SocketServerEvent.CHANNEL_DELETE]: handleChannelDelete,
+        [SocketServerEvent.SERVER_CHANNEL_ADD]: handleServerChannelAdd,
+        [SocketServerEvent.SERVER_CHANNEL_UPDATE]: handleServerChannelUpdate,
+        [SocketServerEvent.SERVER_CHANNEL_DELETE]: handleServerChannelDelete,
       };
       const unsubscribe: (() => void)[] = [];
 
@@ -235,8 +227,14 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
           refreshService.serverChannels({
             serverId,
           }),
-        ]).then(([channels]) => {
-          if (channels) handleChannelsUpdate(channels);
+        ]).then(([serverChannels]) => {
+          if (serverChannels) {
+            const filteredChannels = serverChannels.filter((ch) => !ch.isLobby);
+            setServerChannels(filteredChannels);
+            filteredChannels.forEach((ch) => {
+              map.current[ch.channelId] = ch.order;
+            });
+          }
         });
       };
       refresh();

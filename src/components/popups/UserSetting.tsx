@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 
 // Types
-import { Server, User, UserServer, PopupType } from '@/types';
+import { Server, User, UserServer, PopupType, Friend } from '@/types';
 
 // Components
 import BadgeListViewer from '@/components/viewers/BadgeList';
@@ -60,9 +60,9 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
 
     // User states
     const [user, setUser] = useState<User>(createDefault.user());
+    const [friend, setFriend] = useState<Friend>(createDefault.friend());
     const [servers, setServers] = useState<UserServer[]>([]);
     const [serversView, setServersView] = useState('joined');
-    const [isFriend, setIsFriend] = useState(false);
     const [selectedTabId, setSelectedTabId] = useState<
       'about' | 'groups' | 'userSetting'
     >('about');
@@ -87,6 +87,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
     } = user;
     const userGrade = Math.min(56, userLevel);
     const isSelf = targetId === userId;
+    const isFriend = !!friend.targetId;
     const isEditing = isSelf && selectedTabId === 'userSetting';
     const joinedServers = servers
       .filter((s) => s.permissionLevel > 1 && s.permissionLevel < 7)
@@ -157,14 +158,6 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
     );
 
     // Handlers
-    const handleUserUpdate = (user: User) => {
-      setUser(user);
-    };
-
-    const handleServersUpdate = (servers: UserServer[]) => {
-      setServers(servers);
-    };
-
     const handleUpdateUser = (user: Partial<User>) => {
       if (!socket) return;
       socket.send.updateUser({ user, userId });
@@ -221,13 +214,20 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
           refreshService.userServers({
             userId: targetId,
           }),
-          refreshService.userFriends({
-            userId: targetId,
+          refreshService.friend({
+            userId: userId,
+            targetId: targetId,
           }),
-        ]).then(([user, servers, friends]) => {
-          if (user) handleUserUpdate(user);
-          if (servers) handleServersUpdate(servers);
-          setIsFriend(!!friends?.find((fd) => fd.targetId === userId));
+        ]).then(([user, servers, friend]) => {
+          if (user) {
+            setUser(user);
+          }
+          if (servers) {
+            setServers(servers);
+          }
+          if (friend) {
+            setFriend(friend);
+          }
         });
       };
       refresh();

@@ -412,11 +412,11 @@ const RootPageComponent = () => {
     setFriendGroups(friendGroups);
   };
 
-  const handleMemberAdd = (member: ServerMember): void => {
+  const handleServerMemberAdd = (member: ServerMember): void => {
     setServerMembers((prev) => [...prev, member]);
   };
 
-  const handleMemberUpdate = (
+  const handleServerMemberUpdate = (
     userId: ServerMember['userId'],
     serverId: ServerMember['serverId'],
     member: Partial<ServerMember>,
@@ -430,7 +430,7 @@ const RootPageComponent = () => {
     );
   };
 
-  const handleMemberDelete = (
+  const handleServerMemberDelete = (
     userId: ServerMember['userId'],
     serverId: ServerMember['serverId'],
   ): void => {
@@ -441,15 +441,15 @@ const RootPageComponent = () => {
     );
   };
 
-  const handleMembersUpdate = (members: ServerMember[]) => {
+  const handleServerMembersUpdate = (members: ServerMember[]) => {
     setServerMembers(members);
   };
 
-  const handleChannelAdd = (channel: Channel): void => {
+  const handleServerChannelAdd = (channel: Channel): void => {
     setServerChannels((prev) => [...prev, channel]);
   };
 
-  const handleChannelUpdate = (
+  const handleServerChannelUpdate = (
     id: Channel['channelId'],
     channel: Partial<Channel>,
   ): void => {
@@ -460,11 +460,11 @@ const RootPageComponent = () => {
     );
   };
 
-  const handleChannelDelete = (id: Channel['channelId']): void => {
+  const handleServerChannelDelete = (id: Channel['channelId']): void => {
     setServerChannels((prev) => prev.filter((item) => item.channelId !== id));
   };
 
-  const handleChannelsUpdate = (channels: Channel[]) => {
+  const handleServerChannelsUpdate = (channels: Channel[]) => {
     setServerChannels(channels);
   };
 
@@ -550,14 +550,14 @@ const RootPageComponent = () => {
       [SocketServerEvent.FRIEND_GROUP_UPDATE]: handleFriendGroupUpdate,
       [SocketServerEvent.FRIEND_GROUP_DELETE]: handleFriendGroupDelete,
       [SocketServerEvent.FRIEND_GROUPS_UPDATE]: handleFriendGroupsUpdate,
-      [SocketServerEvent.MEMBER_ADD]: handleMemberAdd,
-      [SocketServerEvent.MEMBER_UPDATE]: handleMemberUpdate,
-      [SocketServerEvent.MEMBER_DELETE]: handleMemberDelete,
-      [SocketServerEvent.MEMBERS_UPDATE]: handleMembersUpdate,
-      [SocketServerEvent.CHANNEL_ADD]: handleChannelAdd,
-      [SocketServerEvent.CHANNEL_UPDATE]: handleChannelUpdate,
-      [SocketServerEvent.CHANNEL_DELETE]: handleChannelDelete,
-      [SocketServerEvent.CHANNELS_UPDATE]: handleChannelsUpdate,
+      [SocketServerEvent.SERVER_MEMBER_ADD]: handleServerMemberAdd,
+      [SocketServerEvent.SERVER_MEMBER_UPDATE]: handleServerMemberUpdate,
+      [SocketServerEvent.SERVER_MEMBER_DELETE]: handleServerMemberDelete,
+      [SocketServerEvent.SERVER_MEMBERS_UPDATE]: handleServerMembersUpdate,
+      [SocketServerEvent.SERVER_CHANNEL_ADD]: handleServerChannelAdd,
+      [SocketServerEvent.SERVER_CHANNEL_UPDATE]: handleServerChannelUpdate,
+      [SocketServerEvent.SERVER_CHANNEL_DELETE]: handleServerChannelDelete,
+      [SocketServerEvent.SERVER_CHANNELS_UPDATE]: handleServerChannelsUpdate,
       [SocketServerEvent.ON_MESSAGE]: handleOnMessagesUpdate,
       [SocketServerEvent.PLAY_SOUND]: handlePlaySound,
       [SocketServerEvent.OPEN_POPUP]: handleOpenPopup,
@@ -588,10 +588,16 @@ const RootPageComponent = () => {
         refreshService.userFriendGroups({
           userId: userId,
         }),
-      ]).then(([userServers, userFriends, userFriendGroups]) => {
-        setServers(userServers || []);
-        setFriends(userFriends || []);
-        setFriendGroups(userFriendGroups || []);
+      ]).then(([servers, friends, friendGroups]) => {
+        if (servers) {
+          setServers(servers);
+        }
+        if (friends) {
+          setFriends(friends);
+        }
+        if (friendGroups) {
+          setFriendGroups(friendGroups);
+        }
       });
     };
     refresh();
@@ -635,9 +641,10 @@ const RootPageComponent = () => {
           <ServerPage
             user={user}
             currentServer={server}
+            currentChannel={channel}
+            friends={friends}
             serverMembers={serverMembers}
             serverChannels={serverChannels}
-            currentChannel={channel}
             channelMessages={channelMessages}
             display={mainTab.selectedTabId === 'server'}
           />

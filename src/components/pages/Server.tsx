@@ -21,6 +21,7 @@ import {
   ServerMember,
   ChannelMessage,
   UserServer,
+  UserFriend,
 } from '@/types';
 
 // Providers
@@ -37,6 +38,7 @@ interface ServerPageProps {
   currentServer: UserServer;
   serverMembers: ServerMember[];
   serverChannels: Channel[];
+  friends: UserFriend[];
   currentChannel: Channel;
   channelMessages: Record<Channel['channelId'], ChannelMessage[]>;
   display: boolean;
@@ -48,6 +50,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     currentServer,
     serverMembers,
     serverChannels,
+    friends,
     currentChannel,
     channelMessages,
     display,
@@ -71,7 +74,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       serverId,
       name: serverName,
       announcement: serverAnnouncement,
-      permissionLevel: userPermissionLevel,
+      permissionLevel: userPermission,
       lastJoinChannelTime: userLastJoinChannelTime,
       lastMessageTime: userLastMessageTime,
     } = currentServer;
@@ -94,21 +97,20 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     const leftWaitTime =
       channelGuestTextWaitTime -
       Math.floor((currentTime - userLastMessageTime) / 1000);
-    const isForbidByChatMode = channelForbidText && userPermissionLevel < 3;
-    const isForbidByGuestText =
-      channelForbidGuestText && userPermissionLevel === 1;
+    const isForbidByChatMode = channelForbidText && userPermission < 3;
+    const isForbidByGuestText = channelForbidGuestText && userPermission === 1;
     const isForbidByGuestTextGap =
-      channelGuestTextGapTime && leftGapTime > 0 && userPermissionLevel === 1;
+      channelGuestTextGapTime && leftGapTime > 0 && userPermission === 1;
     const isForbidByGuestTextWait =
-      channelGuestTextWaitTime && leftWaitTime > 0 && userPermissionLevel === 1;
+      channelGuestTextWaitTime && leftWaitTime > 0 && userPermission === 1;
     const textMaxLength =
-      userPermissionLevel === 1 ? channelGuestTextMaxLength || 100 : 2000;
+      userPermission === 1 ? channelGuestTextMaxLength || 100 : 2000;
     const canChangeToFreeSpeech =
-      userPermissionLevel > 4 && channelVoiceMode !== 'free';
+      userPermission > 4 && channelVoiceMode !== 'free';
     const canChangeToForbiddenSpeech =
-      userPermissionLevel > 4 && channelVoiceMode !== 'forbidden';
+      userPermission > 4 && channelVoiceMode !== 'forbidden';
     // const canChangeToQueue =
-    //   memberPermissionLevel > 4 && channelVoiceMode !== 'queue';
+    //   userPermission > 4 && channelVoiceMode !== 'queue';
 
     // Handlers
     const handleSendMessage = (
@@ -226,6 +228,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
               currentChannel={currentChannel}
               serverMembers={activeServerMembers}
               serverChannels={serverChannels}
+              friends={friends}
             />
           </div>
           {/* Resize Handle */}
@@ -276,7 +279,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
             </div>
             <div className={styles['buttonArea']}>
               <div className={styles['buttons']}>
-                {userPermissionLevel >= 3 && (
+                {userPermission >= 3 && (
                   <div
                     className={styles['voiceModeDropdown']}
                     onClick={(e) =>

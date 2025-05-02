@@ -44,9 +44,8 @@ const ApplyFriendPopup: React.FC<ApplyFriendPopupProps> = React.memo(
     const [section, setSection] = useState<number>(0);
     const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]);
     const [target, setTarget] = useState<User>(createDefault.user());
-    const [application, setApplication] = useState<FriendApplication>(
-      createDefault.friendApplication(),
-    );
+    const [friendApplication, setFriendApplication] =
+      useState<FriendApplication>(createDefault.friendApplication());
     const [selectedFriendGroupId, setSelectedFriendGroupId] = useState<
       FriendGroup['friendGroupId'] | null
     >(null);
@@ -58,7 +57,7 @@ const ApplyFriendPopup: React.FC<ApplyFriendPopupProps> = React.memo(
       senderId: applicationSenderId,
       receiverId: applicationReceiverId,
       description: applicationDescription,
-    } = application;
+    } = friendApplication;
 
     // Handlers
     const handleFriendGroupAdd = (data: FriendGroup) => {
@@ -80,26 +79,6 @@ const ApplyFriendPopup: React.FC<ApplyFriendPopupProps> = React.memo(
       setFriendGroups((prev) =>
         prev.filter((item) => item.friendGroupId !== id),
       );
-    };
-
-    const handleFriendGroupsUpdate = (friendGroups: FriendGroup[]) => {
-      setFriendGroups(friendGroups);
-    };
-
-    const handleTargetUpdate = (user: User) => {
-      setTarget(user);
-    };
-
-    const handleSentApplicationUpdate = (application: FriendApplication) => {
-      setSection(1);
-      setApplication(application);
-    };
-
-    const handleReceivedApplicationUpdate = (
-      application: FriendApplication,
-    ) => {
-      setSection(2);
-      setApplication(application);
     };
 
     const handleCreateFriendApplication = (
@@ -173,11 +152,11 @@ const ApplyFriendPopup: React.FC<ApplyFriendPopupProps> = React.memo(
       const refresh = async () => {
         refreshRef.current = true;
         Promise.all([
-          refreshService.userFriendGroups({
-            userId: userId,
-          }),
           refreshService.user({
             userId: targetId,
+          }),
+          refreshService.userFriendGroups({
+            userId: userId,
           }),
           refreshService.friendApplication({
             senderId: userId,
@@ -188,12 +167,26 @@ const ApplyFriendPopup: React.FC<ApplyFriendPopupProps> = React.memo(
             receiverId: userId,
           }),
         ]).then(
-          ([friendGroups, target, sentApplication, receivedApplication]) => {
-            if (friendGroups) handleFriendGroupsUpdate(friendGroups);
-            if (target) handleTargetUpdate(target);
-            if (sentApplication) handleSentApplicationUpdate(sentApplication);
-            if (receivedApplication)
-              handleReceivedApplicationUpdate(receivedApplication);
+          ([
+            target,
+            friendGroups,
+            sentFriendApplication,
+            receivedFriendApplication,
+          ]) => {
+            if (target) {
+              setTarget(target);
+            }
+            if (friendGroups) {
+              setFriendGroups(friendGroups);
+            }
+            if (sentFriendApplication) {
+              setSection(1);
+              setFriendApplication(sentFriendApplication);
+            }
+            if (receivedFriendApplication) {
+              setSection(2);
+              setFriendApplication(receivedFriendApplication);
+            }
           },
         );
       };
@@ -230,7 +223,7 @@ const ApplyFriendPopup: React.FC<ApplyFriendPopupProps> = React.memo(
                       rows={2}
                       value={applicationDescription}
                       onChange={(e) =>
-                        setApplication((prev) => ({
+                        setFriendApplication((prev) => ({
                           ...prev,
                           description: e.target.value,
                         }))

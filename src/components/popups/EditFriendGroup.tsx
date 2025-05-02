@@ -32,16 +32,14 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
     // Refs
     const refreshRef = useRef(false);
 
+    // States
+    const [friendGroup, setFriendGroup] = useState<FriendGroup>(
+      createDefault.friendGroup(),
+    );
+
     // Variables
     const { userId, friendGroupId } = initialData;
-
-    // States
-    const [groupName, setGroupName] = useState<string>(
-      createDefault.friendGroup().name,
-    );
-    const [groupOrder, setGroupOrder] = useState<number>(
-      createDefault.friendGroup().order,
-    );
+    const { name: groupName, order: groupOrder } = friendGroup;
 
     // Handlers
     const handleUpdateFriendGroup = (
@@ -51,12 +49,6 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
     ) => {
       if (!socket) return;
       socket.send.updateFriendGroup({ group, friendGroupId, userId });
-    };
-
-    const handleFriendGroupUpdate = (data: FriendGroup | null) => {
-      if (!data) data = createDefault.friendGroup();
-      setGroupName(data.name);
-      setGroupOrder(data.order);
     };
 
     const handleClose = () => {
@@ -73,7 +65,9 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
             friendGroupId: friendGroupId,
           }),
         ]).then(([friendGroup]) => {
-          handleFriendGroupUpdate(friendGroup);
+          if (friendGroup) {
+            setFriendGroup(friendGroup);
+          }
         });
       };
       refresh();
@@ -100,7 +94,12 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
                     placeholder={groupName}
                     value={groupName}
                     maxLength={20}
-                    onChange={(e) => setGroupName(e.target.value)}
+                    onChange={(e) =>
+                      setFriendGroup((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
                     required
                   />
                 </div>
@@ -121,7 +120,10 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
                     max={999}
                     min={-999}
                     onChange={(e) =>
-                      setGroupOrder(parseInt(e.target.value) || 0)
+                      setFriendGroup((prev) => ({
+                        ...prev,
+                        order: parseInt(e.target.value) || 0,
+                      }))
                     }
                     required
                   />

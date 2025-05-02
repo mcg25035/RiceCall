@@ -17,7 +17,6 @@ import {
   Member,
   User,
   SocketServerEvent,
-  UserServer,
 } from '@/types';
 
 // Providers
@@ -90,9 +89,8 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     const refreshRef = useRef(false);
 
     // States
-    const [server, setServer] = useState<UserServer>(
-      createDefault.userServer(),
-    );
+    const [server, setServer] = useState<Server>(createDefault.server());
+    const [member, setMember] = useState<Member>(createDefault.member());
     const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
     const [serverApplications, setServerApplications] = useState<
       MemberApplication[]
@@ -119,8 +117,8 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       wealth: serverWealth,
       createdAt: serverCreatedAt,
       visibility: serverVisibility,
-      permissionLevel,
     } = server;
+    const { permissionLevel: userPermission } = member;
     const filteredMembers = serverMembers.filter((member) => {
       const searchLower = searchText.toLowerCase();
       return (
@@ -146,15 +144,11 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     });
 
     // Handlers
-    const handleServerUpdate = (server: UserServer) => {
-      setServer(server);
-    };
-
-    const handleMemberAdd = (member: ServerMember): void => {
+    const handleServerMemberAdd = (member: ServerMember): void => {
       setServerMembers((prev) => [...prev, member]);
     };
 
-    const handleMemberUpdate = (
+    const handleServerMemberUpdate = (
       userId: ServerMember['userId'],
       serverId: ServerMember['serverId'],
       member: Partial<ServerMember>,
@@ -168,7 +162,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       );
     };
 
-    const handleMemberDelete = (
+    const handleServerMemberDelete = (
       userId: ServerMember['userId'],
       serverId: ServerMember['serverId'],
     ): void => {
@@ -179,15 +173,13 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       );
     };
 
-    const handleMembersUpdate = (members: ServerMember[]) => {
-      setServerMembers(members);
-    };
-
-    const handleMemberApplicationAdd = (application: MemberApplication) => {
+    const handleServerMemberApplicationAdd = (
+      application: MemberApplication,
+    ) => {
       setServerApplications((prev) => [...prev, application]);
     };
 
-    const handleMemberApplicationUpdate = (
+    const handleServerMemberApplicationUpdate = (
       userId: User['userId'],
       serverId: Server['serverId'],
       application: Partial<MemberApplication>,
@@ -201,7 +193,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       );
     };
 
-    const handleMemberApplicationDelete = (
+    const handleServerMemberApplicationDelete = (
       userId: User['userId'],
       serverId: Server['serverId'],
     ) => {
@@ -210,12 +202,6 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
           (item) => !(item.userId === userId && item.serverId === serverId),
         ),
       );
-    };
-
-    const handleMemberApplicationsUpdate = (
-      applications: MemberApplication[],
-    ) => {
-      setServerApplications(applications);
     };
 
     const handleSort = <T extends ServerMember | MemberApplication>(
@@ -349,14 +335,15 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       if (!socket) return;
 
       const eventHandlers = {
-        [SocketServerEvent.MEMBER_ADD]: handleMemberAdd,
-        [SocketServerEvent.MEMBER_UPDATE]: handleMemberUpdate,
-        [SocketServerEvent.MEMBER_DELETE]: handleMemberDelete,
-        [SocketServerEvent.MEMBER_APPLICATION_ADD]: handleMemberApplicationAdd,
-        [SocketServerEvent.MEMBER_APPLICATION_UPDATE]:
-          handleMemberApplicationUpdate,
-        [SocketServerEvent.MEMBER_APPLICATION_DELETE]:
-          handleMemberApplicationDelete,
+        [SocketServerEvent.SERVER_MEMBER_ADD]: handleServerMemberAdd,
+        [SocketServerEvent.SERVER_MEMBER_UPDATE]: handleServerMemberUpdate,
+        [SocketServerEvent.SERVER_MEMBER_DELETE]: handleServerMemberDelete,
+        [SocketServerEvent.SERVER_MEMBER_APPLICATION_ADD]:
+          handleServerMemberApplicationAdd,
+        [SocketServerEvent.SERVER_MEMBER_APPLICATION_UPDATE]:
+          handleServerMemberApplicationUpdate,
+        [SocketServerEvent.SERVER_MEMBER_APPLICATION_DELETE]:
+          handleServerMemberApplicationDelete,
       };
       const unsubscribe: (() => void)[] = [];
 
@@ -389,12 +376,18 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
             serverId: serverId,
           }),
         ]).then(([server, member, members, applications]) => {
-          if (server && member)
-            handleServerUpdate(
-              createDefault.userServer({ ...server, ...member }), // FIXME: Use another method to merge server and member
-            );
-          if (members) handleMembersUpdate(members);
-          if (applications) handleMemberApplicationsUpdate(applications);
+          if (server) {
+            setServer(server);
+          }
+          if (member) {
+            setMember(member);
+          }
+          if (members) {
+            setServerMembers(members);
+          }
+          if (applications) {
+            setServerApplications(applications);
+          }
         });
       };
       refresh();
@@ -690,31 +683,31 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                         const isCurrentUser = memberUserId === userId;
                         const canManageMember =
                           !isCurrentUser &&
-                          permissionLevel > 4 &&
-                          permissionLevel > memberPermission;
+                          userPermission > 4 &&
+                          userPermission > memberPermission;
                         const canEditNickname =
                           canManageMember ||
-                          (isCurrentUser && permissionLevel > 1);
+                          (isCurrentUser && userPermission > 1);
                         const canChangeToGuest =
                           canManageMember &&
-                          permissionLevel > 5 &&
+                          userPermission > 5 &&
                           memberPermission !== 1;
                         const canChangeToMember =
                           canManageMember &&
-                          permissionLevel > 5 &&
+                          userPermission > 5 &&
                           memberPermission !== 2;
                         const canChangeToChannelAdmin =
                           canManageMember &&
                           memberPermission !== 3 &&
-                          memberPermission > 1;
+                          userPermission > 1;
                         const canChangeToCategoryAdmin =
                           canManageMember &&
                           memberPermission !== 4 &&
-                          memberPermission > 1;
+                          userPermission > 1;
                         const canChangeToAdmin =
                           canManageMember &&
                           memberPermission !== 5 &&
-                          memberPermission > 1;
+                          userPermission > 1;
 
                         return (
                           <tr
@@ -1005,8 +998,8 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                           createdAt: applicationCreatedAt,
                         } = application;
                         const isCurrentUser = applicationUserId === userId;
-                        const canAccept = !isCurrentUser && permissionLevel > 4;
-                        const canDeny = !isCurrentUser && permissionLevel > 4;
+                        const canAccept = !isCurrentUser && userPermission > 4;
+                        const canDeny = !isCurrentUser && userPermission > 4;
                         return (
                           <tr
                             key={applicationUserId}

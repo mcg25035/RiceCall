@@ -186,8 +186,7 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
     );
   };
 
-  const handleServerUpdate = (data: Server | null) => {
-    if (!data) data = createDefault.server();
+  const handleServerUpdate = (data: Server) => {
     setFriendServerName(data.name);
   };
 
@@ -247,7 +246,7 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
           serverId: friendCurrentServerId,
         }),
       ]).then(([server]) => {
-        handleServerUpdate(server);
+        if (server) handleServerUpdate(server);
       });
     };
     refresh();
