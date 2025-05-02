@@ -93,7 +93,7 @@ export class RTCCandidateHandler extends SocketHandler {
         'RTCCANDIDATE',
       ).validate(data);
 
-      this.socket.to(to).emit('RTCCandidate', {
+      this.socket.to(to).emit('RTCIceCandidate', {
         from: this.socket.id,
         userId: operatorId,
         candidate: candidate,
