@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 // Types
-import { FriendGroup, SocketServerEvent, User } from '@/types';
+import { FriendGroup, User } from '@/types';
 
 // Providers
 import { useSocket } from '@/providers/Socket';

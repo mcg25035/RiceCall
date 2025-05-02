@@ -101,7 +101,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     const mainTab = useMainTab();
 
     // Refs
-    const refreshed = useRef(false);
     const searchRef = useRef<HTMLDivElement>(null);
 
     // States

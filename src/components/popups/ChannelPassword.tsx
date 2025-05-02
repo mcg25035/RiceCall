@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 
 // Types
 import { User, Channel, Server } from '@/types';
@@ -12,7 +12,6 @@ import popup from '@/styles/popup.module.css';
 import setting from '@/styles/popups/setting.module.css';
 
 // Services
-import refreshService from '@/services/refresh.service';
 import ipcService from '@/services/ipc.service';
 
 interface ChannelPasswordPopupProps {

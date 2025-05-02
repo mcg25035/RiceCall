@@ -174,7 +174,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     ): void => {
       setServerMembers((prev) =>
         prev.filter(
-          (item) => item.userId !== userId && item.serverId !== serverId,
+          (item) => !(item.userId === userId && item.serverId === serverId),
         ),
       );
     };
@@ -207,7 +207,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     ) => {
       setServerApplications((prev) =>
         prev.filter(
-          (item) => item.userId !== userId && item.serverId !== serverId,
+          (item) => !(item.userId === userId && item.serverId === serverId),
         ),
       );
     };

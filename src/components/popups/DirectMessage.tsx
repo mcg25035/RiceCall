@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 // Types
-import { User, DirectMessage, SocketServerEvent, Badge, Server } from '@/types';
+import { User, DirectMessage, SocketServerEvent, Server } from '@/types';
 
 // Providers
 // import { useLanguage } from '@/providers/Language';
@@ -53,7 +53,7 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
 
     // Variables
     const { targetId, userId } = initialData;
-    const { avatarUrl: userAvatarUrl, level: userLevel } = user;
+    const { avatarUrl: userAvatarUrl } = user;
     const {
       avatarUrl: targetAvatarUrl,
       level: targetLevel,
@@ -64,7 +64,6 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
     } = target;
     const { name: targetCurrentServerName } = targetCurrentServer;
     const targetGrade = Math.min(56, targetLevel); // 56 is max level
-    const userGrade = Math.min(56, userLevel); // 56 is max level
 
     // Handlers
     const handleSendMessage = (

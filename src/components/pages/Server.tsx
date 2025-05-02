@@ -20,7 +20,6 @@ import {
   Channel,
   ServerMember,
   ChannelMessage,
-  SocketServerEvent,
   UserServer,
 } from '@/types';
 
@@ -32,9 +31,6 @@ import { useContextMenu } from '@/providers/ContextMenu';
 
 // Services
 import ipcService from '@/services/ipc.service';
-
-// Utils
-import { createDefault } from '@/utils/createDefault';
 
 interface ServerPageProps {
   user: User;
