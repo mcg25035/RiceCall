@@ -155,7 +155,7 @@ export class ConnectChannelService {
     };
     await database.set.member(this.userId, this.serverId, updatedMember);
 
-    if (user.currentChannelId) {
+    if (!user.currentChannelId) {
       // Setup user xp interval
       await xpSystem.create(this.userId);
     }
