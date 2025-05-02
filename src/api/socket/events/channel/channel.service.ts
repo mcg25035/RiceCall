@@ -160,6 +160,14 @@ export class ConnectChannelService {
       await xpSystem.create(this.userId);
     }
 
+    if (user.currentChannelId) {
+      actions.push(async (io: Server, socket: Socket) => {
+        await new RTCLeaveHandler(io, socket).handle({
+          channelId: user.currentChannelId,
+        });
+      });
+    }
+
     actions.push(async (io: Server, socket: Socket) => {
       await new RTCJoinHandler(io, socket).handle({
         channelId: this.channelId,
