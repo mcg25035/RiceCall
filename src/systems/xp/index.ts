@@ -1,6 +1,3 @@
-// Error
-import StandardizedError from '@/error';
-
 // Utils
 import Logger from '@/utils/logger';
 
@@ -17,7 +14,7 @@ const xpSystem = {
   setup: async () => {
     try {
       setInterval(() => {
-        xpSystem.refreshAllUsers().catch((error) => {
+        xpSystem.refresh().catch((error) => {
           new Logger('XPSystem').error(
             `Error refreshing XP interval: ${error.message}`,
           );
@@ -25,7 +22,7 @@ const xpSystem = {
       }, config.INTERVAL_MS);
 
       // Run initial cleanup
-      await xpSystem.refreshAllUsers();
+      await xpSystem.refresh();
 
       new Logger('XPSystem').info(`XP system setup complete`);
     } catch (error: any) {
@@ -39,13 +36,7 @@ const xpSystem = {
     try {
       // Validate data
       if (!userId) {
-        throw new StandardizedError({
-          name: 'ValidationError',
-          message: '無效的資料',
-          part: 'config',
-          tag: 'DATA_INVALID',
-          statusCode: 400,
-        });
+        throw new Error('No userId was provided');
       }
 
       xpSystem.timeFlag.set(userId, Date.now());
@@ -66,13 +57,7 @@ const xpSystem = {
     try {
       // Validate data
       if (!userId) {
-        throw new StandardizedError({
-          name: 'ValidationError',
-          message: '無效的資料',
-          part: 'config',
-          tag: 'DATA_INVALID',
-          statusCode: 400,
-        });
+        throw new Error('No userId was provided');
       }
 
       const timeFlag = xpSystem.timeFlag.get(userId);
@@ -80,11 +65,13 @@ const xpSystem = {
       if (timeFlag) {
         const now = Date.now();
         const elapsedTime = xpSystem.elapsedTime.get(userId) || 0;
+
         let newElapsedTime = elapsedTime + (now - timeFlag);
         while (newElapsedTime >= config.INTERVAL_MS) {
           await xpSystem.obtainXp(userId);
           newElapsedTime -= config.INTERVAL_MS;
         }
+
         xpSystem.elapsedTime.set(userId, newElapsedTime);
       }
 
@@ -102,20 +89,23 @@ const xpSystem = {
     }
   },
 
-  refreshAllUsers: async () => {
+  refresh: async () => {
     const refreshTasks = Array.from(xpSystem.timeFlag.entries()).map(
       async ([userId, timeFlag]) => {
         try {
           const now = Date.now();
           const elapsedTime = xpSystem.elapsedTime.get(userId) || 0;
+
           let newElapsedTime = elapsedTime + now - timeFlag;
           while (newElapsedTime >= config.INTERVAL_MS) {
             const success = await xpSystem.obtainXp(userId);
             if (success) newElapsedTime -= config.INTERVAL_MS;
             else break;
           }
+
           xpSystem.elapsedTime.set(userId, newElapsedTime);
           xpSystem.timeFlag.set(userId, now); // Reset timeFlag
+
           new Logger('XPSystem').info(
             `XP interval refreshed for user(${userId})`,
           );
@@ -163,9 +153,10 @@ const xpSystem = {
       }
       const vipBoost = user.vip ? 1 + user.vip * config.VIP_MULTIPLIER : 1;
 
-      // Process XP and level
+      // Process XP
       user.xp += config.BASE_XP * vipBoost;
 
+      // Process Level
       let requiredXp = 0;
       while (true) {
         requiredXp = xpSystem.getRequiredXP(user.level - 1);
@@ -174,32 +165,36 @@ const xpSystem = {
         user.xp -= requiredXp;
       }
 
+      // Process Contribution
+      member.contribution += config.BASE_CONTRIBUTION;
+
+      // Process Wealth
+      server.wealth += config.BASE_CONTRIBUTION;
+
       // Update user
       const updatedUser = {
         level: user.level,
         xp: user.xp,
-        requiredXp: requiredXp,
-        progress: user.xp / requiredXp,
+        requiredXp: xpSystem.getRequiredXP(user.level),
       };
       await Database.set.user(user.userId, updatedUser);
 
       // Update member contribution if in a server
       const updatedMember = {
-        contribution:
-          Math.round((member.contribution + config.BASE_XP * vipBoost) * 100) /
-          100,
+        contribution: member.contribution,
       };
       await Database.set.member(user.userId, server.serverId, updatedMember);
 
       // Update server wealth
       const updatedServer = {
-        wealth:
-          Math.round((server.wealth + config.BASE_XP * vipBoost) * 100) / 100,
+        wealth: server.wealth,
       };
       await Database.set.server(server.serverId, updatedServer);
 
       new Logger('XPSystem').info(
-        `User(${userId}) obtained ${config.BASE_XP * vipBoost} XP`,
+        `User(${userId}) obtained ${config.BASE_XP * vipBoost} XP and ${
+          config.BASE_CONTRIBUTION
+        } contribution`,
       );
       return true;
     } catch (error: any) {
