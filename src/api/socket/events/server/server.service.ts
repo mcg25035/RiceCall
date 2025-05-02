@@ -23,7 +23,7 @@ export class SearchServerService {
   }
 
   async use() {
-    const result = await database.get.server(this.query);
+    const result = await database.get.searchServer(this.query);
 
     return {
       serverSearch: result,

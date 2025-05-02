@@ -8,10 +8,6 @@ import { database } from '@/index';
 
 // Handlers
 import {
-  ConnectChannelHandler,
-  DisconnectChannelHandler,
-} from '@/api/socket/events/channel/channel.handler';
-import {
   ConnectServerHandler,
   DisconnectServerHandler,
 } from '@/api/socket/events/server/server.handler';
@@ -23,7 +19,7 @@ export class SearchUserService {
 
   async use() {
     try {
-      const result = await database.get.user(this.query);
+      const result = await database.get.searchUser(this.query);
 
       return {
         userSearch: result,
