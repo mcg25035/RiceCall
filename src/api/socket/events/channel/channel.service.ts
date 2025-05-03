@@ -14,6 +14,7 @@ import xpSystem from '@/systems/xp';
 import {
   ConnectChannelHandler,
   UpdateChannelHandler,
+  UpdateChannelsHandler,
 } from '@/api/socket/events/channel/channel.handler';
 import {
   RTCJoinHandler,
@@ -531,17 +532,16 @@ export class DeleteChannelService {
     }
 
     if (channelChildren) {
-      channelChildren.map((child, index) => {
-        const channelUpdate = {
-          categoryId: null,
-          order: (categoryChildren?.length || 0) + 1 + index, // 1 is for lobby (-1 ~ serverChannels.length - 1)
-        };
-        actions.push(async (io: Server, socket: Socket) => {
-          await new UpdateChannelHandler(io, socket).handle({
+      actions.push(async (io: Server, socket: Socket) => {
+        await new UpdateChannelsHandler(io, socket).handle({
+          serverId: this.serverId,
+          channels: channelChildren.map((child, index) => ({
             channelId: child.channelId,
-            serverId: this.serverId,
-            channel: channelUpdate,
-          });
+            channel: {
+              categoryId: null,
+              order: (categoryChildren?.length || 0) + 1 + index, // 1 is for lobby (-1 ~ serverChannels.length - 1)
+            },
+          })),
         });
       });
     }
