@@ -72,9 +72,10 @@ export class UpdateMemberHandler extends SocketHandler {
         'UPDATEMEMBER',
       ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(userId);
-
       await new UpdateMemberService(operatorId, userId, serverId, member).use();
+
+      const targetSocket =
+        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       if (targetSocket && targetSocket.rooms.has(`server_${serverId}`)) {
         targetSocket.emit('serverUpdate', member);
@@ -110,9 +111,10 @@ export class DeleteMemberHandler extends SocketHandler {
         'DELETEMEMBER',
       ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(userId);
-
       await new DeleteMemberService(operatorId, userId, serverId).use();
+
+      const targetSocket =
+        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       this.io
         .to(`server_${serverId}`)

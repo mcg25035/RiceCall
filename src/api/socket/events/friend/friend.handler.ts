@@ -37,14 +37,15 @@ export class CreateFriendHandler extends SocketHandler {
         'CREATEFRIEND',
       ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(userId);
-
       const { userFriendAdd, targetFriendAdd } = await new CreateFriendService(
         operatorId,
         userId,
         targetId,
         friend,
       ).use();
+
+      const targetSocket =
+        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       this.socket.emit('friendAdd', userFriendAdd);
       if (targetSocket) {
@@ -107,9 +108,10 @@ export class DeleteFriendHandler extends SocketHandler {
         'DELETEFRIEND',
       ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(userId);
-
       await new DeleteFriendService(operatorId, userId, targetId).use();
+
+      const targetSocket =
+        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       this.socket.emit('friendDelete', userId, targetId);
       if (targetSocket) {

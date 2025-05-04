@@ -42,8 +42,6 @@ export class ConnectChannelHandler extends SocketHandler {
         'CONNECTCHANNEL',
       ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(userId);
-
       const {
         userUpdate,
         serverMemberUpdate,
@@ -57,6 +55,9 @@ export class ConnectChannelHandler extends SocketHandler {
         serverId,
         password,
       ).use();
+
+      const targetSocket =
+        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       if (targetSocket) {
         if (currentChannelId) {
@@ -106,8 +107,6 @@ export class DisconnectChannelHandler extends SocketHandler {
         'DISCONNECTCHANNEL',
       ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(userId);
-
       const { userUpdate, serverMemberUpdate, actions } =
         await new DisconnectChannelService(
           operatorId,
@@ -115,6 +114,9 @@ export class DisconnectChannelHandler extends SocketHandler {
           channelId,
           serverId,
         ).use();
+
+      const targetSocket =
+        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       if (targetSocket) {
         targetSocket.emit('userUpdate', userUpdate);

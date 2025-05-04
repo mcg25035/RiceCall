@@ -125,13 +125,14 @@ export class UpdateUserHandler extends SocketHandler {
         'UPDATEUSER',
       ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(userId);
-
       const { userUpdate } = await new UpdateUserService(
         operatorId,
         userId,
         user,
       ).use();
+
+      const targetSocket =
+        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       if (targetSocket) {
         targetSocket.emit('userUpdate', userUpdate);

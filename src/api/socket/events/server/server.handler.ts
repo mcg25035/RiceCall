@@ -71,8 +71,6 @@ export class ConnectServerHandler extends SocketHandler {
         'CONNECTSERVER',
       ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(userId);
-
       const {
         openPopup,
         serversUpdate,
@@ -81,6 +79,9 @@ export class ConnectServerHandler extends SocketHandler {
         currentServerId,
         actions,
       } = await new ConnectServerService(operatorId, userId, serverId).use();
+
+      const targetSocket =
+        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       if (openPopup) {
         this.socket.emit('openPopup', openPopup);
@@ -128,13 +129,14 @@ export class DisconnectServerHandler extends SocketHandler {
         'DISCONNECTSERVER',
       ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(userId);
-
       const { actions } = await new DisconnectServerService(
         operatorId,
         userId,
         serverId,
       ).use();
+
+      const targetSocket =
+        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       if (targetSocket) {
         targetSocket.leave(`server_${serverId}`);

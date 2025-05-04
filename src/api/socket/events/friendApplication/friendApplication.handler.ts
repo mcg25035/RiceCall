@@ -38,14 +38,17 @@ export class CreateFriendApplicationHandler extends SocketHandler {
           'CREATEFRIENDAPPLICATION',
         ).validate(data);
 
-      const targetSocket = SocketServer.getSocket(receiverId);
-
       const { friendApplicationAdd } = await new CreateFriendApplicationService(
         operatorId,
         senderId,
         receiverId,
         friendApplication,
       ).use();
+
+      const targetSocket =
+        operatorId === receiverId
+          ? this.socket
+          : SocketServer.getSocket(receiverId);
 
       if (targetSocket) {
         targetSocket.emit('friendApplicationAdd', friendApplicationAdd);
@@ -85,7 +88,10 @@ export class UpdateFriendApplicationHandler extends SocketHandler {
         friendApplication,
       ).use();
 
-      const targetSocket = SocketServer.getSocket(receiverId);
+      const targetSocket =
+        operatorId === receiverId
+          ? this.socket
+          : SocketServer.getSocket(receiverId);
 
       if (targetSocket) {
         targetSocket.emit(
@@ -128,7 +134,10 @@ export class DeleteFriendApplicationHandler extends SocketHandler {
         receiverId,
       ).use();
 
-      const targetSocket = SocketServer.getSocket(receiverId);
+      const targetSocket =
+        operatorId === receiverId
+          ? this.socket
+          : SocketServer.getSocket(receiverId);
 
       if (targetSocket) {
         targetSocket.emit('friendApplicationDelete', senderId, receiverId);

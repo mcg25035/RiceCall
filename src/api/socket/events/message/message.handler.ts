@@ -22,6 +22,9 @@ import {
   SendMessageService,
 } from '@/api/socket/events/message/message.service';
 
+// Socket
+import SocketServer from '@/api/socket';
+
 export class SendMessageHandler extends SocketHandler {
   async handle(data: any) {
     try {
@@ -72,14 +75,15 @@ export class SendDirectMessageHandler extends SocketHandler {
         'SENDDIRECTMESSAGE',
       ).validate(data);
 
-      const targetSocket = this.io.sockets.sockets.get(targetId);
-
       const { onDirectMessage } = await new SendDirectMessageService(
         operatorId,
         userId,
         targetId,
         directMessage,
       ).use();
+
+      const targetSocket =
+        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       this.socket.emit('onDirectMessage', onDirectMessage);
       if (targetSocket) {
