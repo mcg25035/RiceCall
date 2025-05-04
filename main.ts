@@ -762,33 +762,44 @@ app.on('ready', async () => {
     setActivity(updatePresence);
   });
 
-  // Auto launch handlers
-  ipcMain.on('set-auto-launch', (_, enable) => {
-    setAutoLaunch(enable);
+  // System settings handlers
+  ipcMain.on('get-system-settings', (event) => {
+    const settings = {
+      autoLaunch: isAutoLaunchEnabled(),
+      inputAudioDevice: store.get('audioInputDevice'),
+      outputAudioDevice: store.get('audioOutputDevice'),
+    };
+    event.reply('system-settings-status', settings);
   });
 
   ipcMain.on('get-auto-launch', (event) => {
     event.reply('auto-launch-status', isAutoLaunchEnabled());
   });
 
-  // Audio device handlers
-  ipcMain.on('set-audio-device', (_, deviceId, type) => {
-    if (type === 'input') {
-      store.set('audioInputDevice', deviceId);
-    } else if (type === 'output') {
-      store.set('audioOutputDevice', deviceId);
-    }
+  ipcMain.on('get-input-audio-device', (event) => {
+    event.reply('input-audio-device-status', store.get('audioInputDevice'));
+  });
+
+  ipcMain.on('get-output-audio-device', (event) => {
+    event.reply('output-audio-device-status', store.get('audioOutputDevice'));
+  });
+
+  ipcMain.on('set-auto-launch', (_, enable) => {
+    setAutoLaunch(enable);
+  });
+
+  ipcMain.on('set-input-audio-device', (_, deviceId) => {
+    store.set('audioInputDevice', deviceId);
     BrowserWindow.getAllWindows().forEach((window) => {
-      window.webContents.send('audio-device-status', type, deviceId);
+      window.webContents.send('input-audio-device-status', deviceId);
     });
   });
 
-  ipcMain.on('get-audio-device', (event, type) => {
-    if (type === 'input') {
-      event.reply('audio-device-status', type, store.get('audioInputDevice'));
-    } else if (type === 'output') {
-      event.reply('audio-device-status', type, store.get('audioOutputDevice'));
-    }
+  ipcMain.on('set-output-audio-device', (_, deviceId) => {
+    store.set('audioOutputDevice', deviceId);
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.webContents.send('output-audio-device-status', deviceId);
+    });
   });
 
   // Open external url handlers

@@ -212,56 +212,122 @@ const ipcService = {
     },
   },
 
-  autoLaunch: {
-    set: (enable: boolean) => {
-      if (isElectron) {
-        ipcRenderer.send('set-auto-launch', enable);
-      }
+  systemSettings: {
+    get: {
+      all: (
+        callback: (data: {
+          autoLaunch: boolean;
+          inputAudioDevice: string;
+          outputAudioDevice: string;
+        }) => void,
+      ) => {
+        if (isElectron) {
+          ipcRenderer.send('get-system-settings');
+          ipcRenderer.once('system-settings-status', (_: any, data: any) => {
+            callback(data);
+          });
+        }
+      },
+      autoLaunch: (callback: (enabled: boolean) => void) => {
+        if (isElectron) {
+          ipcRenderer.send('get-auto-launch');
+          ipcRenderer.once('auto-launch-status', (_: any, enabled: boolean) => {
+            callback(enabled);
+          });
+        }
+      },
+      inputAudioDevice: (callback: (deviceId: string) => void) => {
+        if (isElectron) {
+          ipcRenderer.send('get-input-audio-device');
+          ipcRenderer.once(
+            'input-audio-device-status',
+            (_: any, deviceId: string) => {
+              callback(deviceId);
+            },
+          );
+        }
+      },
+      outputAudioDevice: (callback: (deviceId: string) => void) => {
+        if (isElectron) {
+          ipcRenderer.send('get-output-audio-device');
+          ipcRenderer.once(
+            'output-audio-device-status',
+            (_: any, deviceId: string) => {
+              callback(deviceId);
+            },
+          );
+        }
+      },
     },
-    get: (callback: (enabled: boolean) => void) => {
-      if (isElectron) {
-        ipcRenderer.send('get-auto-launch');
-        ipcRenderer.once('auto-launch-status', (_: any, enabled: boolean) => {
-          callback(enabled);
-        });
-      }
+    set: {
+      autoLaunch: (enable: boolean) => {
+        if (isElectron) {
+          ipcRenderer.send('set-auto-launch', enable);
+        }
+      },
+      inputAudioDevice: (deviceId: string) => {
+        if (isElectron) {
+          ipcRenderer.send('set-input-audio-device', deviceId);
+        }
+      },
+      outputAudioDevice: (deviceId: string) => {
+        if (isElectron) {
+          ipcRenderer.send('set-output-audio-device', deviceId);
+        }
+      },
     },
   },
 
-  audio: {
-    set: (deviceId: string, type: 'input' | 'output') => {
-      if (isElectron) {
-        ipcRenderer.send('set-audio-device', deviceId, type);
-      }
-    },
-    get: (
-      type: 'input' | 'output',
-      callback: (deviceId: string | null) => void,
-    ) => {
-      if (isElectron) {
-        ipcRenderer.send('get-audio-device', type);
-        ipcRenderer.once(
-          'audio-device-status',
-          (_: any, _type: string, _deviceId: string | null) => {
-            if (_type === type) callback(_deviceId);
-          },
-        );
-      }
-    },
-    update: (
-      type: 'input' | 'output',
-      callback: (deviceId: string | null) => void,
-    ) => {
-      if (isElectron) {
-        ipcRenderer.on(
-          'audio-device-status',
-          (_: any, _type: string, _deviceId: string | null) => {
-            if (_type === type) callback(_deviceId);
-          },
-        );
-      }
-    },
-  },
+  // autoLaunch: {
+  //   set: (enable: boolean) => {
+  //     if (isElectron) {
+  //       ipcRenderer.send('set-auto-launch', enable);
+  //     }
+  //   },
+  //   get: (callback: (enabled: boolean) => void) => {
+  //     if (isElectron) {
+  //       ipcRenderer.send('get-auto-launch');
+  //       ipcRenderer.once('auto-launch-status', (_: any, enabled: boolean) => {
+  //         callback(enabled);
+  //       });
+  //     }
+  //   },
+  // },
+
+  // audio: {
+  //   set: (deviceId: string, type: 'input' | 'output') => {
+  //     if (isElectron) {
+  //       ipcRenderer.send('set-audio-device', deviceId, type);
+  //     }
+  //   },
+  //   get: (
+  //     type: 'input' | 'output',
+  //     callback: (deviceId: string | null) => void,
+  //   ) => {
+  //     if (isElectron) {
+  //       ipcRenderer.send('get-audio-device', type);
+  //       ipcRenderer.once(
+  //         'audio-device-status',
+  //         (_: any, _type: string, _deviceId: string | null) => {
+  //           if (_type === type) callback(_deviceId);
+  //         },
+  //       );
+  //     }
+  //   },
+  //   update: (
+  //     type: 'input' | 'output',
+  //     callback: (deviceId: string | null) => void,
+  //   ) => {
+  //     if (isElectron) {
+  //       ipcRenderer.on(
+  //         'audio-device-status',
+  //         (_: any, _type: string, _deviceId: string | null) => {
+  //           if (_type === type) callback(_deviceId);
+  //         },
+  //       );
+  //     }
+  //   },
+  // },
 };
 
 export default ipcService;

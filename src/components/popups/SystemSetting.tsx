@@ -72,28 +72,16 @@ const SystemSettingPopup: React.FC = React.memo(() => {
   const [notificationSound, setNotificationSound] = useState<boolean>(true);
 
   // Handlers
-  const handleAutoLaunchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const enabled = e.target.checked;
-    setAutoLaunch(enabled);
-    ipcService.autoLaunch.set(enabled);
-  };
-
   const handleClose = () => {
     ipcService.window.close();
   };
 
   // Effects
   useEffect(() => {
-    ipcService.autoLaunch.get((enabled) => {
-      setAutoLaunch(enabled);
-    });
-
-    ipcService.audio.get('input', (input) => {
-      setSelectedInput(input || '');
-    });
-
-    ipcService.audio.get('output', (output) => {
-      setSelectedOutput(output || '');
+    ipcService.systemSettings.get.all((data) => {
+      setAutoLaunch(data.autoLaunch);
+      setSelectedInput(data.inputAudioDevice);
+      setSelectedOutput(data.outputAudioDevice);
     });
 
     navigator.mediaDevices.enumerateDevices().then((devices) => {
@@ -137,7 +125,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
                   <input
                     type="checkbox"
                     checked={autoLaunch}
-                    onChange={handleAutoLaunchChange}
+                    onChange={(e) => setAutoLaunch(e.target.checked)}
                   />
                   <div>
                     <div className={popup['label']}>{lang.tr.autoStartup}</div>
@@ -340,9 +328,9 @@ const SystemSettingPopup: React.FC = React.memo(() => {
         <button
           className={popup['button']}
           onClick={() => {
-            ipcService.autoLaunch.set(autoLaunch);
-            ipcService.audio.set(selectedInput, 'input');
-            ipcService.audio.set(selectedOutput, 'output');
+            ipcService.systemSettings.set.autoLaunch(autoLaunch);
+            ipcService.systemSettings.set.inputAudioDevice(selectedInput);
+            ipcService.systemSettings.set.outputAudioDevice(selectedOutput);
             handleClose();
           }}
         >
