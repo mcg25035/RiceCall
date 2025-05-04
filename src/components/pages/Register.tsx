@@ -120,7 +120,9 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
           <div className={styles['formWrapper']}>
             {isLoading && (
               <>
-                <div className={styles['loadingIndicator']}>{'註冊中'}</div>
+                <div className={styles['loadingIndicator']}>
+                  {lang.tr.registering}
+                </div>
                 <div className={styles['loadingBar']} />
               </>
             )}

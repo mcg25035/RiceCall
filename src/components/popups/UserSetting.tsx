@@ -864,7 +864,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
             </div>
           )}
           <div className={popup['button']} onClick={() => handleClose()}>
-            {'關閉' /** CLOSE **/}
+            {lang.tr.close /** CLOSE **/}
           </div>
         </div>
       </div>

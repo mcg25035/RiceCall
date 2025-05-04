@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { User, DirectMessage, SocketServerEvent, Server } from '@/types';
 
 // Providers
-// import { useLanguage } from '@/providers/Language';
+import { useLanguage } from '@/providers/Language';
 import { useSocket } from '@/providers/Socket';
 
 // Components
@@ -33,7 +33,7 @@ interface DirectMessagePopupProps {
 const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
   (initialData: DirectMessagePopupProps) => {
     // Hooks
-    // const lang = useLanguage();
+    const lang = useLanguage();
     const socket = useSocket();
 
     // Refs
@@ -193,7 +193,7 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
               )}
               <div className={directMessage['userStateBox']}>
                 <div
-                  title={`等級：${targetGrade}`}
+                  title={`${lang.tr.level}: ${targetGrade}`}
                   className={`
                     ${grade['grade']}
                     ${grade[`lv-${targetGrade}`]}`}
@@ -242,7 +242,7 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
                 </div>
                 <div className={directMessage['buttons']}>
                   <div className={directMessage['historyMessage']}>
-                    訊息紀錄
+                    {lang.tr.messageHistory}
                   </div>
                 </div>
               </div>

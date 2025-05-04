@@ -132,7 +132,7 @@ const Popup = React.memo(() => {
         setContent(<ChannelPassword {...initialData} />);
         break;
       case PopupType.USER_INFO:
-        setHeaderTitle('個人檔案');
+        setHeaderTitle(lang.tr.userInfo);
         setHeaderButtons(['close']);
         setContent(<UserSetting {...initialData} />);
         break;
@@ -260,7 +260,7 @@ const Popup = React.memo(() => {
   return (
     <div className="wrapper" ref={windowRef}>
       {/* Top Nevigation */}
-      {headerTitle !== '個人檔案' && (
+      {headerTitle !== lang.tr.userInfo && (
         <Header title={headerTitle} buttons={headerButtons} />
       )}
       {/* Main Content */}
