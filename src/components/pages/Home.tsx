@@ -111,6 +111,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     const [relatedResults, setRelatedResults] = useState<UserServer[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingServerID, setLoadingServerID] = useState<string>();
+    const [section, setSection] = useState<number>(0);
 
     // Variables
     const { userId, name: userName, currentServerId } = user;
@@ -368,35 +369,66 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             </div>
           </div>
           <div className={homePage['mid']}>
-            <button
-              className={`${homePage['navegateItem']} ${homePage['active']}`}
+            <div
+              className={`${homePage['navegateItem']} ${
+                section === 0 ? homePage['active'] : ''
+              }`}
               data-key="60060"
+              onClick={() => setSection(0)}
             >
               {lang.tr.home}
-            </button>
-            <button className={homePage['navegateItem']} data-key="30014">
+            </div>
+            <div
+              className={`${homePage['navegateItem']} ${
+                section === 1 ? homePage['active'] : ''
+              }`}
+              data-key="30014"
+              onClick={() => setSection(1)}
+            >
               {lang.tr.game}
-            </button>
-            <button className={homePage['navegateItem']} data-key="30375">
+            </div>
+            <div
+              className={`${homePage['navegateItem']} ${
+                section === 2 ? homePage['active'] : ''
+              }`}
+              data-key="30375"
+              onClick={() => setSection(2)}
+            >
               {lang.tr.live}
-            </button>
+            </div>
           </div>
           <div className={homePage['right']}>
-            <button
+            <div
               className={homePage['navegateItem']}
               data-key="30014"
               onClick={() => handleOpenCreateServer(userId)}
             >
               {lang.tr.createServers}
-            </button>
-            <button className={homePage['navegateItem']} data-key="60004">
+            </div>
+            <div
+              className={homePage['navegateItem']}
+              data-key="60004"
+              onClick={() => setSection(3)}
+            >
               {lang.tr.personalExclusive}
-            </button>
+            </div>
           </div>
         </header>
 
         {/* Main Content */}
-        <main className={homePage['homeContent']}>
+
+        {/* Announcement */}
+        <webview
+          src="https://ricecall.com.tw/announcement"
+          className={homePage['webview']}
+          style={section === 0 ? {} : { display: 'none' }}
+        />
+
+        {/* Personal Exclusive */}
+        <main
+          className={homePage['homeContent']}
+          style={section === 3 ? {} : { display: 'none' }}
+        >
           <ServerListSection
             title={lang.tr.recentVisits}
             servers={recentServers}
@@ -428,6 +460,14 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
               setLoadingServerID(server.displayId);
             }}
           />
+        </main>
+
+        {/* Not Available */}
+        <main
+          className={homePage['homeContent']}
+          style={section === 1 || section === 2 ? {} : { display: 'none' }}
+        >
+          <div>{'Sorry, this page is not available yet'}</div>
         </main>
 
         {/* Loading */}

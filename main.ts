@@ -279,6 +279,7 @@ async function createMainWindow(): Promise<BrowserWindow | null> {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      webviewTag: true,
     },
   });
 
@@ -334,6 +335,7 @@ async function createAuthWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      webviewTag: true,
     },
   });
 
