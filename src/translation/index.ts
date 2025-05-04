@@ -404,6 +404,7 @@ export const translations: Record<LanguageKey, Translation> = {
     unmute: '接受此人語音',
     editChannelOrder: '修改頻道排序',
     editChannelName: '修改頻道名',
+    unblock: '解除封鎖',
   },
   cn: {
     RPCHomePage: '正在浏览主页',
@@ -807,6 +808,7 @@ export const translations: Record<LanguageKey, Translation> = {
     unmute: '接受此人语音',
     editChannelOrder: '修改频道排序',
     editChannelName: '修改频道名',
+    unblock: '解除封鎖',
   },
   en: {
     RPCHomePage: 'Browsing Homepage',
@@ -1235,6 +1237,7 @@ export const translations: Record<LanguageKey, Translation> = {
     unmute: 'Unmute this user',
     editChannelOrder: 'Change channel order',
     editChannelName: 'Change channel name',
+    unblock: 'Unblock',
   },
   jp: {
     RPCHomePage: 'ホームページを閲覧中',
@@ -1658,5 +1661,6 @@ export const translations: Record<LanguageKey, Translation> = {
     unmute: 'このユーザーの音声を受聴',
     editChannelOrder: '変更チャンネル順序',
     editChannelName: 'チャンネル名の変更',
+    unblock: '解除封鎖',
   },
 };

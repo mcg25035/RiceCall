@@ -671,13 +671,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                     <tbody className={setting['tableContainer']}>
                       {filteredMembers.map((member) => {
                         const {
+                          userId: memberUserId,
                           name: memberName,
                           nickname: memberNickname,
                           gender: memberGender,
                           permissionLevel: memberPermission,
                           contribution: memberContribution,
-                          userId: memberUserId,
-                          serverId: memberServerId,
                           createdAt: memberJoinDate,
                         } = member;
                         const isCurrentUser = memberUserId === userId;
@@ -690,24 +689,27 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                           (isCurrentUser && userPermission > 1);
                         const canChangeToGuest =
                           canManageMember &&
-                          userPermission > 5 &&
-                          memberPermission !== 1;
+                          memberPermission !== 1 &&
+                          userPermission > 5;
                         const canChangeToMember =
                           canManageMember &&
-                          userPermission > 5 &&
-                          memberPermission !== 2;
+                          memberPermission !== 2 &&
+                          (memberPermission > 1 || userPermission > 5);
                         const canChangeToChannelAdmin =
                           canManageMember &&
                           memberPermission !== 3 &&
-                          userPermission > 1;
+                          memberPermission > 1 &&
+                          userPermission > 3;
                         const canChangeToCategoryAdmin =
                           canManageMember &&
                           memberPermission !== 4 &&
-                          userPermission > 1;
+                          memberPermission > 1 &&
+                          userPermission > 4;
                         const canChangeToAdmin =
                           canManageMember &&
                           memberPermission !== 5 &&
-                          userPermission > 1;
+                          memberPermission > 1 &&
+                          userPermission > 5;
 
                         return (
                           <tr
@@ -747,7 +749,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                   onClick: () =>
                                     handleOpenEditNickname(
                                       memberUserId,
-                                      memberServerId,
+                                      serverId,
                                     ),
                                 },
                                 {
@@ -770,7 +772,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                         handleUpdateMember(
                                           { permissionLevel: 1 },
                                           memberUserId,
-                                          memberServerId,
+                                          serverId,
                                         ),
                                     },
                                     {
@@ -781,7 +783,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                         handleUpdateMember(
                                           { permissionLevel: 2 },
                                           memberUserId,
-                                          memberServerId,
+                                          serverId,
                                         ),
                                     },
                                     {
@@ -792,7 +794,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                         handleUpdateMember(
                                           { permissionLevel: 3 },
                                           memberUserId,
-                                          memberServerId,
+                                          serverId,
                                         ),
                                     },
                                     {
@@ -803,7 +805,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                         handleUpdateMember(
                                           { permissionLevel: 4 },
                                           memberUserId,
-                                          memberServerId,
+                                          serverId,
                                         ),
                                     },
                                     {
@@ -814,7 +816,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                         handleUpdateMember(
                                           { permissionLevel: 5 },
                                           memberUserId,
-                                          memberServerId,
+                                          serverId,
                                         ),
                                     },
                                   ],
@@ -992,7 +994,6 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       {filteredApplications.map((application) => {
                         const {
                           userId: applicationUserId,
-                          serverId: applicationServerId,
                           name: applicationName,
                           description: applicationDescription,
                           createdAt: applicationCreatedAt,
@@ -1022,12 +1023,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                   onClick: () => {
                                     handleDeleteMemberApplication(
                                       applicationUserId,
-                                      applicationServerId,
+                                      serverId,
                                     );
                                     handleCreateMember(
                                       { permissionLevel: 2 },
                                       applicationUserId,
-                                      applicationServerId,
+                                      serverId,
                                     );
                                   },
                                 },
@@ -1038,7 +1039,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                   onClick: () => {
                                     handleDeleteMemberApplication(
                                       applicationUserId,
-                                      applicationServerId,
+                                      serverId,
                                     );
                                   },
                                 },
@@ -1116,21 +1117,31 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                     <tbody className={setting['tableContainer']}>
                       {filteredBlockMembers.map((blockMember) => {
                         const {
-                          userId: blockMemberUserId,
-                          // serverId: blockMemberServerId,
+                          userId: memberUserId,
                           nickname: blockMemberNickname,
                           name: blockMemberName,
-                          contribution: blockMemberContribution,
                         } = blockMember;
                         return (
                           <tr
-                            key={blockMemberUserId}
+                            key={memberUserId}
                             onContextMenu={(e) => {
-                              contextMenu.showContextMenu(e.pageX, e.pageY, []);
+                              contextMenu.showContextMenu(e.pageX, e.pageY, [
+                                {
+                                  id: 'unblock',
+                                  label: lang.tr.unblock,
+                                  show: true,
+                                  onClick: () => {
+                                    handleUpdateMember(
+                                      { isBlocked: false },
+                                      memberUserId,
+                                      serverId,
+                                    );
+                                  },
+                                },
+                              ]);
                             }}
                           >
                             <td>{blockMemberNickname || blockMemberName}</td>
-                            <td>{blockMemberContribution}</td>
                           </tr>
                         );
                       })}

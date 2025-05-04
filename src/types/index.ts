@@ -395,6 +395,7 @@ export interface Translation {
   unmute: string;
   editChannelOrder: string;
   editChannelName: string;
+  unblock: string;
 }
 
 export type LanguageKey = 'tw' | 'cn' | 'en' | 'jp';

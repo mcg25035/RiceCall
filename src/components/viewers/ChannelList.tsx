@@ -507,7 +507,12 @@ const UserTab: React.FC<UserTabProps> = React.memo(
       currentChannelId: memberCurrentChannelId,
       currentServerId: memberCurrentServerId,
     } = member;
-    const { userId, serverId, permissionLevel: userPermission } = currentServer;
+    const {
+      userId,
+      serverId,
+      lobbyId,
+      permissionLevel: userPermission,
+    } = currentServer;
     const { channelId: currentChannelId } = currentChannel;
     const memberGrade = Math.min(56, memberLevel); // 56 is max leve
     const isCurrentUser = memberUserId === userId;
@@ -521,19 +526,33 @@ const UserTab: React.FC<UserTabProps> = React.memo(
     const isFriend = friends.some((fd) => fd.targetId === memberUserId);
     const canApplyFriend = !isFriend && !isCurrentUser;
     const canManageMember =
-      !isCurrentUser && userPermission > 4 && userPermission > memberPermission;
+      !isCurrentUser &&
+      userPermission > 4 &&
+      memberPermission < 6 &&
+      userPermission > memberPermission;
     const canEditNickname =
       canManageMember || (isCurrentUser && userPermission > 1);
     const canChangeToGuest =
       canManageMember && memberPermission !== 1 && userPermission > 5;
     const canChangeToMember =
-      canManageMember && memberPermission !== 2 && userPermission > 5;
+      canManageMember &&
+      memberPermission !== 2 &&
+      (memberPermission > 1 || userPermission > 5);
     const canChangeToChannelAdmin =
-      canManageMember && memberPermission !== 3 && memberPermission > 1;
+      canManageMember &&
+      memberPermission !== 3 &&
+      memberPermission > 1 &&
+      userPermission > 3;
     const canChangeToCategoryAdmin =
-      canManageMember && memberPermission !== 4 && memberPermission > 1;
+      canManageMember &&
+      memberPermission !== 4 &&
+      memberPermission > 1 &&
+      userPermission > 4;
     const canChangeToAdmin =
-      canManageMember && memberPermission !== 5 && memberPermission > 1;
+      canManageMember &&
+      memberPermission !== 5 &&
+      memberPermission > 1 &&
+      userPermission > 5;
     const canKick = canManageMember && memberCurrentServerId === serverId;
     const canMoveToChannel =
       canManageMember && memberCurrentChannelId !== currentChannelId;
@@ -557,6 +576,28 @@ const UserTab: React.FC<UserTabProps> = React.memo(
     ) => {
       if (!socket) return;
       socket.send.disconnectServer({ userId, serverId });
+    };
+
+    const handleKickChannel = (
+      userId: User['userId'],
+      lobbyId: Channel['channelId'],
+      serverId: Server['serverId'],
+    ) => {
+      if (!socket) return;
+      socket.send.connectChannel({ userId, channelId: lobbyId, serverId });
+    };
+
+    const handleUpdateMember = (
+      member: Partial<Member>,
+      userId: User['userId'],
+      serverId: Server['serverId'],
+    ) => {
+      if (!socket) return;
+      socket.send.updateMember({
+        member,
+        userId,
+        serverId,
+      });
     };
 
     const handleMoveToChannel = (
@@ -614,19 +655,6 @@ const UserTab: React.FC<UserTabProps> = React.memo(
       ipcService.initialData.onRequest(`userInfo-${targetId}`, {
         userId,
         targetId,
-      });
-    };
-
-    const handleUpdateMember = (
-      member: Partial<Member>,
-      userId: User['userId'],
-      serverId: Server['serverId'],
-    ) => {
-      if (!socket) return;
-      socket.send.updateMember({
-        member,
-        userId,
-        serverId,
       });
     };
 
@@ -712,19 +740,30 @@ const UserTab: React.FC<UserTabProps> = React.memo(
                 id: 'kick-channel',
                 label: lang.tr.kickChannel,
                 show: canKick,
-                onClick: () => {}, // handleKickChannel(memberUserId, serverId),
+                onClick: () => {
+                  handleKickChannel(memberUserId, lobbyId, serverId);
+                },
               },
               {
                 id: 'kick-server',
                 label: lang.tr.kickServer,
                 show: canKick,
-                onClick: () => handleKickServer(memberUserId, serverId),
+                onClick: () => {
+                  handleKickServer(memberUserId, serverId);
+                },
               },
               {
                 id: 'ban',
                 label: lang.tr.ban,
-                show: canManageMember,
-                onClick: () => {},
+                show: canKick,
+                onClick: () => {
+                  handleUpdateMember(
+                    { permissionLevel: 1, isBlocked: true },
+                    memberUserId,
+                    serverId,
+                  );
+                  handleKickServer(memberUserId, serverId);
+                },
               },
               {
                 id: 'separator',
