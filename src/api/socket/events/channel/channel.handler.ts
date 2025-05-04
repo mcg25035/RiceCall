@@ -47,6 +47,7 @@ export class ConnectChannelHandler extends SocketHandler {
         serverMemberUpdate,
         serverUpdate,
         currentChannelId,
+        currentServerId,
         actions,
       } = await new ConnectChannelService(
         operatorId,
@@ -60,11 +61,20 @@ export class ConnectChannelHandler extends SocketHandler {
         operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       if (targetSocket) {
-        if (currentChannelId) {
+        if (currentChannelId && currentServerId) {
           targetSocket.leave(`channel_${currentChannelId}`);
           targetSocket
             .to(`channel_${currentChannelId}`)
             .emit('playSound', 'leave');
+
+          this.io
+            .to(`server_${currentServerId}`)
+            .emit(
+              'serverMemberUpdate',
+              userId,
+              currentServerId,
+              serverMemberUpdate,
+            );
         }
 
         targetSocket.emit('userUpdate', userUpdate);
@@ -72,14 +82,14 @@ export class ConnectChannelHandler extends SocketHandler {
         targetSocket.join(`channel_${channelId}`);
         targetSocket.to(`channel_${channelId}`).emit('playSound', 'join');
 
+        this.io
+          .to(`server_${serverId}`)
+          .emit('serverMemberUpdate', userId, serverId, serverMemberUpdate);
+
         await Promise.all(
           actions.map((action) => action(this.io, targetSocket)),
         );
       }
-
-      this.io
-        .to(`server_${serverId}`)
-        .emit('serverMemberUpdate', userId, serverId, serverMemberUpdate);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -123,14 +133,14 @@ export class DisconnectChannelHandler extends SocketHandler {
         targetSocket.leave(`channel_${channelId}`);
         targetSocket.to(`channel_${channelId}`).emit('playSound', 'leave');
 
+        this.io
+          .to(`server_${serverId}`)
+          .emit('serverMemberUpdate', userId, serverId, serverMemberUpdate);
+
         await Promise.all(
           actions.map((action) => action(this.io, targetSocket)),
         );
       }
-
-      this.io
-        .to(`server_${serverId}`)
-        .emit('serverMemberUpdate', userId, serverId, serverMemberUpdate);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({

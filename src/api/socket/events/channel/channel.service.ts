@@ -180,6 +180,7 @@ export class ConnectChannelService {
       serverMemberUpdate: { ...updatedUser, ...updatedMember },
       serverUpdate: updatedMember,
       currentChannelId: user.currentChannelId,
+      currentServerId: user.currentServerId,
       actions,
     };
   }
