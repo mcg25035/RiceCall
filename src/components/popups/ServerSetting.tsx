@@ -588,7 +588,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       }
                     }}
                   >
-                    {showPreview ? '編輯' : '預覽'}
+                    {showPreview ? lang.tr.edit : lang.tr.preview}
                   </div>
                 </div>
                 <div className={`${popup['inputBox']} ${popup['col']}`}>

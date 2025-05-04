@@ -374,7 +374,9 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                 <div className={styles['micText']}>
                   {webRTC.isMute ? lang.tr.takeMic : lang.tr.takenMic}
                   <div className={styles['micSubText']}>
-                    {!webRTC.isMute && webRTC.micVolume === 0 ? '麥已靜音' : ''}
+                    {!webRTC.isMute && webRTC.micVolume === 0
+                      ? lang.tr.micMuted
+                      : ''}
                   </div>
                 </div>
               </div>

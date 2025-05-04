@@ -396,6 +396,17 @@ export interface Translation {
   editChannelOrder: string;
   editChannelName: string;
   unblock: string;
+  userInfo: string;
+  registering: string;
+  micMuted: string;
+  create: string;
+  changeName: string;
+  moveUp: string;
+  moveDown: string;
+  moveTop: string;
+  moveBottom: string;
+  close: string;
+  showTo: string;
 }
 
 export type LanguageKey = 'tw' | 'cn' | 'en' | 'jp';

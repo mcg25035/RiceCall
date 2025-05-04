@@ -254,7 +254,7 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
                     },
                     {
                       id: 'language-select-cn',
-                      label: '簡體中文',
+                      label: '简体中文',
                       onClick: () => handleLanguageChange('cn'),
                     },
                     {

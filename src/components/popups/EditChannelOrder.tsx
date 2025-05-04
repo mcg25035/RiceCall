@@ -404,7 +404,7 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
               );
             }}
           >
-            新建
+            {lang.tr.create}
           </div>
 
           <div
@@ -417,7 +417,7 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
               handleEditChannelName();
             }}
           >
-            改名
+            {lang.tr.changeName}
           </div>
 
           <div
@@ -435,7 +435,7 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
               );
             }}
           >
-            刪除
+            {lang.tr.delete}
           </div>
 
           <div
@@ -448,7 +448,7 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
               handleChangeOrder(currentIndex, currentIndex - 1);
             }}
           >
-            上移
+            {lang.tr.moveUp}
           </div>
 
           <div
@@ -461,7 +461,7 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
               handleChangeOrder(currentIndex, currentIndex + 1);
             }}
           >
-            下移
+            {lang.tr.moveDown}
           </div>
 
           <div
@@ -474,7 +474,7 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
               handleChangeOrder(currentIndex, 0);
             }}
           >
-            置頂
+            {lang.tr.moveTop}
           </div>
 
           <div
@@ -487,7 +487,7 @@ const EditChannelOrderPopup: React.FC<EditChannelOrderPopupProps> = React.memo(
               handleChangeOrder(currentIndex, groupChannels.length - 1);
             }}
           >
-            置底
+            {lang.tr.moveBottom}
           </div>
         </div>
 

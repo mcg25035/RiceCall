@@ -7,7 +7,7 @@ import badgeInfoCardStyles from '@/styles/badgeInfoCard.module.css';
 import type { Badge } from '@/types';
 
 // Providers
-// import { useLanguage } from '@/providers/Language';
+import { useLanguage } from '@/providers/Language';
 
 interface BadgeInfoCardProps {
   rect: DOMRect;
@@ -20,7 +20,7 @@ const BadgeInfoCard: React.FC<BadgeInfoCardProps> = React.memo(
     // Refs
     const cardRef = useRef<HTMLDivElement>(null);
 
-    // const lang = useLanguage();
+    const lang = useLanguage();
 
     // State
     const [cardX, setCardX] = useState(0);
@@ -98,7 +98,7 @@ const BadgeInfoCard: React.FC<BadgeInfoCardProps> = React.memo(
           </div>
         </div>
         <div className={badgeInfoCardStyles.badgeShowTimeBox}>
-          <div>展示至:</div>
+          <div>{lang.tr.showTo}:</div>
           <div>1970-01-01</div>
         </div>
       </div>
