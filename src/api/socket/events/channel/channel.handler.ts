@@ -70,13 +70,15 @@ export class ConnectChannelHandler extends SocketHandler {
         targetSocket.emit('serverUpdate', serverUpdate);
         targetSocket.join(`channel_${channelId}`);
         targetSocket.to(`channel_${channelId}`).emit('playSound', 'join');
+
+        await Promise.all(
+          actions.map((action) => action(this.io, targetSocket)),
+        );
       }
 
       this.io
         .to(`server_${serverId}`)
         .emit('serverMemberUpdate', userId, serverId, serverMemberUpdate);
-
-      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -106,7 +108,7 @@ export class DisconnectChannelHandler extends SocketHandler {
 
       const targetSocket = SocketServer.getSocket(userId);
 
-      const { userUpdate, serverMemberUpdate } =
+      const { userUpdate, serverMemberUpdate, actions } =
         await new DisconnectChannelService(
           operatorId,
           userId,
@@ -118,6 +120,10 @@ export class DisconnectChannelHandler extends SocketHandler {
         targetSocket.emit('userUpdate', userUpdate);
         targetSocket.leave(`channel_${channelId}`);
         targetSocket.to(`channel_${channelId}`).emit('playSound', 'leave');
+
+        await Promise.all(
+          actions.map((action) => action(this.io, targetSocket)),
+        );
       }
 
       this.io

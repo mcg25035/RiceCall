@@ -260,6 +260,7 @@ export class DisconnectChannelService {
     return {
       userUpdate: updatedUser,
       serverMemberUpdate: updatedUser,
+      actions,
     };
   }
 }
