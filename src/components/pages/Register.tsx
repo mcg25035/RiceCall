@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 
+// Types
+import { Translation } from '@/types';
+
 // CSS
 import styles from '@/styles/pages/register.module.css';
-
-// Utils
-import { createValidators } from '@/utils/validators';
 
 // Services
 import authService from '@/services/auth.service';
@@ -28,6 +28,42 @@ interface FormDatas {
   gender: 'Male' | 'Female';
 }
 
+function validateAccount(value: string, lang: { tr: Translation }): string {
+  value = value.trim();
+  if (!value) return lang.tr.accountRequired;
+  if (value.length < 4) return lang.tr.accountMinLength;
+  if (value.length > 16) return lang.tr.accountMaxLength;
+  if (!/^[A-Za-z0-9_\.]+$/.test(value)) return lang.tr.accountInvalidFormat;
+  return '';
+}
+
+function validatePassword(value: string, lang: { tr: Translation }): string {
+  value = value.trim();
+  if (!value) return lang.tr.passwordRequired;
+  if (value.length < 8) return lang.tr.passwordMinLength;
+  if (value.length > 20) return lang.tr.passwordMaxLength;
+  if (!/^[A-Za-z0-9@$!%*#?&]{8,20}$/.test(value))
+    return lang.tr.passwordInvalidFormat;
+  return '';
+}
+
+function validateUsername(value: string, lang: { tr: Translation }): string {
+  value = value.trim();
+  if (!value) return lang.tr.usernameRequired;
+  if (value.length < 1) return lang.tr.usernameMinLength;
+  if (value.length > 32) return lang.tr.usernameMaxLength;
+  return '';
+}
+
+function validateCheckPassword(
+  value: string,
+  check: string,
+  lang: { tr: Translation },
+): string {
+  if (value !== check) return lang.tr.passwordsDoNotMatch;
+  return '';
+}
+
 interface RegisterPageProps {
   setSection: (section: 'login' | 'register') => void;
 }
@@ -36,7 +72,6 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
   ({ setSection }) => {
     // Hooks
     const lang = useLanguage();
-    const validators = React.useMemo(() => createValidators(lang), [lang]);
 
     // States
     const [formData, setFormData] = useState<FormDatas>({
@@ -56,6 +91,31 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
         ...prev,
         [name]: value,
       }));
+      if (name === 'account') {
+        setErrors((prev) => ({
+          ...prev,
+          account: validateAccount(value, lang),
+        }));
+      } else if (name === 'password') {
+        setErrors((prev) => ({
+          ...prev,
+          password: validatePassword(value, lang),
+        }));
+      } else if (name === 'confirmPassword') {
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: validateCheckPassword(
+            value,
+            formData.password,
+            lang,
+          ),
+        }));
+      } else if (name === 'username') {
+        setErrors((prev) => ({
+          ...prev,
+          username: validateUsername(value, lang),
+        }));
+      }
     };
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -63,25 +123,26 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
       if (name === 'account') {
         setErrors((prev) => ({
           ...prev,
-          account: validators.validateAccount(value),
+          account: validateAccount(value, lang),
         }));
       } else if (name === 'password') {
         setErrors((prev) => ({
           ...prev,
-          password: validators.validatePassword(value),
+          password: validatePassword(value, lang),
         }));
       } else if (name === 'confirmPassword') {
         setErrors((prev) => ({
           ...prev,
-          confirmPassword: validators.validateCheckPassword(
+          confirmPassword: validateCheckPassword(
             value,
             formData.password,
+            lang,
           ),
         }));
       } else if (name === 'username') {
         setErrors((prev) => ({
           ...prev,
-          username: validators.validateUsername(value),
+          username: validateUsername(value, lang),
         }));
       }
     };
@@ -232,7 +293,20 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
                     <div className={styles['hint']}>{lang.tr.nicknameHint}</div>
                   )}
                 </div>
-                <button className={styles['button']} onClick={handleSubmit}>
+                <button
+                  className={styles['button']}
+                  onClick={handleSubmit}
+                  disabled={
+                    !formData.account.trim() ||
+                    !formData.password.trim() ||
+                    !formData.confirmPassword.trim() ||
+                    !formData.username.trim() ||
+                    !!errors.account ||
+                    !!errors.password ||
+                    !!errors.confirmPassword ||
+                    !!errors.username
+                  }
+                >
                   {lang.tr.register}
                 </button>
               </>

@@ -259,6 +259,7 @@
 .button {
   width: 200px;
   height: 42px;
+  margin-top: 10px;
   background-color: #1680ce;
   color: #fff;
   border: none;
@@ -273,6 +274,12 @@
 
 .button:active {
   background-color: #1680ce;
+}
+
+.button:disabled {
+  background-color: #1680ce;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Footer */
