@@ -4,7 +4,7 @@ export const CreateMemberApplicationSchema = z
   .object({
     userId: z.string(),
     serverId: z.string(),
-    memberApplication: z.object({}),
+    memberApplication: z.any(), // TODO: implement schema
   })
   .strict();
 
@@ -12,7 +12,7 @@ export const UpdateMemberApplicationSchema = z
   .object({
     userId: z.string(),
     serverId: z.string(),
-    memberApplication: z.object({}),
+    memberApplication: z.any(), // TODO: implement schema
   })
   .strict();
 
