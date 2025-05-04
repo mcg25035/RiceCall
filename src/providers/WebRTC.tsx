@@ -244,7 +244,11 @@ const WebRTCProvider = ({ children }: WebRTCProviderProps) => {
     (deviceId: string) => {
       navigator.mediaDevices
         .getUserMedia({
-          audio: true,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: false,
+          },
           ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
         })
         .then((stream) => {
