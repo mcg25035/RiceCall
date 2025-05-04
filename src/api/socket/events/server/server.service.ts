@@ -155,10 +155,7 @@ export class ConnectServerService {
     const actions: any[] = [];
     const user = await database.get.user(this.userId);
     const server = await database.get.server(this.serverId);
-    const operatorMember = await database.get.member(
-      this.operatorId,
-      this.serverId,
-    );
+    const userMember = await database.get.member(this.userId, this.serverId);
 
     if (this.operatorId !== this.userId) {
       throw new StandardizedError({
@@ -171,7 +168,7 @@ export class ConnectServerService {
     } else {
       if (
         server.visibility === 'invisible' &&
-        (!operatorMember || operatorMember.permissionLevel < 2)
+        (!userMember || userMember.permissionLevel < 2)
       ) {
         return {
           openPopup: {
@@ -184,10 +181,21 @@ export class ConnectServerService {
           },
         };
       }
+      if (userMember.isBlocked) {
+        return {
+          openPopup: {
+            type: 'dialogError',
+            id: 'errorDialog',
+            initialData: {
+              title: '你已被加入黑名單，無法加入群組',
+            },
+          },
+        };
+      }
     }
 
     // Create new membership if there isn't one
-    if (!operatorMember) {
+    if (!userMember) {
       await database.set.member(this.userId, this.serverId, {
         permissionLevel: 1,
       });
