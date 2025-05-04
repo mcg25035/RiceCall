@@ -107,7 +107,7 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
     return (
       <div
         className={friendPage['friendWrapper']}
-        style={{ display: display ? 'flex' : 'none' }}
+        style={display ? {} : { display: 'none' }}
       >
         {/* Header */}
         <header className={friendPage['friendHeader']}>

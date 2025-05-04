@@ -104,7 +104,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     const isForbidByGuestTextWait =
       channelGuestTextWaitTime && leftWaitTime > 0 && userPermission === 1;
     const textMaxLength =
-      userPermission === 1 ? channelGuestTextMaxLength || 100 : 2000;
+      userPermission === 1 ? channelGuestTextMaxLength : 2000;
     const canChangeToFreeSpeech =
       userPermission > 4 && channelVoiceMode !== 'free';
     const canChangeToForbiddenSpeech =
@@ -214,7 +214,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     return (
       <div
         className={styles['serverWrapper']}
-        style={{ display: display ? 'flex' : 'none' }}
+        style={display ? {} : { display: 'none' }}
       >
         {/* Main Content */}
         <main className={styles['serverContent']}>

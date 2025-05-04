@@ -272,7 +272,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     return (
       <div
         className={homePage['homeWrapper']}
-        style={{ display: display ? 'flex' : 'none' }}
+        style={display ? {} : { display: 'none' }}
       >
         {/* Header */}
         <header className={homePage['homeHeader']}>
