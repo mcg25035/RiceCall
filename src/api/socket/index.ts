@@ -107,10 +107,10 @@ export default class SocketServer {
           if (socketId) {
             io.to(socketId).emit('openPopup', {
               type: 'dialogAlert',
-              id: 'alertDialog',
+              id: 'logout',
               initialData: {
                 title: '另一個設備已登入，請重新登入',
-                submitTo: 'alertDialog',
+                submitTo: 'logout',
               },
             });
             io.to(socketId).disconnectSockets();
@@ -138,8 +138,8 @@ export default class SocketServer {
       await new ConnectUserHandler(io, socket).handle();
 
       socket.on('disconnect', async () => {
-        await new DisconnectUserHandler(io, socket).handle();
         SocketServer.userSocketMap.delete(socket.data.userId);
+        await new DisconnectUserHandler(io, socket).handle();
       });
 
       // User
