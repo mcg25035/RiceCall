@@ -33,6 +33,9 @@ import refreshService from '@/services/refresh.service';
 import { createDefault } from '@/utils/createDefault';
 import { createSorter } from '@/utils/createSorter';
 
+// Components
+import MarkdownViewer from '@/components/viewers/Markdown';
+
 interface ServerSettingPopupProps {
   serverId: Server['serverId'];
   userId: User['userId'];
@@ -593,17 +596,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                 </div>
                 <div className={`${popup['inputBox']} ${popup['col']}`}>
                   {showPreview ? (
-                    <>
-                      <div
-                        style={{ minHeight: '330px' }}
-                        className={`${
-                          showPreview ? setting['previewModeArea'] : ''
-                        } ${markdown['markdownContent']}`}
-                        dangerouslySetInnerHTML={{
-                          __html: announcementPreview,
-                        }}
-                      />
-                    </>
+                    <div
+                      className={markdown['settingMarkdownContainer']}
+                      style={{ minHeight: '330px' }}
+                    >
+                      <MarkdownViewer markdownText={serverAnnouncement} />
+                    </div>
                   ) : (
                     <textarea
                       style={{ minHeight: '330px' }}
