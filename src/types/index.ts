@@ -433,6 +433,7 @@ export type User = {
   vip: number;
   xp: number;
   requiredXp: number;
+  // progress: number; (Not used but still in database column)
   birthYear: number;
   birthMonth: number;
   birthDay: number;
@@ -443,11 +444,39 @@ export type User = {
   lastActiveAt: number;
   createdAt: number;
   badges: Badge[];
-  // These data will not save in database
-  servers: UserServer[];
-  friends: UserFriend[];
-  friendApplications: FriendApplication[];
-  friendGroups: FriendGroup[];
+};
+
+export type Badge = {
+  badgeId: string;
+  name: string;
+  rare: string;
+  description: string;
+  order: number;
+  createdAt: number;
+};
+
+export type FriendGroup = {
+  friendGroupId: string;
+  userId: string;
+  name: string;
+  order: number;
+  createdAt: number;
+};
+
+export type Friend = {
+  userId: string;
+  targetId: string;
+  isBlocked: boolean;
+  friendGroupId: string | null;
+  createdAt: number;
+};
+
+export type FriendApplication = User & {
+  // Change name to UserFriendApplication and separate
+  senderId: string;
+  receiverId: string;
+  description: string;
+  createdAt: number;
 };
 
 export type Server = {
@@ -469,10 +498,6 @@ export type Server = {
   lobbyId: string;
   ownerId: string;
   createdAt: number;
-  // These data will not save in database
-  channels: Channel[];
-  members: ServerMember[];
-  memberApplications: MemberApplication[];
 };
 
 export type BaseChannel = {
@@ -484,7 +509,7 @@ export type BaseChannel = {
   guestTextGapTime: number;
   guestTextWaitTime: number;
   guestTextMaxLength: number;
-  // isRoot: boolean;
+  // isRoot: boolean; (Not used but still in database column)
   isLobby: boolean;
   slowmode: boolean;
   forbidText: boolean;
@@ -507,29 +532,6 @@ export type Channel = BaseChannel & {
   type: 'channel';
 };
 
-export type Friend = {
-  userId: string;
-  targetId: string;
-  isBlocked: boolean;
-  friendGroupId: string | null;
-  createdAt: number;
-};
-
-export type FriendApplication = User & {
-  senderId: string;
-  receiverId: string;
-  description: string;
-  createdAt: number;
-};
-
-export type FriendGroup = {
-  friendGroupId: string;
-  userId: string;
-  name: string;
-  order: number;
-  createdAt: number;
-};
-
 export type Member = {
   userId: string;
   serverId: string;
@@ -543,22 +545,15 @@ export type Member = {
 };
 
 export type MemberApplication = User & {
+  // Change name to ServerMemberApplication and separate
   userId: string;
   serverId: string;
   description: string;
   createdAt: number;
 };
 
-export type Badge = {
-  badgeId: string;
-  name: string;
-  rare: string;
-  description: string;
-  order: number;
-  createdAt: number;
-};
-
 export type Message = {
+  // Change name to BaseMessage
   messageId: string;
   content: string;
   type: 'general' | 'info' | 'dm';
@@ -635,6 +630,18 @@ export enum SocketClientEvent {
   // User
   SEARCH_USER = 'searchUser',
   UPDATE_USER = 'updateUser',
+  // Friend Group
+  CREATE_FRIEND_GROUP = 'createFriendGroup',
+  UPDATE_FRIEND_GROUP = 'updateFriendGroup',
+  DELETE_FRIEND_GROUP = 'deleteFriendGroup',
+  // Friend
+  CREATE_FRIEND = 'createFriend',
+  UPDATE_FRIEND = 'updateFriend',
+  DELETE_FRIEND = 'deleteFriend',
+  // Friend Application
+  CREATE_FRIEND_APPLICATION = 'createFriendApplication',
+  UPDATE_FRIEND_APPLICATION = 'updateFriendApplication',
+  DELETE_FRIEND_APPLICATION = 'deleteFriendApplication',
   // Server
   SEARCH_SERVER = 'searchServer',
   CONNECT_SERVER = 'connectServer',
@@ -649,26 +656,14 @@ export enum SocketClientEvent {
   UPDATE_CHANNEL = 'updateChannel',
   UPDATE_CHANNELS = 'updateChannels',
   DELETE_CHANNEL = 'deleteChannel',
-  // Friend Group
-  CREATE_FRIEND_GROUP = 'createFriendGroup',
-  UPDATE_FRIEND_GROUP = 'updateFriendGroup',
-  DELETE_FRIEND_GROUP = 'deleteFriendGroup',
   // Member
   CREATE_MEMBER = 'createMember',
   UPDATE_MEMBER = 'updateMember',
   DELETE_MEMBER = 'deleteMember',
-  // Friend
-  CREATE_FRIEND = 'createFriend',
-  UPDATE_FRIEND = 'updateFriend',
-  DELETE_FRIEND = 'deleteFriend',
   // Member Application
   CREATE_MEMBER_APPLICATION = 'createMemberApplication',
   UPDATE_MEMBER_APPLICATION = 'updateMemberApplication',
   DELETE_MEMBER_APPLICATION = 'deleteMemberApplication',
-  // Friend Application
-  CREATE_FRIEND_APPLICATION = 'createFriendApplication',
-  UPDATE_FRIEND_APPLICATION = 'updateFriendApplication',
-  DELETE_FRIEND_APPLICATION = 'deleteFriendApplication',
   // Message
   SEND_MESSAGE = 'message',
   SEND_DIRECT_MESSAGE = 'directMessage',
@@ -731,7 +726,7 @@ export enum SocketServerEvent {
   RTC_ICE_CANDIDATE = 'RTCIceCandidate',
   RTC_JOIN = 'RTCJoin',
   RTC_LEAVE = 'RTCLeave',
-  // Play
+  // Play Sound
   PLAY_SOUND = 'playSound',
   // Echo
   PONG = 'pong',
