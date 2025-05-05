@@ -45,7 +45,8 @@
 
 .markdownContent ul,
 .markdownContent ol {
-  margin: 0.5em 0 0.5em 1.5em;
+  margin: 0.5em 0;
+  padding-inline-start: 20px;
   list-style-position: outside;
 }
 
