@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -104,6 +104,8 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
       },
     );
     const sanitized = DOMPurify.sanitize(withEmojis, PURIFY_CONFIG);
+    const [isCopied, setIsCopied] = useState(false);
+
     const components: Components = {
       h1: ({ node, ...props }: any) => (
         <h1 className={markdown.heading1} {...props} />
@@ -177,9 +179,25 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
       code: ({ node, inline, className, children, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || '');
         const language = match ? match[1] : 'text';
+
         if (!inline) {
+          const codeString = String(children).replace(/\n$/, '');
+
+          const handleCopy = () => {
+            navigator.clipboard.writeText(codeString);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+          };
+
           return (
             <div className={markdown.codeWrapper}>
+              <button
+                className={markdown.copyButton}
+                onClick={handleCopy}
+                aria-label="複製程式碼"
+              >
+                {isCopied ? '已複製！' : '複製'}
+              </button>
               <SyntaxHighlighter
                 language={language}
                 style={{ ...vscDarkPlus, ...customStyle }}
@@ -187,11 +205,12 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
                 className={markdown.codeBlock}
                 {...props}
               >
-                {String(children).replace(/\n$/, '')}
+                {codeString}
               </SyntaxHighlighter>
             </div>
           );
         }
+
         return (
           <code className={markdown.inlineCode} {...props}>
             {children}

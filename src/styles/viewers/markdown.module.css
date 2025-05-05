@@ -201,3 +201,30 @@
   background: rgba(79, 84, 92, 0.05);
   border-radius: 0 4px 4px 0;
 }
+
+.codeWrapper {
+  position: relative;
+}
+
+.copyButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.codeWrapper:hover .copyButton {
+  opacity: 1;
+}
+
+.copyButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
