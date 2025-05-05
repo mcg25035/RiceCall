@@ -213,7 +213,7 @@ export class UpdateServerHandler extends SocketHandler {
 
       await new UpdateServerService(operatorId, serverId, server).use();
 
-      this.io.to(`server_${serverId}`).emit('serverUpdate', server);
+      this.io.to(`server_${serverId}`).emit('serverUpdate', serverId, server);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
