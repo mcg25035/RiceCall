@@ -125,6 +125,7 @@
   min-width: max-content;
   height: 2.2rem;
   margin-right: 15px;
+  padding: 5px;
 }
 
 .navegateItem:hover {
