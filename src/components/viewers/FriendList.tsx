@@ -92,7 +92,7 @@ const FriendGroupTab: React.FC<FriendGroupTabProps> = React.memo(
           className={styles['tab']}
           onClick={() => setExpanded(!expanded)}
           onContextMenu={(e) => {
-            contextMenu.showContextMenu(e.pageX, e.pageY, [
+            contextMenu.showContextMenu(e.clientX, e.clientY, [
               {
                 id: 'edit',
                 label: lang.tr.editFriendGroup,
@@ -258,7 +258,7 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
       <div
         className={styles['friendCard']}
         onContextMenu={(e) => {
-          contextMenu.showContextMenu(e.pageX, e.pageY, [
+          contextMenu.showContextMenu(e.clientX, e.clientY, [
             {
               id: 'info',
               label: lang.tr.viewProfile,

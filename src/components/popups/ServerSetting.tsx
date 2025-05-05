@@ -716,112 +716,119 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                             key={memberUserId}
                             onContextMenu={(e) => {
                               const isCurrentUser = memberUserId === userId;
-                              contextMenu.showContextMenu(e.pageX, e.pageY, [
-                                {
-                                  id: 'direct-message',
-                                  label: lang.tr.directMessage,
-                                  show: !isCurrentUser,
-                                  onClick: () =>
-                                    handleOpenDirectMessage(
-                                      userId,
-                                      memberUserId,
-                                      memberName,
-                                    ),
-                                },
-                                {
-                                  id: 'view-profile',
-                                  label: lang.tr.viewProfile,
-                                  show: !isCurrentUser,
-                                  onClick: () =>
-                                    handleOpenUserInfo(userId, memberUserId),
-                                },
-                                {
-                                  id: 'apply-friend',
-                                  label: lang.tr.addFriend,
-                                  show: !isCurrentUser,
-                                  onClick: () =>
-                                    handleOpenApplyFriend(userId, memberUserId),
-                                },
-                                {
-                                  id: 'edit-nickname',
-                                  label: lang.tr.editNickname,
-                                  show: canEditNickname,
-                                  onClick: () =>
-                                    handleOpenEditNickname(
-                                      memberUserId,
-                                      serverId,
-                                    ),
-                                },
-                                {
-                                  id: 'separator',
-                                  label: '',
-                                  show: canManageMember,
-                                },
-                                {
-                                  id: 'member-management',
-                                  label: lang.tr.memberManagement,
-                                  show: canManageMember,
-                                  icon: 'submenu',
-                                  hasSubmenu: true,
-                                  submenuItems: [
-                                    {
-                                      id: 'set-guest',
-                                      label: lang.tr.setGuest,
-                                      show: canChangeToGuest,
-                                      onClick: () =>
-                                        handleUpdateMember(
-                                          { permissionLevel: 1 },
-                                          memberUserId,
-                                          serverId,
-                                        ),
-                                    },
-                                    {
-                                      id: 'set-member',
-                                      label: lang.tr.setMember,
-                                      show: canChangeToMember,
-                                      onClick: () =>
-                                        handleUpdateMember(
-                                          { permissionLevel: 2 },
-                                          memberUserId,
-                                          serverId,
-                                        ),
-                                    },
-                                    {
-                                      id: 'set-channel-admin',
-                                      label: lang.tr.setChannelAdmin,
-                                      show: canChangeToChannelAdmin,
-                                      onClick: () =>
-                                        handleUpdateMember(
-                                          { permissionLevel: 3 },
-                                          memberUserId,
-                                          serverId,
-                                        ),
-                                    },
-                                    {
-                                      id: 'set-category-admin',
-                                      label: lang.tr.setCategoryAdmin,
-                                      show: canChangeToCategoryAdmin,
-                                      onClick: () =>
-                                        handleUpdateMember(
-                                          { permissionLevel: 4 },
-                                          memberUserId,
-                                          serverId,
-                                        ),
-                                    },
-                                    {
-                                      id: 'set-admin',
-                                      label: lang.tr.setAdmin,
-                                      show: canChangeToAdmin,
-                                      onClick: () =>
-                                        handleUpdateMember(
-                                          { permissionLevel: 5 },
-                                          memberUserId,
-                                          serverId,
-                                        ),
-                                    },
-                                  ],
-                                },
-                              ]);
+                              contextMenu.showContextMenu(
+                                e.clientX,
+                                e.clientY,
+                                [
+                                  {
+                                    id: 'direct-message',
+                                    label: lang.tr.directMessage,
+                                    show: !isCurrentUser,
+                                    onClick: () =>
+                                      handleOpenDirectMessage(
+                                        userId,
+                                        memberUserId,
+                                        memberName,
+                                      ),
+                                  },
+                                  {
+                                    id: 'view-profile',
+                                    label: lang.tr.viewProfile,
+                                    show: !isCurrentUser,
+                                    onClick: () =>
+                                      handleOpenUserInfo(userId, memberUserId),
+                                  },
+                                  {
+                                    id: 'apply-friend',
+                                    label: lang.tr.addFriend,
+                                    show: !isCurrentUser,
+                                    onClick: () =>
+                                      handleOpenApplyFriend(
+                                        userId,
+                                        memberUserId,
+                                      ),
+                                  },
+                                  {
+                                    id: 'edit-nickname',
+                                    label: lang.tr.editNickname,
+                                    show: canEditNickname,
+                                    onClick: () =>
+                                      handleOpenEditNickname(
+                                        memberUserId,
+                                        serverId,
+                                      ),
+                                  },
+                                  {
+                                    id: 'separator',
+                                    label: '',
+                                    show: canManageMember,
+                                  },
+                                  {
+                                    id: 'member-management',
+                                    label: lang.tr.memberManagement,
+                                    show: canManageMember,
+                                    icon: 'submenu',
+                                    hasSubmenu: true,
+                                    submenuItems: [
+                                      {
+                                        id: 'set-guest',
+                                        label: lang.tr.setGuest,
+                                        show: canChangeToGuest,
+                                        onClick: () =>
+                                          handleUpdateMember(
+                                            { permissionLevel: 1 },
+                                            memberUserId,
+                                            serverId,
+                                          ),
+                                      },
+                                      {
+                                        id: 'set-member',
+                                        label: lang.tr.setMember,
+                                        show: canChangeToMember,
+                                        onClick: () =>
+                                          handleUpdateMember(
+                                            { permissionLevel: 2 },
+                                            memberUserId,
+                                            serverId,
+                                          ),
+                                      },
+                                      {
+                                        id: 'set-channel-admin',
+                                        label: lang.tr.setChannelAdmin,
+                                        show: canChangeToChannelAdmin,
+                                        onClick: () =>
+                                          handleUpdateMember(
+                                            { permissionLevel: 3 },
+                                            memberUserId,
+                                            serverId,
+                                          ),
+                                      },
+                                      {
+                                        id: 'set-category-admin',
+                                        label: lang.tr.setCategoryAdmin,
+                                        show: canChangeToCategoryAdmin,
+                                        onClick: () =>
+                                          handleUpdateMember(
+                                            { permissionLevel: 4 },
+                                            memberUserId,
+                                            serverId,
+                                          ),
+                                      },
+                                      {
+                                        id: 'set-admin',
+                                        label: lang.tr.setAdmin,
+                                        show: canChangeToAdmin,
+                                        onClick: () =>
+                                          handleUpdateMember(
+                                            { permissionLevel: 5 },
+                                            memberUserId,
+                                            serverId,
+                                          ),
+                                      },
+                                    ],
+                                  },
+                                ],
+                              );
                             }}
                           >
                             <td>
@@ -1005,45 +1012,49 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                           <tr
                             key={applicationUserId}
                             onContextMenu={(e) => {
-                              contextMenu.showContextMenu(e.pageX, e.pageY, [
-                                {
-                                  id: 'view-profile',
-                                  label: lang.tr.viewProfile,
-                                  show: !isCurrentUser,
-                                  onClick: () =>
-                                    handleOpenUserInfo(
-                                      userId,
-                                      applicationUserId,
-                                    ),
-                                },
-                                {
-                                  id: 'accept',
-                                  label: lang.tr.acceptApplication,
-                                  show: canAccept,
-                                  onClick: () => {
-                                    handleDeleteMemberApplication(
-                                      applicationUserId,
-                                      serverId,
-                                    );
-                                    handleCreateMember(
-                                      { permissionLevel: 2 },
-                                      applicationUserId,
-                                      serverId,
-                                    );
+                              contextMenu.showContextMenu(
+                                e.clientX,
+                                e.clientY,
+                                [
+                                  {
+                                    id: 'view-profile',
+                                    label: lang.tr.viewProfile,
+                                    show: !isCurrentUser,
+                                    onClick: () =>
+                                      handleOpenUserInfo(
+                                        userId,
+                                        applicationUserId,
+                                      ),
                                   },
-                                },
-                                {
-                                  id: 'deny',
-                                  label: lang.tr.denyApplication,
-                                  show: canDeny,
-                                  onClick: () => {
-                                    handleDeleteMemberApplication(
-                                      applicationUserId,
-                                      serverId,
-                                    );
+                                  {
+                                    id: 'accept',
+                                    label: lang.tr.acceptApplication,
+                                    show: canAccept,
+                                    onClick: () => {
+                                      handleDeleteMemberApplication(
+                                        applicationUserId,
+                                        serverId,
+                                      );
+                                      handleCreateMember(
+                                        { permissionLevel: 2 },
+                                        applicationUserId,
+                                        serverId,
+                                      );
+                                    },
                                   },
-                                },
-                              ]);
+                                  {
+                                    id: 'deny',
+                                    label: lang.tr.denyApplication,
+                                    show: canDeny,
+                                    onClick: () => {
+                                      handleDeleteMemberApplication(
+                                        applicationUserId,
+                                        serverId,
+                                      );
+                                    },
+                                  },
+                                ],
+                              );
                             }}
                           >
                             <td>
@@ -1125,20 +1136,24 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                           <tr
                             key={memberUserId}
                             onContextMenu={(e) => {
-                              contextMenu.showContextMenu(e.pageX, e.pageY, [
-                                {
-                                  id: 'unblock',
-                                  label: lang.tr.unblock,
-                                  show: true,
-                                  onClick: () => {
-                                    handleUpdateMember(
-                                      { isBlocked: false },
-                                      memberUserId,
-                                      serverId,
-                                    );
+                              contextMenu.showContextMenu(
+                                e.clientX,
+                                e.clientY,
+                                [
+                                  {
+                                    id: 'unblock',
+                                    label: lang.tr.unblock,
+                                    show: true,
+                                    onClick: () => {
+                                      handleUpdateMember(
+                                        { isBlocked: false },
+                                        memberUserId,
+                                        serverId,
+                                      );
+                                    },
                                   },
-                                },
-                              ]);
+                                ],
+                              );
                             }}
                           >
                             <td>{blockMemberNickname || blockMemberName}</td>

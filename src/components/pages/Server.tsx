@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import dynamic from 'next/dynamic';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 // CSS
 import styles from '@/styles/pages/server.module.css';
@@ -60,9 +60,16 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     const webRTC = useWebRTC();
     const contextMenu = useContextMenu();
 
+    // Refs
+    const announcementAreaRef = useRef<HTMLDivElement>(null);
+
     // States
     const [sidebarWidth, setSidebarWidth] = useState<number>(270);
-    const [isResizing, setIsResizing] = useState<boolean>(false);
+    const [announcementAreaHeight, setAnnouncementAreaHeight] =
+      useState<number>(200);
+    const [isResizingSidebar, setIsResizingSidebar] = useState<boolean>(false);
+    const [isResizingAnnouncementArea, setIsResizingAnnouncementArea] =
+      useState<boolean>(false);
     const [showMicVolume, setShowMicVolume] = useState(false);
     const [showSpeakerVolume, setShowSpeakerVolume] = useState(false);
     const [currentTime, setCurrentTime] = useState<number>(Date.now());
@@ -131,14 +138,27 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       socket.send.updateChannel({ channel, channelId, serverId });
     };
 
-    const handleResize = useCallback(
+    const handleResizeSidebar = useCallback(
       (e: MouseEvent) => {
-        if (!isResizing) return;
+        if (!isResizingSidebar) return;
         const maxWidth = window.innerWidth * 0.3;
         const newWidth = Math.max(270, Math.min(e.clientX, maxWidth));
         setSidebarWidth(newWidth);
       },
-      [isResizing],
+      [isResizingSidebar],
+    );
+
+    const handleResizeAnnouncementArea = useCallback(
+      (e: MouseEvent) => {
+        if (!isResizingAnnouncementArea) return;
+        if (!announcementAreaRef.current) return;
+        const maxHeight = window.innerHeight * 0.6;
+        const newHeight =
+          Math.max(200, Math.min(e.clientY, maxHeight)) -
+          announcementAreaRef.current.offsetTop;
+        setAnnouncementAreaHeight(newHeight);
+      },
+      [isResizingAnnouncementArea],
     );
 
     const handleClickOutside = useCallback((e: MouseEvent) => {
@@ -167,13 +187,28 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     }, [handleClickOutside]);
 
     useEffect(() => {
-      window.addEventListener('mousemove', handleResize);
-      window.addEventListener('mouseup', () => setIsResizing(false));
+      window.addEventListener('mousemove', handleResizeSidebar);
+      window.addEventListener('mouseup', () => setIsResizingSidebar(false));
       return () => {
-        window.removeEventListener('mousemove', handleResize);
-        window.removeEventListener('mouseup', () => setIsResizing(false));
+        window.removeEventListener('mousemove', handleResizeSidebar);
+        window.removeEventListener('mouseup', () =>
+          setIsResizingSidebar(false),
+        );
       };
-    }, [handleResize]);
+    }, [handleResizeSidebar]);
+
+    useEffect(() => {
+      window.addEventListener('mousemove', handleResizeAnnouncementArea);
+      window.addEventListener('mouseup', () =>
+        setIsResizingAnnouncementArea(false),
+      );
+      return () => {
+        window.removeEventListener('mousemove', handleResizeAnnouncementArea);
+        window.removeEventListener('mouseup', () =>
+          setIsResizingAnnouncementArea(false),
+        );
+      };
+    }, [handleResizeAnnouncementArea]);
 
     useEffect(() => {
       if (!webRTC || !channelBitrate) return;
@@ -233,14 +268,24 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
           {/* Resize Handle */}
           <div
             className="resizeHandle"
-            onMouseDown={() => setIsResizing(true)}
-            onMouseUp={() => setIsResizing(false)}
+            onMouseDown={() => setIsResizingSidebar(true)}
+            onMouseUp={() => setIsResizingSidebar(false)}
           />
           {/* Right Content */}
           <div className={styles['mainContent']}>
-            <div className={`${styles['announcementArea']}`}>
+            <div
+              ref={announcementAreaRef}
+              className={styles['announcementArea']}
+              style={{ height: `${announcementAreaHeight}px` }}
+            >
               <MarkdownViewer markdownText={serverAnnouncement} />
             </div>
+            {/* Resize Handle */}
+            <div
+              className="resizeHandleVertical"
+              onMouseDown={() => setIsResizingAnnouncementArea(true)}
+              onMouseUp={() => setIsResizingAnnouncementArea(false)}
+            />
             <div className={styles['messageArea']}>
               <MessageViewer messages={channelMessages[channelId] || []} />
             </div>

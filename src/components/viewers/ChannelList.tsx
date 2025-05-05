@@ -149,7 +149,7 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
           key={channelId}
           className={`${styles['channelTab']} `}
           onContextMenu={(e) => {
-            contextMenu.showContextMenu(e.pageX, e.pageY, [
+            contextMenu.showContextMenu(e.clientX, e.clientY, [
               {
                 id: 'edit',
                 label: lang.tr.editChannel,
@@ -389,7 +389,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
             }
           }}
           onContextMenu={(e) => {
-            contextMenu.showContextMenu(e.pageX, e.pageY, [
+            contextMenu.showContextMenu(e.clientX, e.clientY, [
               {
                 id: 'edit',
                 label: lang.tr.editChannel,
@@ -663,12 +663,12 @@ const UserTab: React.FC<UserTabProps> = React.memo(
         key={memberUserId}
         className={`${styles['userTab']}`}
         onClick={(e) => {
-          contextMenu.showUserInfoBlock(e.pageX, e.pageY, member);
+          contextMenu.showUserInfoBlock(e.clientX, e.clientY, member);
         }}
         onContextMenu={(e) => {
           contextMenu.showContextMenu(
-            e.pageX,
-            e.pageY,
+            e.clientX,
+            e.clientY,
             [
               {
                 id: 'direct-message',
