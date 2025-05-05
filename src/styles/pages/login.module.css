@@ -71,7 +71,6 @@
 }
 
 .input:focus {
-  outline: none;
   background: #fff;
 }
 

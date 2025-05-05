@@ -759,7 +759,7 @@
   height: 4px;
   background: #bbb;
   border-radius: 2px;
-  outline: none;
+
   transform: rotate(-90deg);
   position: absolute;
 }
