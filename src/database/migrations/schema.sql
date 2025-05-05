@@ -61,7 +61,6 @@ CREATE TABLE `channels` (
   `guest_text_gap_time` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `guest_text_wait_time` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `guest_text_max_length` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `is_root` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `is_lobby` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `slowmode` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `forbid_text` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
@@ -73,22 +72,6 @@ CREATE TABLE `channels` (
   `category_id` char(36) DEFAULT NULL,
   `server_id` char(36) NOT NULL,
   `created_at` bigint(20) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- --------------------------------------------------------
-
---
--- 資料表結構 `direct_messages`
---
-
-CREATE TABLE `direct_messages` (
-  `direct_message_id` char(36) NOT NULL,
-  `content` text NOT NULL DEFAULT '',
-  `type` varchar(255) NOT NULL DEFAULT 'dm',
-  `sender_id` char(36) NOT NULL,
-  `user1_id` char(36) NOT NULL,
-  `user2_id` char(36) NOT NULL,
-  `timestamp` bigint(20) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -166,22 +149,6 @@ CREATE TABLE `member_applications` (
 -- --------------------------------------------------------
 
 --
--- 資料表結構 `messages`
---
-
-CREATE TABLE `messages` (
-  `message_id` char(36) NOT NULL,
-  `content` text NOT NULL DEFAULT '',
-  `type` varchar(255) NOT NULL DEFAULT 'general',
-  `sender_id` char(36) NOT NULL,
-  `server_id` char(36) NOT NULL,
-  `channel_id` char(36) NOT NULL,
-  `timestamp` bigint(20) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- --------------------------------------------------------
-
---
 -- 資料表結構 `servers`
 --
 
@@ -196,7 +163,7 @@ CREATE TABLE `servers` (
   `display_id` varchar(24) NOT NULL DEFAULT '',
   `slogan` varchar(255) NOT NULL DEFAULT '',
   `level` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `wealth` int(1) UNSIGNED NOT NULL DEFAULT 0,
+  `wealth` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `receive_apply` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `allow_direct_message` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `type` varchar(255) NOT NULL DEFAULT 'game',
@@ -223,7 +190,6 @@ CREATE TABLE `users` (
   `vip` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `xp` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `required_xp` int(10) UNSIGNED NOT NULL DEFAULT 25,
-  `progress` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `birth_year` smallint(5) UNSIGNED NOT NULL DEFAULT 1900,
   `birth_month` tinyint(3) UNSIGNED NOT NULL DEFAULT 1,
   `birth_day` tinyint(3) UNSIGNED NOT NULL DEFAULT 1,
