@@ -2,7 +2,10 @@
   "scripts": {
     "dev": "tsx -r dotenv/config src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "backup": "tsx -r dotenv/config src/database/scripts/backup-db.ts",
+    "restore": "tsx -r dotenv/config src/database/scripts/restore-db.ts",
+    "setup": "tsx -r dotenv/config src/database/scripts/setup-db.ts",
   },
   "dependencies": {
     "@types/formidable": "^3.4.5",
