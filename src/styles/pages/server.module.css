@@ -28,7 +28,6 @@
   min-height: 0;
   min-width: 0;
   background-color: #f1f2f5;
-  border-right: 1px solid #e2e8f0;
   font-size: 0.875rem;
 }
 
@@ -147,11 +146,11 @@
   min-width: 40px;
   display: flex;
   align-items: center;
-  position: relative;
+  position: absolute;
   justify-content: flex-end;
   margin-left: auto;
-  bottom: -20px;
-  right: -5px;
+  bottom: 5px;
+  right: 5px;
 }
 
 .navItem:first-child:hover::before,
@@ -431,7 +430,6 @@
 
 .announcementArea {
   overflow-y: auto;
-  border-bottom: 1px solid #e2e8f0;
   padding: 0.75rem;
   margin-bottom: 0.25rem;
   height: 150px;

@@ -141,8 +141,10 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     const handleResizeSidebar = useCallback(
       (e: MouseEvent) => {
         if (!isResizingSidebar) return;
-        const maxWidth = window.innerWidth * 0.3;
-        const newWidth = Math.max(270, Math.min(e.clientX, maxWidth));
+        // const maxWidth = window.innerWidth * 0.3;
+        const maxWidth = 400;
+        const minWidth = 250;
+        const newWidth = Math.max(minWidth, Math.min(e.clientX, maxWidth));
         setSidebarWidth(newWidth);
       },
       [isResizingSidebar],
@@ -152,9 +154,11 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       (e: MouseEvent) => {
         if (!isResizingAnnouncementArea) return;
         if (!announcementAreaRef.current) return;
-        const maxHeight = window.innerHeight * 0.6;
+        // const maxHeight = window.innerHeight * 0.6;
+        const maxHeight = 500;
+        const minHeight = 100;
         const newHeight =
-          Math.max(200, Math.min(e.clientY, maxHeight)) -
+          Math.max(minHeight, Math.min(e.clientY, maxHeight)) -
           announcementAreaRef.current.offsetTop;
         setAnnouncementAreaHeight(newHeight);
       },
