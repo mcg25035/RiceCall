@@ -181,7 +181,7 @@ export class ConnectServerService {
           },
         };
       }
-      if (userMember.isBlocked) {
+      if (userMember && userMember.isBlocked) {
         return {
           openPopup: {
             type: 'dialogError',
