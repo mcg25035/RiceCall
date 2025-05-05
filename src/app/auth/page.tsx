@@ -58,13 +58,11 @@ const Auth: React.FC = () => {
 
   // Effects
   useEffect(() => {
-    authService.autoLogin();
-    window.addEventListener('storage', (e) => {
-      if (e.key == 'pageReloadFlag') {
-        localStorage.removeItem('pageReloadFlag');
-        location.reload();
-      }
-    });
+    const autoLogin = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await authService.autoLogin();
+    };
+    autoLogin();
   }, []);
 
   const getMainContent = () => {
