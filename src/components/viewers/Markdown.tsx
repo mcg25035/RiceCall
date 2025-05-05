@@ -11,6 +11,9 @@ import DOMPurify from 'dompurify';
 // Componenets
 import emojis from '@/components/emojis';
 
+// CSS
+import markdown from '@/styles/viewers/markdown.module.css';
+
 interface PurifyConfig {
   ALLOWED_TAGS: string[];
   ALLOWED_ATTR: string[];
@@ -210,7 +213,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = React.memo(
   ({ markdownText, isGuest = false, forbidGuestUrl = false }) => {
     return (
       <div className="flex-1 overflow-x-hidden">
-        <div className="max-w-full overflow-x-auto">
+        <div className={markdown['markdownContent']}>
           <Markdown
             markdownText={markdownText}
             isGuest={isGuest}

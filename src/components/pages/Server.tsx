@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 // CSS
 import styles from '@/styles/pages/server.module.css';
-import markdown from '@/styles/viewers/markdown.module.css';
 
 // Components
 import MarkdownViewer from '@/components/viewers/Markdown';
@@ -239,9 +238,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
           />
           {/* Right Content */}
           <div className={styles['mainContent']}>
-            <div
-              className={`${styles['announcementArea']} ${markdown['markdownContent']}`}
-            >
+            <div className={`${styles['announcementArea']}`}>
               <MarkdownViewer markdownText={serverAnnouncement} />
             </div>
             <div className={styles['messageArea']}>
