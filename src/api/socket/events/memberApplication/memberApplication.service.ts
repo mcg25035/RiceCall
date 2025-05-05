@@ -32,7 +32,7 @@ export class CreateMemberApplicationService {
         statusCode: 403,
       });
     } else {
-      if (operatorMember.permissionLevel !== 1) {
+      if (operatorMember && operatorMember.permissionLevel !== 1) {
         throw new StandardizedError({
           name: 'ValidationError',
           message: '非遊客無法創建會員申請',
