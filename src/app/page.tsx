@@ -345,11 +345,15 @@ const RootPageComponent = () => {
     id: UserServer['serverId'],
     server: UserServer,
   ) => {
-    setServers((prev) => prev.map((s) => (s.serverId === id ? server : s)));
+    setServers((prev) =>
+      prev.map((item) =>
+        item.serverId === id ? { ...item, ...server } : item,
+      ),
+    );
   };
 
   const handleServerDelete = (id: UserServer['serverId']) => {
-    setServers((prev) => prev.filter((s) => s.serverId !== id));
+    setServers((prev) => prev.filter((item) => item.serverId !== id));
   };
 
   const handleServersUpdate = (servers: UserServer[]) => {

@@ -222,6 +222,7 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                   <textarea
                     style={{ minHeight: '200px' }}
                     // value={channelAnnouncement}
+                    placeholder={'目前不可用'}
                     value={''}
                     // onChange={(e) => setChannelAnnouncement(e.target.value)}
                     onChange={() => {}}
