@@ -359,3 +359,10 @@
 .dialogIcon.success {
   background-image: url('../../public/pic_ok.png');
 }
+
+.dialogContent {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0 20px;
+}

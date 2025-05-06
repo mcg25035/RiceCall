@@ -87,9 +87,7 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
 
     cleanupRef.current.push(() => {
       ipcService.removeListener('connect');
-      ipcService.removeListener('connect_error');
       ipcService.removeListener('reconnect');
-      ipcService.removeListener('reconnect_error');
       ipcService.removeListener('disconnect');
     });
 

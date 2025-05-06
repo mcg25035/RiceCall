@@ -40,11 +40,12 @@ export class errorHandler {
   }
 
   show() {
-    const errorMessage = `(${new Date().toLocaleString()}) [錯誤][${
-      this.error.tag
-    }] ${this.error.message}，錯誤代碼: ${this.error.statusCode} (${
-      this.error.part
-    })`;
+    console.error(
+      `[${this.error.tag}] ${this.error.message} (${this.error.statusCode}) (${
+        this.error.part
+      }) (${new Date().toLocaleString()})`,
+    );
+    const errorMessage = `${this.error.message} (${this.error.statusCode})`;
 
     ipcService.popup.open(PopupType.DIALOG_ERROR, 'errorDialog');
     ipcService.popup.onSubmit('errorDialog', () => {

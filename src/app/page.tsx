@@ -511,8 +511,31 @@ const RootPageComponent = () => {
   };
 
   const handleError = (error: StandardizedError) => {
-    console.log('error', error);
     new errorHandler(error).show();
+  };
+
+  const handleConnectError = () => {
+    new errorHandler(
+      new StandardizedError({
+        name: 'ConnectError',
+        message: '連線失敗',
+        part: 'SOCKET',
+        tag: 'CONNECT_ERROR',
+        statusCode: 500,
+      }),
+    ).show();
+  };
+
+  const handleReconnectError = () => {
+    new errorHandler(
+      new StandardizedError({
+        name: 'ReconnectError',
+        message: '重新連線失敗',
+        part: 'SOCKET',
+        tag: 'RECONNECT_ERROR',
+        statusCode: 500,
+      }),
+    ).show();
   };
 
   const handleOpenPopup = (popup: {
@@ -580,8 +603,8 @@ const RootPageComponent = () => {
       [SocketServerEvent.PLAY_SOUND]: handlePlaySound,
       [SocketServerEvent.OPEN_POPUP]: handleOpenPopup,
       [SocketServerEvent.ERROR]: handleError,
-      [SocketServerEvent.CONNECT_ERROR]: handleError,
-      [SocketServerEvent.RECONNECT_ERROR]: handleError,
+      [SocketServerEvent.CONNECT_ERROR]: handleConnectError,
+      [SocketServerEvent.RECONNECT_ERROR]: handleReconnectError,
     };
     const unsubscribe: (() => void)[] = [];
 
