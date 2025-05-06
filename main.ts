@@ -265,8 +265,10 @@ async function createMainWindow(): Promise<BrowserWindow | null> {
   }
 
   mainWindow = new BrowserWindow({
-    minWidth: 950,
-    minHeight: 700,
+    width: 1080,
+    height: 720,
+    minWidth: 800,
+    minHeight: 600,
     frame: false,
     transparent: true,
     resizable: true,
@@ -321,11 +323,11 @@ async function createAuthWindow() {
   }
 
   authWindow = new BrowserWindow({
-    width: 610,
-    height: 450,
-    resizable: false,
+    width: 640,
+    height: 480,
     frame: false,
     transparent: true,
+    resizable: false,
     hasShadow: true,
     icon: path.join(
       __dirname,
@@ -741,14 +743,14 @@ app.on('ready', async () => {
         window.minimize();
         break;
       case 'maximize':
-        if (window.isMaximized()) {
-          window.unmaximize();
+        if (window.isFullScreen()) {
+          window.setFullScreen(false);
         } else {
-          window.maximize();
+          window.setFullScreen(true);
         }
         break;
       case 'unmaximize':
-        window.unmaximize();
+        window.setFullScreen(false);
         break;
       case 'close':
         window.close();
