@@ -329,6 +329,7 @@ async function createAuthWindow() {
     transparent: true,
     resizable: false,
     hasShadow: true,
+    fullscreen: false,
     icon: path.join(
       __dirname,
       'resources',
@@ -385,6 +386,7 @@ async function createPopup(
     transparent: true,
     hasShadow: true,
     modal: true,
+    fullscreen: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
