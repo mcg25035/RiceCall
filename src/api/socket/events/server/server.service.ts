@@ -71,6 +71,8 @@ export class CreateServerService {
     await database.set.channel(lobbyId, {
       name: '大廳',
       isLobby: true,
+      serverId,
+      createdAt: Date.now(),
     });
 
     // Create member
@@ -90,7 +92,6 @@ export class CreateServerService {
     });
 
     // Join the server
-
     actions.push({
       handler: (io: Server, socket: Socket) =>
         new ConnectServerHandler(io, socket),
