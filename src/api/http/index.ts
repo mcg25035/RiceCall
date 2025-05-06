@@ -53,15 +53,19 @@ const sendResponse = (res: ServerResponse, response: ResponseType) => {
   res.end(JSON.stringify(response.data));
 };
 
+const sendError = (res: ServerResponse, error: StandardizedError) => {
+  if (error instanceof StandardizedError) {
+    res.writeHead(error.statusCode, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: error.message }));
+  } else {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Internal Server Error' }));
+  }
+};
+
 const sendOptions = (res: ServerResponse) => {
   res.writeHead(200);
   res.end();
-};
-
-const ERROR_RESPONSE = {
-  statusCode: 500,
-  message: 'Internal Server Error',
-  data: { error: 'Internal Server Error' },
 };
 
 export default class HttpServer {
@@ -83,227 +87,100 @@ export default class HttpServer {
         return;
       }
 
-      console.log(req.method, req.url);
-
       if (req.method === 'GET') {
+        let response: ResponseType | null = null;
+
         if (req.url?.startsWith('/images')) {
-          const response = await new ImagesHandler(req).handle();
-          if (response) {
-            sendImage(res, response);
-          } else {
-            sendResponse(res, ERROR_RESPONSE);
-          }
-          return;
+          response = await new ImagesHandler(req).handle();
         }
+
+        if (response) sendImage(res, response);
+        return;
       }
 
-      if (req.method === 'POST') {
-        if (req.url === '/upload') {
-          const form = new IncomingForm();
-          form.parse(req, async (err, data) => {
-            if (err) {
-              sendResponse(res, {
-                statusCode: 500,
-                message: 'error',
-                data: { error: err },
-              });
-              return;
-            }
-            const response = await new UploadHandler(req).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-          });
-          return;
-        }
-
+      if (
+        req.method === 'POST' &&
+        req.headers['content-type'] === 'application/json'
+      ) {
         let data = '';
+        let response: ResponseType | null = null;
 
         req.on('data', (chunk) => {
           data += chunk.toString();
         });
 
         req.on('end', async () => {
+          data = JSON.parse(data);
+
           if (req.url === '/login') {
-            data = JSON.parse(data);
-            const response = await new LoginHandler(req).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new LoginHandler(req).handle(data);
           } else if (req.url === '/register') {
-            data = JSON.parse(data);
-            const response = await new RegisterHandler(req).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RegisterHandler(req).handle(data);
           } else if (req.url === '/refresh/channel') {
-            data = JSON.parse(data);
-            const response = await new RefreshChannelHandler(req).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshChannelHandler(req).handle(data);
           } else if (req.url === '/refresh/friend') {
-            data = JSON.parse(data);
-            const response = await new RefreshFriendHandler(req).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshFriendHandler(req).handle(data);
           } else if (req.url === '/refresh/friendApplication') {
-            data = JSON.parse(data);
-            const response = await new RefreshFriendApplicationHandler(
-              req,
-            ).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshFriendApplicationHandler(req).handle(
+              data,
+            );
           } else if (req.url === '/refresh/friendGroup') {
-            data = JSON.parse(data);
-            const response = await new RefreshFriendGroupHandler(req).handle(
-              data,
-            );
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshFriendGroupHandler(req).handle(data);
           } else if (req.url === '/refresh/member') {
-            data = JSON.parse(data);
-            const response = await new RefreshMemberHandler(req).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshMemberHandler(req).handle(data);
           } else if (req.url === '/refresh/memberApplication') {
-            data = JSON.parse(data);
-            const response = await new RefreshMemberApplicationHandler(
-              req,
-            ).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshMemberApplicationHandler(req).handle(
+              data,
+            );
           } else if (req.url === '/refresh/server') {
-            data = JSON.parse(data);
-            const response = await new RefreshServerHandler(req).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshServerHandler(req).handle(data);
           } else if (req.url === '/refresh/serverChannels') {
-            data = JSON.parse(data);
-            const response = await new RefreshServerChannelsHandler(req).handle(
-              data,
-            );
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshServerChannelsHandler(req).handle(data);
           } else if (req.url === '/refresh/serverMemberApplications') {
-            data = JSON.parse(data);
-            const response = await new RefreshServerMemberApplicationsHandler(
+            response = await new RefreshServerMemberApplicationsHandler(
               req,
             ).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
           } else if (req.url === '/refresh/serverMembers') {
-            data = JSON.parse(data);
-            const response = await new RefreshServerMembersHandler(req).handle(
-              data,
-            );
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshServerMembersHandler(req).handle(data);
           } else if (req.url === '/refresh/user') {
-            data = JSON.parse(data);
-            const response = await new RefreshUserHandler(req).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshUserHandler(req).handle(data);
           } else if (req.url === '/refresh/userFriendApplications') {
-            data = JSON.parse(data);
-            const response = await new RefreshUserFriendApplicationsHandler(
+            response = await new RefreshUserFriendApplicationsHandler(
               req,
             ).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
           } else if (req.url === '/refresh/userFriendGroups') {
-            data = JSON.parse(data);
-            const response = await new RefreshUserFriendGroupsHandler(
-              req,
-            ).handle(data);
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshUserFriendGroupsHandler(req).handle(
+              data,
+            );
           } else if (req.url === '/refresh/userFriends') {
-            data = JSON.parse(data);
-            const response = await new RefreshUserFriendsHandler(req).handle(
-              data,
-            );
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
+            response = await new RefreshUserFriendsHandler(req).handle(data);
           } else if (req.url === '/refresh/userServers') {
-            data = JSON.parse(data);
-            const response = await new RefreshUserServersHandler(req).handle(
-              data,
-            );
-            if (response) {
-              sendResponse(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
-          } else {
-            sendResponse(res, ERROR_RESPONSE);
+            response = await new RefreshUserServersHandler(req).handle(data);
+          }
+
+          if (response) sendResponse(res, response);
+        });
+        return;
+      }
+
+      if (req.method === 'POST') {
+        const form = new IncomingForm();
+
+        let response: ResponseType | null = null;
+
+        form.parse(req, async (err, data) => {
+          if (err) {
+            sendError(res, err);
             return;
           }
+
+          if (req.url === '/upload') {
+            response = await new UploadHandler(req).handle(data);
+          }
+
+          if (response) sendResponse(res, response);
         });
+        return;
       }
     });
 

@@ -33,8 +33,6 @@ export class UploadHandler extends HttpHandler {
         file: _file[0],
       };
 
-      console.log(type, fileName, file);
-
       const result = await new UploadService(type, fileName, file).use();
 
       return {
