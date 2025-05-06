@@ -38,17 +38,17 @@ const imageSystem = {
       await imageSystem.cleanupServerAvatars();
       await imageSystem.cleanupUserAvatars();
 
-      new Logger('ImageSystem').info(`Cleanup setup complete`);
+      new Logger('ImageSystem').info(`Image system setup complete`);
     } catch (error: any) {
       new Logger('ImageSystem').error(
-        `Error setting up cleanup interval: ${error.message}`,
+        `Error setting up Image system: ${error.message}`,
       );
     }
   },
 
   cleanupUserAvatars: async () => {
     try {
-      const directory = path.join(__dirname, appConfig.userAvatarDir);
+      const directory = appConfig.userAvatarDir;
       const files = await fs.readdir(directory);
       const data = (await database.get.all('users')) || {};
       const avatarMap: Record<string, boolean> = {};
@@ -99,7 +99,7 @@ const imageSystem = {
 
   cleanupServerAvatars: async () => {
     try {
-      const directory = path.join(__dirname, appConfig.serverAvatarDir);
+      const directory = appConfig.serverAvatarDir;
       const files = await fs.readdir(directory);
       const data = (await database.get.all('servers')) || {};
       const avatarMap: Record<string, boolean> = {};

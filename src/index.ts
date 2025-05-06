@@ -16,14 +16,22 @@ import SocketServer from '@/api/socket';
 // Database
 import Database from '@/database';
 
-// HTTP Server
+// Systems
+import xpSystem from '@/systems/xp';
+import imageSystem from '@/systems/image';
+
+// Setup HTTP Server
 export const httpServer = new HttpServer(serverConfig.port).setup();
 
-// Socket Server
+// Setup Socket Server
 export const socketServer = new SocketServer(httpServer).setup();
 
-// Database
+// Setup Database
 export const database = new Database();
+
+// Setup Systems
+xpSystem.setup();
+imageSystem.setup();
 
 // Error Handling
 process.on('uncaughtException', (error: any) => {
