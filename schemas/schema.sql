@@ -157,7 +157,7 @@ CREATE TABLE `servers` (
   `name` varchar(255) NOT NULL DEFAULT '',
   `avatar` varchar(255) NOT NULL DEFAULT '',
   `avatar_url` varchar(255) NOT NULL DEFAULT '',
-  `announcement` text NOT NULL DEFAULT '',
+  `announcement` text DEFAULT NULL,
   `apply_notice` varchar(255) NOT NULL DEFAULT '',
   `description` varchar(255) NOT NULL DEFAULT '',
   `display_id` varchar(24) NOT NULL DEFAULT '',
