@@ -16,16 +16,14 @@ interface FormErrors {
   general?: string;
   account?: string;
   password?: string;
-  confirmPassword?: string;
   username?: string;
+  confirmPassword?: string;
 }
 
 interface FormDatas {
   account: string;
   password: string;
-  confirmPassword: string;
   username: string;
-  gender: 'Male' | 'Female';
 }
 
 function validateAccount(value: string, lang: { tr: Translation }): string {
@@ -77,31 +75,35 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
     const [formData, setFormData] = useState<FormDatas>({
       account: '',
       password: '',
-      confirmPassword: '',
       username: '',
-      gender: 'Male',
     });
+    const [confirmPassword, setConfirmPassword] = useState<string>('');
     const [errors, setErrors] = useState<FormErrors>({});
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     // Handlers
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
       if (name === 'account') {
+        setFormData((prev) => ({
+          ...prev,
+          account: value,
+        }));
         setErrors((prev) => ({
           ...prev,
           account: validateAccount(value, lang),
         }));
       } else if (name === 'password') {
+        setFormData((prev) => ({
+          ...prev,
+          password: value,
+        }));
         setErrors((prev) => ({
           ...prev,
           password: validatePassword(value, lang),
         }));
       } else if (name === 'confirmPassword') {
+        setConfirmPassword(value);
         setErrors((prev) => ({
           ...prev,
           confirmPassword: validateCheckPassword(
@@ -111,6 +113,10 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
           ),
         }));
       } else if (name === 'username') {
+        setFormData((prev) => ({
+          ...prev,
+          username: value,
+        }));
         setErrors((prev) => ({
           ...prev,
           username: validateUsername(value, lang),
@@ -155,11 +161,11 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
       if (!formData.password.trim()) {
         validationErrors.password = lang.tr.pleaseInputPassword;
       }
-      if (!formData.confirmPassword.trim()) {
-        validationErrors.confirmPassword = lang.tr.pleaseInputPasswordAgain;
-      }
       if (!formData.username.trim()) {
         validationErrors.username = lang.tr.pleaseInputNickname;
+      }
+      if (!confirmPassword.trim()) {
+        validationErrors.confirmPassword = lang.tr.pleaseInputPasswordAgain;
       }
       if (Object.keys(validationErrors).length > 0) {
         setErrors((prev) => ({
@@ -248,7 +254,7 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
                     <input
                       type="password"
                       name="confirmPassword"
-                      value={formData.confirmPassword}
+                      value={confirmPassword}
                       onChange={handleInputChange}
                       onBlur={handleBlur}
                       placeholder={lang.tr.pleaseInputPasswordAgain}
@@ -299,8 +305,8 @@ const RegisterPage: React.FC<RegisterPageProps> = React.memo(
                   disabled={
                     !formData.account.trim() ||
                     !formData.password.trim() ||
-                    !formData.confirmPassword.trim() ||
                     !formData.username.trim() ||
+                    !confirmPassword.trim() ||
                     !!errors.account ||
                     !!errors.password ||
                     !!errors.confirmPassword ||
