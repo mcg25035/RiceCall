@@ -419,7 +419,6 @@ function connectSocket(token: string): Socket | null {
   const socket = io(WS_URL, {
     transports: ['websocket'],
     reconnection: true,
-    reconnectionAttempts: -1,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,

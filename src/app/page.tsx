@@ -566,6 +566,8 @@ const RootPageComponent = () => {
       [SocketServerEvent.PLAY_SOUND]: handlePlaySound,
       [SocketServerEvent.OPEN_POPUP]: handleOpenPopup,
       [SocketServerEvent.ERROR]: handleError,
+      [SocketServerEvent.CONNECT_ERROR]: handleError,
+      [SocketServerEvent.RECONNECT_ERROR]: handleError,
     };
     const unsubscribe: (() => void)[] = [];
 

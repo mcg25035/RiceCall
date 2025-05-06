@@ -69,19 +69,8 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
     setIsConnected(false);
   };
 
-  const handleConnectError = (error: any) => {
-    console.error('Socket connection error', error);
-    setIsConnected(false);
-  };
-
   const handleReconnect = (attemptNumber: number) => {
     console.info('Socket reconnected', attemptNumber);
-    setIsConnected(true);
-  };
-
-  const handleReconnectError = (error: any) => {
-    console.error('Socket reconnected error', error);
-    setIsConnected(false);
   };
 
   // Effects
@@ -129,9 +118,7 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
     });
 
     ipcService.onSocketEvent('connect', handleConnect);
-    ipcService.onSocketEvent('connect_error', handleConnectError);
     ipcService.onSocketEvent('reconnect', handleReconnect);
-    ipcService.onSocketEvent('reconnect_error', handleReconnectError);
     ipcService.onSocketEvent('disconnect', handleDisconnect);
 
     return () => {

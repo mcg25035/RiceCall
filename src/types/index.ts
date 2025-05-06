@@ -732,6 +732,8 @@ export enum SocketServerEvent {
   PONG = 'pong',
   // Error
   ERROR = 'error',
+  CONNECT_ERROR = 'connect_error',
+  RECONNECT_ERROR = 'reconnect_error',
   // Popup
   OPEN_POPUP = 'openPopup',
 }
