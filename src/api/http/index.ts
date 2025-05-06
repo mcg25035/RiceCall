@@ -1,5 +1,5 @@
 import http, { ServerResponse } from 'http';
-import formidable from 'formidable';
+import { IncomingForm } from 'formidable';
 
 // Error
 import StandardizedError from '@/error';
@@ -40,12 +40,12 @@ export type ResponseType = {
 
 const sendImage = (res: ServerResponse, response: ResponseType) => {
   res.writeHead(200, {
-    'Content-Type': 'image/jpeg',
+    'Content-Type': 'image/webp',
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
     'Expires': '0',
     'Pragma': 'no-cache',
   });
-  res.end(response);
+  res.end(response.data);
 };
 
 const sendResponse = (res: ServerResponse, response: ResponseType) => {
@@ -83,7 +83,42 @@ export default class HttpServer {
         return;
       }
 
+      console.log(req.method, req.url);
+
+      if (req.method === 'GET') {
+        if (req.url?.startsWith('/images')) {
+          const response = await new ImagesHandler(req).handle();
+          if (response) {
+            sendImage(res, response);
+          } else {
+            sendResponse(res, ERROR_RESPONSE);
+          }
+          return;
+        }
+      }
+
       if (req.method === 'POST') {
+        if (req.url === '/upload') {
+          const form = new IncomingForm();
+          form.parse(req, async (err, data) => {
+            if (err) {
+              sendResponse(res, {
+                statusCode: 500,
+                message: 'error',
+                data: { error: err },
+              });
+              return;
+            }
+            const response = await new UploadHandler(req).handle(data);
+            if (response) {
+              sendResponse(res, response);
+            } else {
+              sendResponse(res, ERROR_RESPONSE);
+            }
+          });
+          return;
+        }
+
         let data = '';
 
         req.on('data', (chunk) => {
@@ -91,8 +126,8 @@ export default class HttpServer {
         });
 
         req.on('end', async () => {
-          data = JSON.parse(data);
           if (req.url === '/login') {
+            data = JSON.parse(data);
             const response = await new LoginHandler(req).handle(data);
             if (response) {
               sendResponse(res, response);
@@ -101,6 +136,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/register') {
+            data = JSON.parse(data);
             const response = await new RegisterHandler(req).handle(data);
             if (response) {
               sendResponse(res, response);
@@ -109,6 +145,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/channel') {
+            data = JSON.parse(data);
             const response = await new RefreshChannelHandler(req).handle(data);
             if (response) {
               sendResponse(res, response);
@@ -117,6 +154,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/friend') {
+            data = JSON.parse(data);
             const response = await new RefreshFriendHandler(req).handle(data);
             if (response) {
               sendResponse(res, response);
@@ -125,6 +163,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/friendApplication') {
+            data = JSON.parse(data);
             const response = await new RefreshFriendApplicationHandler(
               req,
             ).handle(data);
@@ -135,6 +174,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/friendGroup') {
+            data = JSON.parse(data);
             const response = await new RefreshFriendGroupHandler(req).handle(
               data,
             );
@@ -145,6 +185,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/member') {
+            data = JSON.parse(data);
             const response = await new RefreshMemberHandler(req).handle(data);
             if (response) {
               sendResponse(res, response);
@@ -153,6 +194,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/memberApplication') {
+            data = JSON.parse(data);
             const response = await new RefreshMemberApplicationHandler(
               req,
             ).handle(data);
@@ -163,6 +205,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/server') {
+            data = JSON.parse(data);
             const response = await new RefreshServerHandler(req).handle(data);
             if (response) {
               sendResponse(res, response);
@@ -171,6 +214,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/serverChannels') {
+            data = JSON.parse(data);
             const response = await new RefreshServerChannelsHandler(req).handle(
               data,
             );
@@ -181,6 +225,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/serverMemberApplications') {
+            data = JSON.parse(data);
             const response = await new RefreshServerMemberApplicationsHandler(
               req,
             ).handle(data);
@@ -191,6 +236,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/serverMembers') {
+            data = JSON.parse(data);
             const response = await new RefreshServerMembersHandler(req).handle(
               data,
             );
@@ -201,6 +247,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/user') {
+            data = JSON.parse(data);
             const response = await new RefreshUserHandler(req).handle(data);
             if (response) {
               sendResponse(res, response);
@@ -209,6 +256,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/userFriendApplications') {
+            data = JSON.parse(data);
             const response = await new RefreshUserFriendApplicationsHandler(
               req,
             ).handle(data);
@@ -219,6 +267,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/userFriendGroups') {
+            data = JSON.parse(data);
             const response = await new RefreshUserFriendGroupsHandler(
               req,
             ).handle(data);
@@ -229,6 +278,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/userFriends') {
+            data = JSON.parse(data);
             const response = await new RefreshUserFriendsHandler(req).handle(
               data,
             );
@@ -239,6 +289,7 @@ export default class HttpServer {
             }
             return;
           } else if (req.url === '/refresh/userServers') {
+            data = JSON.parse(data);
             const response = await new RefreshUserServersHandler(req).handle(
               data,
             );
@@ -248,32 +299,6 @@ export default class HttpServer {
               sendResponse(res, ERROR_RESPONSE);
             }
             return;
-          } else if (req.url === '/images') {
-            const response = await new ImagesHandler(req).handle(data);
-            if (response) {
-              sendImage(res, response);
-            } else {
-              sendResponse(res, ERROR_RESPONSE);
-            }
-            return;
-          } else if (req.url === '/upload') {
-            const form = new formidable.IncomingForm();
-            form.parse(req, async (err, data) => {
-              if (err) {
-                sendResponse(res, {
-                  statusCode: 500,
-                  message: 'error',
-                  data: { error: err },
-                });
-                return;
-              }
-              const response = await new UploadHandler(req).handle(data);
-              if (response) {
-                sendResponse(res, response);
-              } else {
-                sendResponse(res, ERROR_RESPONSE);
-              }
-            });
           } else {
             sendResponse(res, ERROR_RESPONSE);
             return;

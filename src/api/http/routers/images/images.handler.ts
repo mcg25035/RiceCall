@@ -14,7 +14,7 @@ import { HttpHandler } from '@/api/http/base.handler';
 import ImagesService from '@/api/http/routers/images/images.service';
 
 export class ImagesHandler extends HttpHandler {
-  async handle(data: any): Promise<ResponseType> {
+  async handle(): Promise<ResponseType> {
     try {
       const filePath =
         this.req.url?.replace('/images/', '/').split('?')[0].split('/') || [];

@@ -15,7 +15,9 @@ export default class DataValidator {
     if (!result.success) {
       throw new StandardizedError({
         name: 'ValidationError',
-        message: `驗證資料失敗: ${result.error.message}`,
+        message: `驗證資料失敗: ${[...result.error.errors]
+          .map((error) => error.message)
+          .join(', ')}`,
         part: this.part,
         tag: 'INVALID_DATA',
         statusCode: 401,

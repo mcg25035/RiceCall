@@ -46,17 +46,6 @@ const imageSystem = {
     }
   },
 
-  directory: (type: string) => {
-    switch (type) {
-      case 'server':
-        return path.join(__dirname, appConfig.serverAvatarDir);
-      case 'user':
-        return path.join(__dirname, appConfig.userAvatarDir);
-      default:
-        return path.join(__dirname, appConfig.uploadsDir);
-    }
-  },
-
   cleanupUserAvatars: async () => {
     try {
       const directory = path.join(__dirname, appConfig.userAvatarDir);

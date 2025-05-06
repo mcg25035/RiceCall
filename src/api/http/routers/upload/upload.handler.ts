@@ -27,14 +27,15 @@ export class UploadHandler extends HttpHandler {
         'UPLOAD',
       ).validate(data);
 
-      const ext = _file.split('.').pop(); // FIXME: this is not a good way to get the file extension
+      const { type, fileName, file } = {
+        type: _type[0],
+        fileName: _fileName[0],
+        file: _file[0],
+      };
 
-      const result = await new UploadService(
-        _type,
-        _fileName,
-        _file,
-        ext,
-      ).use();
+      console.log(type, fileName, file);
+
+      const result = await new UploadService(type, fileName, file).use();
 
       return {
         statusCode: 200,
