@@ -103,7 +103,8 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
         return `<img src="/smiles/${emojiId + 1}.gif" alt="[emoji_${id}]" />`;
       },
     );
-    const sanitized = DOMPurify.sanitize(withEmojis, PURIFY_CONFIG);
+    const withSoftBreaks = withEmojis.replace(/(?<!\n)\n(?!\n)/g, '<br />');
+    const sanitized = DOMPurify.sanitize(withSoftBreaks, PURIFY_CONFIG);
     const [isCopied, setIsCopied] = useState(false);
 
     const components: Components = {
