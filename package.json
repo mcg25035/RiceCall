@@ -5,7 +5,8 @@
     "start": "node dist/index.js",
     "backup": "tsx -r dotenv/config src/database/scripts/backup-db.ts",
     "restore": "tsx -r dotenv/config src/database/scripts/restore-db.ts",
-    "setup": "tsx -r dotenv/config src/database/scripts/setup-db.ts"
+    "setup": "tsx -r dotenv/config src/database/scripts/setup-db.ts",
+    "execute": "tsx -r dotenv/config"
   },
   "dependencies": {
     "@types/formidable": "^3.4.5",
