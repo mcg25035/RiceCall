@@ -146,7 +146,7 @@ enum SocketServerEvent {
 
 // Constants
 const DEV = process.argv.includes('--dev');
-const BASE_URI = DEV ? 'http://127.0.0.1:3000' : '';
+const BASE_URI = DEV ? 'http://localhost:3000' : '';
 
 // Windows
 let mainWindow: BrowserWindow;
@@ -745,19 +745,20 @@ app.on('ready', async () => {
         window.minimize();
         break;
       case 'maximize':
-        if (window.isFullScreen()) {
-          window.setFullScreen(false);
-        } else {
-          window.setFullScreen(true);
-        }
+        window.maximize();
+        window.setResizable(false);
+        window.setMovable(false);
         break;
       case 'unmaximize':
-        window.setFullScreen(false);
+        window.unmaximize();
+        window.setResizable(true);
+        window.setMovable(true);
         break;
       case 'close':
         window.close();
         break;
     }
+    window.webContents.send(command);
   });
 
   // Discord RPC handlers

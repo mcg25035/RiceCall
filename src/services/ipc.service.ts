@@ -57,16 +57,6 @@ const ipcService = {
     }
   },
 
-  // Get socket connect state
-  getSocketStatus: async (): Promise<'connected' | 'disconnected'> => {
-    if (isElectron) {
-      return await ipcRenderer.send('get-socket-status');
-    } else {
-      console.warn('IPC not available - not in Electron environment');
-    }
-    return 'disconnected';
-  },
-
   // Initial data methods
   initialData: {
     request: (to: string, callback: (data: any) => void) => {
@@ -135,22 +125,12 @@ const ipcService = {
     },
     onMaximize: (callback: () => void) => {
       if (isElectron) {
-        ipcRenderer.on('window-maximized', callback);
+        ipcRenderer.on('maximize', callback);
       }
     },
     onUnmaximize: (callback: () => void) => {
       if (isElectron) {
-        ipcRenderer.on('window-unmaximized', callback);
-      }
-    },
-    offMaximize: (callback: () => void) => {
-      if (isElectron) {
-        ipcRenderer.removeListener('window-maximized', callback);
-      }
-    },
-    offUnmaximize: (callback: () => void) => {
-      if (isElectron) {
-        ipcRenderer.removeListener('window-unmaximized', callback);
+        ipcRenderer.on('unmaximize', callback);
       }
     },
     openExternal: (url: string) => {

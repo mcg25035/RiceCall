@@ -47,8 +47,11 @@ const Header: React.FC<HeaderProps> = React.memo(({ title, buttons }) => {
 
   // Handlers
   const handleFullscreen = () => {
-    ipcService.window.maximize();
-    setIsFullscreen(!isFullscreen);
+    if (isFullscreen) {
+      ipcService.window.unmaximize();
+    } else {
+      ipcService.window.maximize();
+    }
   };
 
   const handleMinimize = () => {
@@ -58,6 +61,17 @@ const Header: React.FC<HeaderProps> = React.memo(({ title, buttons }) => {
   const handleClose = () => {
     ipcService.window.close();
   };
+
+  // Effects
+  useEffect(() => {
+    ipcService.window.onMaximize(() => {
+      setIsFullscreen(true);
+    });
+
+    ipcService.window.onUnmaximize(() => {
+      setIsFullscreen(false);
+    });
+  }, []);
 
   return (
     <div className={header['header']}>

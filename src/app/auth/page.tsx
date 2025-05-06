@@ -14,15 +14,7 @@ import ipcService from '@/services/ipc.service';
 import authService from '@/services/auth.service';
 
 const Header: React.FC = React.memo(() => {
-  // States
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
   // Handlers
-  const handleFullscreen = () => {
-    ipcService.window.maximize();
-    setIsFullscreen(!isFullscreen);
-  };
-
   const handleMinimize = () => {
     ipcService.window.minimize();
   };
@@ -40,10 +32,6 @@ const Header: React.FC = React.memo(() => {
       {/* Buttons */}
       <div className={header['buttons']}>
         <div className={header['minimize']} onClick={() => handleMinimize()} />
-        <div
-          className={isFullscreen ? header['restore'] : header['maxsize']}
-          onClick={() => handleFullscreen()}
-        />
         <div className={header['close']} onClick={() => handleClose()} />
       </div>
     </div>

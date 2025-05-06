@@ -113,8 +113,11 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
   };
 
   const handleFullscreen = () => {
-    ipcService.window.maximize();
-    setIsFullscreen(!isFullscreen);
+    if (isFullscreen) {
+      ipcService.window.unmaximize();
+    } else {
+      ipcService.window.maximize();
+    }
   };
 
   const handleMinimize = () => {
@@ -129,6 +132,17 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
     lang.set(language);
     localStorage.setItem('language', language);
   };
+
+  // Effects
+  useEffect(() => {
+    ipcService.window.onMaximize(() => {
+      setIsFullscreen(true);
+    });
+
+    ipcService.window.onUnmaximize(() => {
+      setIsFullscreen(false);
+    });
+  }, []);
 
   return (
     <div className={header['header']}>
