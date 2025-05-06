@@ -8,4 +8,10 @@ export const dbConfig = {
   connectionLimit: 10,
   queueLimit: 0,
   charset: 'utf8mb4_unicode_ci',
+  schema: {
+    directory: './schemas/schema.sql',
+  },
+  backups: {
+    directory: './backups',
+  },
 };

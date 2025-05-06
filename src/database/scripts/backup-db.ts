@@ -1,8 +1,11 @@
 import fs from 'fs/promises';
 import mysql from 'mysql2/promise';
+import path from 'path';
 
 // Config
 import { dbConfig } from '@/config';
+
+const MAX_RETRIES = 3;
 
 async function getTables(connection: mysql.PoolConnection, database: string) {
   const [rows] = await connection.execute(
@@ -70,7 +73,7 @@ async function generateInsertStatements(
 ) {
   let inserts = '';
   for (const table of tables) {
-    console.log(`備份資料表: ${table}`);
+    console.log(`🔄 備份資料表: ${table}`);
     const [rows] = await connection.execute(`SELECT * FROM \`${table}\``);
     if ((rows as any[]).length === 0) continue;
 
@@ -90,72 +93,94 @@ async function generateInsertStatements(
 }
 
 async function backupDatabase() {
-  let connection: mysql.PoolConnection | null = null;
-  try {
-    const pool = mysql.createPool(dbConfig);
-    connection = await pool.getConnection();
-    const database = dbConfig.database;
-    const backupFilePath = `./backups/${database}_backup_${Date.now()}.sql`;
+  const pool = mysql.createPool(dbConfig);
+  const connection = await pool.getConnection();
 
-    console.log(`開始備份資料庫: ${database}`);
+  const database = dbConfig.database;
+  const backupDir = dbConfig.backups.directory;
+  const backupFileName = `${database}_backup_${Date.now()}.sql`;
+  const backupFilePath = path.join(backupDir, backupFileName);
 
-    const tables = await getTables(connection, database);
-    if (tables.length === 0) {
-      console.log('資料庫中沒有表格。');
+  let retryCount = 0;
+  let lastError: any = null;
+
+  while (retryCount < MAX_RETRIES) {
+    try {
+      console.log(`🔄 開始備份資料庫: ${database}`);
+
+      const tables = await getTables(connection, database);
+      if (tables.length === 0) {
+        console.log('❌ 資料庫中沒有表格。');
+        return;
+      }
+
+      const { createStatements, dependencies } = await getCreateStatements(
+        connection,
+        tables,
+      );
+      const creationOrder = resolveCreationOrder(tables, dependencies);
+
+      let sql = `-- Database: ${database}\n-- Backup generated on: ${new Date().toISOString()}\n\n`;
+
+      // DROP TABLES
+      const dropOrder = [
+        'accounts',
+        'badges',
+        'channels',
+        'direct_messages',
+        'friends',
+        'friend_applications',
+        'friend_groups',
+        'members',
+        'member_applications',
+        'messages',
+        'servers',
+        'users',
+        'user_badges',
+        'user_servers',
+      ];
+      for (const table of dropOrder) {
+        if (tables.includes(table)) {
+          sql += `DROP TABLE IF EXISTS \`${table}\`;\n`;
+        }
+      }
+      sql += `-- End of DROP TABLE statements;\n\n`;
+
+      // CREATE TABLES
+      for (const table of creationOrder) {
+        sql += `-- Table structure for ${table};\n`;
+        sql += createStatements[table] + ';\n\n';
+      }
+
+      // INSERT DATA
+      sql += await generateInsertStatements(connection, tables);
+      sql += `-- End of data;\n`;
+
+      // SAVE TO FILE
+      await fs.mkdir(dbConfig.backups.directory, { recursive: true });
+      await fs.writeFile(backupFilePath, sql, 'utf8');
+      console.log(`✅ 備份完成: ${backupFilePath}`);
+      console.log(`💡 還原方法: yarn restore ${backupFilePath}`);
       return;
-    }
-
-    const { createStatements, dependencies } = await getCreateStatements(
-      connection,
-      tables,
-    );
-    const creationOrder = resolveCreationOrder(tables, dependencies);
-
-    let sql = `-- Database: ${database}\n-- Backup generated on: ${new Date().toISOString()}\n\n`;
-
-    // DROP TABLES
-    const dropOrder = [
-      'accounts',
-      'badges',
-      'channels',
-      'direct_messages',
-      'friends',
-      'friend_applications',
-      'friend_groups',
-      'members',
-      'member_applications',
-      'messages',
-      'servers',
-      'users',
-      'user_badges',
-      'user_servers',
-    ];
-    for (const table of dropOrder) {
-      if (tables.includes(table)) {
-        sql += `DROP TABLE IF EXISTS \`${table}\`;\n`;
+    } catch (err: any) {
+      lastError = err;
+      console.error('執行語句時出錯:', err.code, err.message);
+      if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+        console.warn(
+          `🔄 連線斷開，正在重新連接...（第 ${retryCount + 1} 次重試）`,
+        );
+        retryCount++;
+        await new Promise((res) => setTimeout(res, 2000));
+      } else {
+        console.error('❌ 無法處理的錯誤，停止備份');
+        break;
       }
     }
-    sql += `-- End of DROP TABLE statements;\n\n`;
+  }
 
-    // CREATE TABLES
-    for (const table of creationOrder) {
-      sql += `-- Table structure for ${table};\n`;
-      sql += createStatements[table] + ';\n\n';
-    }
-
-    // INSERT DATA
-    sql += await generateInsertStatements(connection, tables);
-    sql += `-- End of data;\n`;
-
-    // SAVE TO FILE
-    await fs.mkdir('./backups', { recursive: true });
-    await fs.writeFile(backupFilePath, sql, 'utf8');
-    console.log(`✅ 備份完成: ${backupFilePath}`);
-    console.log(`💡 還原方法: node ./restore-db.js ${backupFilePath}`);
-  } catch (err) {
-    console.error('❌ 備份失敗:', err);
-  } finally {
-    if (connection) connection.release();
+  if (retryCount >= MAX_RETRIES) {
+    console.error('🚫 超過最大重試次數，備份失敗');
+    if (lastError) console.error('最後錯誤:', lastError);
   }
 }
 

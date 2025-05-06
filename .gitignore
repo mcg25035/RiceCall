@@ -47,22 +47,12 @@ package-lock.json
 *.sqlite
 
 # uploads
-/test-server/uploads/*
-!/test-server/uploads/serverAvatars
-!/test-server/uploads/userAvatars
-/test-server/uploads/serverAvatars/*
-!/test-server/uploads/serverAvatars/__default.png
-/test-server/uploads/userAvatars/*
-!/test-server/uploads/userAvatars/__default.png
-upload-*.jpeg
-upload-*.jpg
-upload-*.png
-upload-*.gif
-upload-*.webp
-
+/uploads/**
+!/uploads/**/
+!/uploads/**/__*
 # env
 .env
 !.env.example
 
-# vip
-vip.json
+# backups
+**/backups/*

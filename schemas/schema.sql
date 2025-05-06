@@ -252,15 +252,6 @@ ALTER TABLE `badges`
 ALTER TABLE `channels`
   ADD PRIMARY KEY (`channel_id`);
 
---
--- 資料表索引 `direct_messages`
---
-ALTER TABLE `direct_messages`
-  ADD PRIMARY KEY (`direct_message_id`),
-  ADD KEY `user1_id` (`user1_id`) USING BTREE,
-  ADD KEY `user2_id` (`user2_id`) USING BTREE;
-
---
 -- 資料表索引 `friends`
 --
 ALTER TABLE `friends`
@@ -299,15 +290,6 @@ ALTER TABLE `member_applications`
   ADD PRIMARY KEY (`user_id`,`server_id`),
   ADD KEY `server_id` (`server_id`),
   ADD KEY `user_id` (`user_id`);
-
---
--- 資料表索引 `messages`
---
-ALTER TABLE `messages`
-  ADD PRIMARY KEY (`message_id`),
-  ADD KEY `channel_id` (`channel_id`),
-  ADD KEY `sender_id` (`sender_id`),
-  ADD KEY `server_id` (`server_id`);
 
 --
 -- 資料表索引 `servers`
@@ -350,13 +332,6 @@ ALTER TABLE `accounts`
   ADD CONSTRAINT `accounts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
 
 --
--- 資料表的限制式 `direct_messages`
---
-ALTER TABLE `direct_messages`
-  ADD CONSTRAINT `direct_messages_ibfk_1` FOREIGN KEY (`user1_id`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `direct_messages_ibfk_2` FOREIGN KEY (`user2_id`) REFERENCES `users` (`user_id`);
-
---
 -- 資料表的限制式 `friends`
 --
 ALTER TABLE `friends`
@@ -390,14 +365,6 @@ ALTER TABLE `members`
 ALTER TABLE `member_applications`
   ADD CONSTRAINT `member_applications_ibfk_1` FOREIGN KEY (`server_id`) REFERENCES `servers` (`server_id`),
   ADD CONSTRAINT `member_applications_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
-
---
--- 資料表的限制式 `messages`
---
-ALTER TABLE `messages`
-  ADD CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`channel_id`) REFERENCES `channels` (`channel_id`),
-  ADD CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`sender_id`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `messages_ibfk_3` FOREIGN KEY (`server_id`) REFERENCES `servers` (`server_id`);
 
 --
 -- 資料表的限制式 `servers`
