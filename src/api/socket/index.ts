@@ -129,6 +129,16 @@ export default class SocketServer {
           });
         }
 
+        io.to(socket.id).emit('openPopup', {
+          type: 'dialogAlert',
+          id: 'logout',
+          initialData: {
+            title: error.message || '發生錯誤，請重新登入',
+            submitTo: 'logout',
+          },
+        });
+        io.to(socket.id).disconnectSockets();
+
         return next(error);
       }
     });
