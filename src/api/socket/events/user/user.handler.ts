@@ -16,16 +16,10 @@ import {
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import {
-  SearchUserService,
-  ConnectUserService,
-  DisconnectUserService,
-  UpdateUserService,
-} from '@/api/socket/events/user/user.service';
-
-// Socket
-import SocketServer from '@/api/socket';
+// Database
+import { database } from '@/index';
+import { ConnectServerHandler } from '@/api/socket/events/server/server.handler';
+import { DisconnectServerHandler } from '@/api/socket/events/server/server.handler';
 
 export class SearchUserHandler extends SocketHandler {
   async handle(data: any) {
@@ -37,9 +31,9 @@ export class SearchUserHandler extends SocketHandler {
         'SEARCHUSER',
       ).validate(data);
 
-      const { userSearch } = await new SearchUserService(query).use();
+      const result = await database.get.searchUser(query);
 
-      this.socket.emit('userSearch', userSearch);
+      this.socket.emit('userSearch', result);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -62,13 +56,22 @@ export class ConnectUserHandler extends SocketHandler {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { userUpdate, actions } = await new ConnectUserService(
-        operatorId,
-      ).use();
+      const user = await database.get.user(operatorId);
 
-      this.socket.emit('userUpdate', userUpdate);
+      // Reconnect user to server
+      if (user.currentServerId) {
+        await new ConnectServerHandler(this.io, this.socket).handle({
+          userId: user.userId,
+          serverId: user.currentServerId,
+        });
+      }
 
-      await Promise.all(actions.map((action) => action(this.io, this.socket)));
+      // Update user
+      await database.set.user(operatorId, {
+        lastActiveAt: Date.now(),
+      });
+
+      this.socket.emit('userUpdate', user);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -91,13 +94,22 @@ export class DisconnectUserHandler extends SocketHandler {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { userUpdate, actions } = await new DisconnectUserService(
-        operatorId,
-      ).use();
+      const user = await database.get.user(operatorId);
 
-      this.socket.emit('userUpdate', userUpdate);
+      // Disconnect user from server and channel
+      if (user.currentServerId) {
+        await new DisconnectServerHandler(this.io, this.socket).handle({
+          userId: user.userId,
+          serverId: user.currentServerId,
+        });
+      }
 
-      await Promise.all(actions.map((action) => action(this.io, this.socket)));
+      // Update user
+      await database.set.user(operatorId, {
+        lastActiveAt: Date.now(),
+      });
+
+      this.socket.emit('userUpdate', null);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -120,23 +132,24 @@ export class UpdateUserHandler extends SocketHandler {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { userId, user } = await new DataValidator(
+      const { userId, user: update } = await new DataValidator(
         UpdateUserSchema,
         'UPDATEUSER',
       ).validate(data);
 
-      const { userUpdate } = await new UpdateUserService(
-        operatorId,
-        userId,
-        user,
-      ).use();
-
-      const targetSocket =
-        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
-
-      if (targetSocket) {
-        targetSocket.emit('userUpdate', userUpdate);
+      if (operatorId !== userId) {
+        throw new StandardizedError({
+          name: 'ServerError',
+          message: '無法更新其他使用者的資料',
+          part: 'UPDATEUSER',
+          tag: 'PERMISSION_ERROR',
+          statusCode: 403,
+        });
       }
+
+      await database.set.user(userId, update);
+
+      this.socket.emit('userUpdate', update);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({

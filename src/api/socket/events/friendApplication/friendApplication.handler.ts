@@ -4,6 +4,9 @@ import StandardizedError from '@/error';
 // Utils
 import Logger from '@/utils/logger';
 
+// Socket
+import SocketServer from '@/api/socket';
+
 // Handler
 import { SocketHandler } from '@/api/socket/base.handler';
 
@@ -17,41 +20,71 @@ import {
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import {
-  CreateFriendApplicationService,
-  UpdateFriendApplicationService,
-  DeleteFriendApplicationService,
-} from '@/api/socket/events/friendApplication/friendApplication.service';
-
-// Socket
-import SocketServer from '@/api/socket';
+// Database
+import { database } from '@/index';
 
 export class CreateFriendApplicationHandler extends SocketHandler {
   async handle(data: any) {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { friendApplication, senderId, receiverId } =
-        await new DataValidator(
-          CreateFriendApplicationSchema,
-          'CREATEFRIENDAPPLICATION',
-        ).validate(data);
-
-      const { friendApplicationAdd } = await new CreateFriendApplicationService(
-        operatorId,
+      const {
         senderId,
         receiverId,
-        friendApplication,
-      ).use();
+        friendApplication: preset,
+      } = await new DataValidator(
+        CreateFriendApplicationSchema,
+        'CREATEFRIENDAPPLICATION',
+      ).validate(data);
 
-      const targetSocket =
-        operatorId === receiverId
-          ? this.socket
-          : SocketServer.getSocket(receiverId);
+      const friendApplication = await database.get.friendApplication(
+        senderId,
+        receiverId,
+      );
+
+      if (friendApplication) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '你已經發送過好友申請',
+          part: 'CREATEFRIENDAPPLICATION',
+          tag: 'FRIENDAPPLICATION_EXISTS',
+          statusCode: 400,
+        });
+      }
+
+      if (operatorId !== senderId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法新增非自己的好友',
+          part: 'CREATEFRIEND',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      if (senderId === receiverId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法將自己加入好友',
+          part: 'CREATEFRIEND',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      // Create friend application
+      await database.set.friendApplication(senderId, receiverId, {
+        ...preset,
+        createdAt: Date.now(),
+      });
+
+      const targetSocket = SocketServer.getSocket(receiverId);
 
       if (targetSocket) {
-        targetSocket.emit('friendApplicationAdd', friendApplicationAdd);
+        targetSocket.emit(
+          'friendApplicationAdd',
+          await database.get.userFriendApplication(receiverId, senderId),
+        );
       }
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
@@ -75,30 +108,36 @@ export class UpdateFriendApplicationHandler extends SocketHandler {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { friendApplication, senderId, receiverId } =
-        await new DataValidator(
-          UpdateFriendApplicationSchema,
-          'UPDATEFRIENDAPPLICATION',
-        ).validate(data);
-
-      await new UpdateFriendApplicationService(
-        operatorId,
+      const {
         senderId,
         receiverId,
-        friendApplication,
-      ).use();
+        friendApplication: update,
+      } = await new DataValidator(
+        UpdateFriendApplicationSchema,
+        'UPDATEFRIENDAPPLICATION',
+      ).validate(data);
 
-      const targetSocket =
-        operatorId === receiverId
-          ? this.socket
-          : SocketServer.getSocket(receiverId);
+      if (operatorId !== senderId && operatorId !== receiverId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法修改非自己的好友申請',
+          part: 'UPDATEFRIENDAPPLICATION',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      // Update friend application
+      await database.set.friendApplication(senderId, receiverId, update);
+
+      const targetSocket = SocketServer.getSocket(receiverId);
 
       if (targetSocket) {
         targetSocket.emit(
           'friendApplicationUpdate',
           senderId,
           receiverId,
-          friendApplication,
+          update,
         );
       }
     } catch (error: any) {
@@ -128,16 +167,20 @@ export class DeleteFriendApplicationHandler extends SocketHandler {
         'DELETEFRIENDAPPLICATION',
       ).validate(data);
 
-      await new DeleteFriendApplicationService(
-        operatorId,
-        senderId,
-        receiverId,
-      ).use();
+      if (operatorId !== senderId && operatorId !== receiverId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法刪除非自己的好友申請',
+          part: 'DELETEFRIENDAPPLICATION',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
 
-      const targetSocket =
-        operatorId === receiverId
-          ? this.socket
-          : SocketServer.getSocket(receiverId);
+      // Delete friend application
+      await database.delete.friendApplication(senderId, receiverId);
+
+      const targetSocket = SocketServer.getSocket(receiverId);
 
       if (targetSocket) {
         targetSocket.emit('friendApplicationDelete', senderId, receiverId);

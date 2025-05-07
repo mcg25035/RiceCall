@@ -1,8 +1,13 @@
+import { v4 as uuidv4 } from 'uuid';
+
 // Error
 import StandardizedError from '@/error';
 
 // Utils
 import Logger from '@/utils/logger';
+
+// Socket
+import SocketServer from '@/api/socket';
 
 // Handler
 import { SocketHandler } from '@/api/socket/base.handler';
@@ -17,34 +22,86 @@ import {
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import {
-  CreateMemberService,
-  UpdateMemberService,
-  DeleteMemberService,
-} from '@/api/socket/events/member/member.service';
-
-// Socket
-import SocketServer from '@/api/socket';
+// Database
+import { database } from '@/index';
 
 export class CreateMemberHandler extends SocketHandler {
   async handle(data: any) {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { userId, serverId, member } = await new DataValidator(
-        CreateMemberSchema,
-        'CREATEMEMBER',
-      ).validate(data);
-
-      const { serverMemberAdd } = await new CreateMemberService(
-        operatorId,
+      const {
         userId,
         serverId,
-        member,
-      ).use();
+        member: preset,
+      } = await new DataValidator(CreateMemberSchema, 'CREATEMEMBER').validate(
+        data,
+      );
 
-      this.io.to(`server_${serverId}`).emit('serverMemberAdd', serverMemberAdd);
+      const server = await database.get.server(serverId);
+      const operatorMember = await database.get.member(operatorId, serverId);
+
+      if (operatorId !== userId) {
+        if (operatorMember.permissionLevel < 5) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限新增成員',
+            part: 'CREATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+        if (preset.permissionLevel >= operatorMember.permissionLevel) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '無法給予高於自己的權限',
+            part: 'CREATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+        if (preset.permissionLevel > 5) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '權限等級過高',
+            part: 'CREATEMEMBER',
+            tag: 'PERMISSION_TOO_HIGH',
+            statusCode: 403,
+          });
+        }
+      } else {
+        if (preset.permissionLevel !== 1 && server.ownerId !== operatorId) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '必須是遊客',
+            part: 'CREATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+        if (preset.permissionLevel !== 6 && server.ownerId === operatorId) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '必須是群組創建者',
+            part: 'CREATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+      }
+
+      // Create member
+      await database.set.member(userId, serverId, {
+        ...preset,
+        createdAt: Date.now(),
+      });
+
+      this.io
+        .to(`server_${serverId}`)
+        .emit(
+          'serverMemberAdd',
+          await database.get.serverMember(serverId, userId),
+        );
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -67,23 +124,129 @@ export class UpdateMemberHandler extends SocketHandler {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { member, userId, serverId } = await new DataValidator(
-        UpdateMemberSchema,
-        'UPDATEMEMBER',
-      ).validate(data);
+      const {
+        userId,
+        serverId,
+        member: update,
+      } = await new DataValidator(UpdateMemberSchema, 'UPDATEMEMBER').validate(
+        data,
+      );
 
-      await new UpdateMemberService(operatorId, userId, serverId, member).use();
+      const userMember = await database.get.member(userId, serverId);
+      const operatorMember = await database.get.member(operatorId, serverId);
+
+      if (operatorId !== userId) {
+        if (operatorMember.permissionLevel < 3) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限更改其他成員',
+            part: 'UPDATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+
+        if (operatorMember.permissionLevel <= userMember.permissionLevel) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限編輯權限高於自己的成員',
+            part: 'UPDATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+
+        if (userMember.permissionLevel > 5) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '無法更改群組創建者的權限',
+            part: 'UPDATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+
+        if (
+          userMember.permissionLevel === 1 &&
+          update.permissionLevel &&
+          operatorMember.permissionLevel < 5
+        ) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限更改遊客的權限',
+            part: 'UPDATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+
+        if (
+          update.permissionLevel === 1 &&
+          operatorMember.permissionLevel < 5
+        ) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限更改會員至遊客',
+            part: 'UPDATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+
+        if (update.nickname && operatorMember.permissionLevel < 5) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限更改其他成員的暱稱',
+            part: 'UPDATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+
+        if (update.permissionLevel >= operatorMember.permissionLevel) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '無法給予高於自己的權限',
+            part: 'UPDATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+
+        if (update.permissionLevel > 5) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '權限等級過高',
+            part: 'UPDATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+      } else {
+        if (update.permissionLevel) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '無法更改自己的權限',
+            part: 'UPDATEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+      }
+
+      // Update member
+      await database.set.member(userId, serverId, update);
 
       const targetSocket =
         operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       if (targetSocket && targetSocket.rooms.has(`server_${serverId}`)) {
-        targetSocket.emit('serverUpdate', member);
+        targetSocket.emit('serverUpdate', update);
       }
 
       this.io
         .to(`server_${serverId}`)
-        .emit('serverMemberUpdate', userId, serverId, member);
+        .emit('serverMemberUpdate', userId, serverId, update);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -111,7 +274,51 @@ export class DeleteMemberHandler extends SocketHandler {
         'DELETEMEMBER',
       ).validate(data);
 
-      await new DeleteMemberService(operatorId, userId, serverId).use();
+      const userMember = await database.get.member(userId, serverId);
+      const operatorMember = await database.get.member(operatorId, serverId);
+
+      if (operatorId !== userId) {
+        if (operatorMember.permissionLevel < 3) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限刪除其他成員',
+            part: 'DELETEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+
+        if (operatorMember.permissionLevel <= userMember.permissionLevel) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限刪除權限高於自己的成員',
+            part: 'DELETEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+
+        if (userMember.permissionLevel > 5) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '無法刪除群組創建者',
+            part: 'DELETEMEMBER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+      } else {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法刪除自己的成員',
+          part: 'DELETEMEMBER',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      // Delete member
+      await database.delete.member(userId, serverId);
 
       const targetSocket =
         operatorId === userId ? this.socket : SocketServer.getSocket(userId);

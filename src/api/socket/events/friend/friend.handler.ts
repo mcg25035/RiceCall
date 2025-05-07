@@ -4,6 +4,9 @@ import StandardizedError from '@/error';
 // Utils
 import Logger from '@/utils/logger';
 
+// Socket
+import SocketServer from '@/api/socket';
+
 // Handler
 import { SocketHandler } from '@/api/socket/base.handler';
 
@@ -17,39 +20,77 @@ import {
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import {
-  CreateFriendService,
-  DeleteFriendService,
-  UpdateFriendService,
-} from '@/api/socket/events/friend/friend.service';
-
-// Socket
-import SocketServer from '@/api/socket';
+// Database
+import { database } from '@/index';
 
 export class CreateFriendHandler extends SocketHandler {
   async handle(data: any) {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { userId, targetId, friend } = await new DataValidator(
-        CreateFriendSchema,
-        'CREATEFRIEND',
-      ).validate(data);
-
-      const { userFriendAdd, targetFriendAdd } = await new CreateFriendService(
-        operatorId,
+      const {
         userId,
         targetId,
-        friend,
-      ).use();
+        friend: preset,
+      } = await new DataValidator(CreateFriendSchema, 'CREATEFRIEND').validate(
+        data,
+      );
 
-      const targetSocket =
-        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
+      const friend = await database.get.friend(userId, targetId);
 
-      this.socket.emit('friendAdd', userFriendAdd);
+      if (friend) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '你已經是對方的好友',
+          part: 'CREATEFRIEND',
+          tag: 'FRIEND_EXISTS',
+          statusCode: 400,
+        });
+      }
+
+      if (operatorId !== userId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法新增非自己的好友',
+          part: 'CREATEFRIEND',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      if (userId === targetId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法將自己加入好友',
+          part: 'CREATEFRIEND',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      // Create friend
+      await database.set.friend(userId, targetId, {
+        ...preset,
+        createdAt: Date.now(),
+      });
+
+      // Create friend (reverse)
+      await database.set.friend(targetId, userId, {
+        ...preset,
+        createdAt: Date.now(),
+      });
+
+      const targetSocket = SocketServer.getSocket(targetId);
+
+      this.socket.emit(
+        'friendAdd',
+        await database.get.userFriend(userId, targetId),
+      );
       if (targetSocket) {
-        targetSocket.emit('friendAdd', targetFriendAdd);
+        targetSocket.emit(
+          'friendAdd',
+          await database.get.userFriend(targetId, userId),
+        );
       }
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
@@ -78,7 +119,18 @@ export class UpdateFriendHandler extends SocketHandler {
         'UPDATEFRIEND',
       ).validate(data);
 
-      await new UpdateFriendService(operatorId, userId, targetId, friend).use();
+      if (operatorId !== userId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法修改非自己的好友',
+          part: 'UPDATEFRIEND',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      // Update friend
+      await database.set.friend(userId, targetId, friend);
 
       this.socket.emit('friendUpdate', userId, targetId, friend);
     } catch (error: any) {
@@ -108,14 +160,27 @@ export class DeleteFriendHandler extends SocketHandler {
         'DELETEFRIEND',
       ).validate(data);
 
-      await new DeleteFriendService(operatorId, userId, targetId).use();
+      if (operatorId !== userId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法刪除非自己的好友',
+          part: 'DELETEFRIEND',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
 
-      const targetSocket =
-        operatorId === userId ? this.socket : SocketServer.getSocket(userId);
+      // Delete friend
+      await database.delete.friend(userId, targetId);
+
+      // Delete friend (reverse)
+      await database.delete.friend(targetId, userId);
+
+      const targetSocket = SocketServer.getSocket(targetId);
 
       this.socket.emit('friendDelete', userId, targetId);
       if (targetSocket) {
-        targetSocket.emit('friendDelete', userId, targetId);
+        targetSocket.emit('friendDelete', targetId, userId);
       }
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {

@@ -1,8 +1,17 @@
+import { Server, Socket } from 'socket.io';
+import { v4 as uuidv4 } from 'uuid';
+
 // Error
 import StandardizedError from '@/error';
 
 // Utils
 import Logger from '@/utils/logger';
+
+// Socket
+import SocketServer from '@/api/socket';
+
+// Handler
+import { SocketHandler } from '@/api/socket/base.handler';
 
 // Schemas
 import {
@@ -17,20 +26,11 @@ import {
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import {
-  ConnectChannelService,
-  DisconnectChannelService,
-  CreateChannelService,
-  UpdateChannelService,
-  DeleteChannelService,
-} from '@/api/socket/events/channel/channel.service';
+// Database
+import { database } from '@/index';
 
-// Handler
-import { SocketHandler } from '@/api/socket/base.handler';
-
-// Socket
-import SocketServer from '@/api/socket';
+// Systems
+import xpSystem from '@/systems/xp';
 
 export class ConnectChannelHandler extends SocketHandler {
   async handle(data: any) {
@@ -42,36 +42,158 @@ export class ConnectChannelHandler extends SocketHandler {
         'CONNECTCHANNEL',
       ).validate(data);
 
-      const {
-        userUpdate,
-        serverMemberUpdate,
-        serverUpdate,
-        currentChannelId,
-        currentServerId,
-      } = await new ConnectChannelService(
-        operatorId,
-        userId,
-        channelId,
-        serverId,
-        password,
-      ).use();
+      const user = await database.get.user(userId);
+      const server = await database.get.server(serverId);
+      const channel = await database.get.channel(channelId);
+      const channelUsers = await database.get.channelUsers(channelId);
+      const userMember = await database.get.member(userId, serverId);
+      const operatorMember = await database.get.member(operatorId, serverId);
+
+      if (!channel.isLobby) {
+        if (operatorId !== userId) {
+          if (
+            operatorMember.permissionLevel < 5 ||
+            operatorMember.permissionLevel <= userMember.permissionLevel
+          ) {
+            throw new StandardizedError({
+              name: 'PermissionError',
+              message: '你沒有足夠的權限移動其他用戶',
+              part: 'CONNECTCHANNEL',
+              tag: 'PERMISSION_DENIED',
+              statusCode: 403,
+            });
+          }
+
+          if (channel.visibility === 'readonly') {
+            throw new StandardizedError({
+              name: 'PermissionError',
+              message: '該頻道為唯獨頻道',
+              part: 'CONNECTCHANNEL',
+              tag: 'CHANNEL_IS_READONLY',
+              statusCode: 403,
+            });
+          }
+
+          if (user.currentChannelId === channelId) {
+            throw new StandardizedError({
+              name: 'PermissionError',
+              message: '用戶已經在該頻道中',
+              part: 'CONNECTCHANNEL',
+              tag: 'PERMISSION_DENIED',
+              statusCode: 403,
+            });
+          }
+
+          if (user.currentServerId !== serverId) {
+            throw new StandardizedError({
+              name: 'PermissionError',
+              message: '用戶不在該語音群中',
+              part: 'CONNECTCHANNEL',
+              tag: 'PERMISSION_DENIED',
+              statusCode: 403,
+            });
+          }
+        } else {
+          if (channel.visibility === 'readonly') {
+            throw new StandardizedError({
+              name: 'PermissionError',
+              message: '該頻道為唯獨頻道',
+              part: 'CONNECTCHANNEL',
+              tag: 'CHANNEL_IS_READONLY',
+              statusCode: 403,
+            });
+          }
+
+          if (
+            (server.visibility === 'private' ||
+              channel.visibility === 'member') &&
+            operatorMember.permissionLevel < 2
+          ) {
+            throw new StandardizedError({
+              name: 'PermissionError',
+              message: '你需要成為該群組的會員才能加入該頻道',
+              part: 'CONNECTCHANNEL',
+              tag: 'PERMISSION_DENIED',
+              statusCode: 403,
+            });
+          }
+
+          if (
+            channel.password &&
+            password !== channel.password &&
+            operatorMember.permissionLevel < 3
+          ) {
+            throw new StandardizedError({
+              name: 'PermissionError',
+              message: '你需要輸入正確的密碼才能加入該頻道',
+              part: 'CONNECTCHANNEL',
+              tag: 'PASSWORD_INCORRECT',
+              statusCode: 403,
+            });
+          }
+
+          if (
+            channel.userLimit &&
+            channelUsers &&
+            channelUsers.length >= channel.userLimit &&
+            operatorMember.permissionLevel < 5
+          ) {
+            throw new StandardizedError({
+              name: 'PermissionError',
+              message: '該頻道已達人數上限',
+              part: 'CONNECTCHANNEL',
+              tag: 'CHANNEL_USER_LIMIT_REACHED',
+              statusCode: 403,
+            });
+          }
+        }
+      }
+
+      // Setup user xp interval
+      await xpSystem.create(userId);
+
+      // Update user
+      const updatedUser = {
+        currentServerId: serverId,
+        currentChannelId: channelId,
+        lastActiveAt: Date.now(),
+      };
+      await database.set.user(userId, updatedUser);
+
+      // Update Member
+      const updatedMember = {
+        lastJoinChannelTime: Date.now(),
+      };
+      await database.set.member(userId, serverId, updatedMember);
 
       const targetSocket =
         operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
+      if (targetSocket && user.currentChannelId) {
+        targetSocket.leave(`channel_${user.currentChannelId}`);
+        targetSocket
+          .to(`channel_${user.currentChannelId}`)
+          .emit('playSound', 'leave');
+        targetSocket.to(`channel_${user.currentChannelId}`).emit('RTCLeave', {
+          from: targetSocket.id,
+          userId: userId,
+        });
+      }
+
+      if (targetSocket && user.currentServerId) {
+        targetSocket
+          .to(`server_${user.currentServerId}`)
+          .emit(
+            'serverMemberUpdate',
+            userId,
+            user.currentServerId,
+            updatedUser,
+          );
+      }
+
       if (targetSocket) {
-        if (currentChannelId) {
-          targetSocket.leave(`channel_${currentChannelId}`);
-          targetSocket
-            .to(`channel_${currentChannelId}`)
-            .emit('playSound', 'leave');
-          targetSocket.to(`channel_${currentChannelId}`).emit('RTCLeave', {
-            from: targetSocket.id,
-            userId: userId,
-          });
-        }
-        targetSocket.emit('userUpdate', userUpdate);
-        targetSocket.emit('serverUpdate', serverId, serverUpdate);
+        targetSocket.emit('userUpdate', updatedUser);
+        targetSocket.emit('serverUpdate', serverId, updatedMember);
         targetSocket.join(`channel_${channelId}`);
         targetSocket.to(`channel_${channelId}`).emit('playSound', 'join');
         targetSocket.to(`channel_${channelId}`).emit('RTCJoin', {
@@ -80,19 +202,9 @@ export class ConnectChannelHandler extends SocketHandler {
         });
       }
 
-      if (currentServerId) {
-        this.io
-          .to(`server_${currentServerId}`)
-          .emit(
-            'serverMemberUpdate',
-            userId,
-            currentServerId,
-            serverMemberUpdate,
-          );
-      }
       this.io
         .to(`server_${serverId}`)
-        .emit('serverMemberUpdate', userId, serverId, serverMemberUpdate);
+        .emit('serverMemberUpdate', userId, serverId, updatedUser);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -120,19 +232,59 @@ export class DisconnectChannelHandler extends SocketHandler {
         'DISCONNECTCHANNEL',
       ).validate(data);
 
-      const { userUpdate, serverMemberUpdate } =
-        await new DisconnectChannelService(
-          operatorId,
-          userId,
-          channelId,
-          serverId,
-        ).use();
+      const user = await database.get.user(userId);
+      const userMember = await database.get.member(userId, serverId);
+      const operatorMember = await database.get.member(operatorId, serverId);
+
+      if (operatorId !== userId) {
+        if (user.currentChannelId !== channelId) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '用戶不在該頻道中',
+            part: 'DISCONNECTCHANNEL',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+        if (user.currentServerId !== serverId) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '用戶不在該語音群中',
+            part: 'DISCONNECTCHANNEL',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+        if (
+          operatorMember.permissionLevel < 5 ||
+          operatorMember.permissionLevel <= userMember.permissionLevel
+        ) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限踢除其他用戶',
+            part: 'DISCONNECTCHANNEL',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+      }
+
+      // Clear user xp interval
+      await xpSystem.delete(userId);
+
+      // Update user
+      const updatedUser = {
+        currentServerId: null,
+        currentChannelId: null,
+        lastActiveAt: Date.now(),
+      };
+      await database.set.user(userId, updatedUser);
 
       const targetSocket =
         operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
       if (targetSocket) {
-        targetSocket.emit('userUpdate', userUpdate);
+        targetSocket.emit('userUpdate', updatedUser);
         targetSocket.leave(`channel_${channelId}`);
         targetSocket.to(`channel_${channelId}`).emit('playSound', 'leave');
         targetSocket.to(`channel_${channelId}`).emit('RTCLeave', {
@@ -142,8 +294,8 @@ export class DisconnectChannelHandler extends SocketHandler {
       }
 
       this.io
-        .to(`server_${serverId}`)
-        .emit('serverMemberUpdate', userId, serverId, serverMemberUpdate);
+        .to([`server_${serverId}`, `server_${user.currentServerId}`])
+        .emit('serverMemberUpdate', userId, serverId, updatedUser);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -166,22 +318,62 @@ export class CreateChannelHandler extends SocketHandler {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { serverId, channel } = await new DataValidator(
+      const { serverId, channel: preset } = await new DataValidator(
         CreateChannelSchema,
         'CREATECHANNEL',
       ).validate(data);
 
-      const { serverChannelAdd, actions } = await new CreateChannelService(
-        operatorId,
-        serverId,
-        channel,
-      ).use();
+      const category = await database.get.channel(preset.categoryId);
+      const serverChannels = await database.get.serverChannels(serverId);
+      const operatorMember = await database.get.member(operatorId, serverId);
+
+      if (operatorMember.permissionLevel < 5) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '你沒有足夠的權限創建頻道',
+          part: 'CREATECHANNEL',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      if (category && category.categoryId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法在二級頻道下創建頻道',
+          part: 'CREATECHANNEL',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      if (category && !category.categoryId) {
+        const channel = {
+          type: 'category',
+        };
+        await new UpdateChannelHandler(this.io, this.socket).handle({
+          channelId: category.channelId,
+          serverId: serverId,
+          channel,
+        });
+      }
+
+      const categoryChannels = serverChannels?.filter(
+        (ch) => ch.categoryId === preset.categoryId,
+      );
+
+      // Create new channel
+      const channelId = uuidv4();
+      await database.set.channel(channelId, {
+        ...preset,
+        serverId: serverId,
+        order: (categoryChannels?.length || 0) + 1, // 1 is for lobby (-1 ~ serverChannels.length - 1)
+        createdAt: Date.now(),
+      });
 
       this.io
         .to(`server_${serverId}`)
-        .emit('serverChannelAdd', serverChannelAdd);
-
-      await Promise.all(actions.map((action) => action(this.io, this.socket)));
+        .emit('serverChannelAdd', await database.get.channel(channelId));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -204,24 +396,140 @@ export class UpdateChannelHandler extends SocketHandler {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { channelId, serverId, channel } = await new DataValidator(
+      const {
+        channelId,
+        serverId,
+        channel: update,
+      } = await new DataValidator(
         UpdateChannelSchema,
         'UPDATECHANNEL',
       ).validate(data);
 
-      const { onMessages } = await new UpdateChannelService(
-        operatorId,
-        serverId,
-        channelId,
-        channel,
-      ).use();
+      const messages: any[] = [];
+      const channel = await database.get.channel(channelId);
+      const operatorMember = await database.get.member(operatorId, serverId);
 
-      if (onMessages.length > 0) {
-        this.io.to(`channel_${channelId}`).emit('onMessage', ...onMessages);
+      if (operatorMember.permissionLevel < 5) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '你沒有足夠的權限編輯頻道',
+          part: 'UPDATECHANNEL',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      if (
+        update.voiceMode !== undefined &&
+        update.voiceMode !== channel.voiceMode
+      ) {
+        messages.push({
+          serverId: serverId,
+          channelId: channelId,
+          type: 'info',
+          content:
+            update.voiceMode === 'free'
+              ? 'VOICE_CHANGE_TO_FREE_SPEECH'
+              : update.voiceMode === 'forbidden'
+              ? 'VOICE_CHANGE_TO_FORBIDDEN_SPEECH'
+              : 'VOICE_CHANGE_TO_QUEUE',
+          timestamp: Date.now().valueOf(),
+        });
+      }
+
+      if (
+        update.forbidText !== undefined &&
+        update.forbidText !== channel.forbidText
+      ) {
+        messages.push({
+          serverId: serverId,
+          channelId: channelId,
+          type: 'info',
+          content: update.forbidText
+            ? 'TEXT_CHANGE_TO_FORBIDDEN_SPEECH'
+            : 'TEXT_CHANGE_TO_FREE_SPEECH',
+          timestamp: Date.now().valueOf(),
+        });
+      }
+
+      if (
+        update.forbidGuestText !== undefined &&
+        update.forbidGuestText !== channel.forbidGuestText
+      ) {
+        messages.push({
+          serverId: serverId,
+          channelId: channelId,
+          type: 'info',
+          content: update.forbidGuestText
+            ? 'TEXT_CHANGE_TO_FORBIDDEN_TEXT'
+            : 'TEXT_CHANGE_TO_ALLOWED_TEXT',
+          timestamp: Date.now().valueOf(),
+        });
+      }
+
+      if (
+        update.forbidGuestUrl !== undefined &&
+        update.forbidGuestUrl !== channel.forbidGuestUrl
+      ) {
+        messages.push({
+          serverId: serverId,
+          channelId: channelId,
+          type: 'info',
+          content: update.forbidGuestUrl
+            ? 'TEXT_CHANGE_TO_FORBIDDEN_URL'
+            : 'TEXT_CHANGE_TO_ALLOWED_URL',
+          timestamp: Date.now().valueOf(),
+        });
+      }
+
+      if (
+        update.guestTextMaxLength !== undefined &&
+        update.guestTextMaxLength !== channel.guestTextMaxLength
+      ) {
+        messages.push({
+          serverId: serverId,
+          channelId: channelId,
+          type: 'info',
+          content: `TEXT_CHANGE_TO_MAX_LENGTH ${update.guestTextMaxLength}`,
+          timestamp: Date.now().valueOf(),
+        });
+      }
+
+      if (
+        update.guestTextWaitTime !== undefined &&
+        update.guestTextWaitTime !== channel.guestTextWaitTime
+      ) {
+        messages.push({
+          serverId: serverId,
+          channelId: channelId,
+          type: 'info',
+          content: `TEXT_CHANGE_TO_WAIT_TIME ${update.guestTextWaitTime}`,
+          timestamp: Date.now().valueOf(),
+        });
+      }
+
+      if (
+        update.guestTextGapTime !== undefined &&
+        update.guestTextGapTime !== channel.guestTextGapTime
+      ) {
+        messages.push({
+          serverId: serverId,
+          channelId: channelId,
+          type: 'info',
+          content: `TEXT_CHANGE_TO_GAP_TIME ${update.guestTextGapTime}`,
+          timestamp: Date.now().valueOf(),
+        });
+      }
+
+      // Update channel
+      await database.set.channel(channelId, update);
+
+      if (messages.length > 0) {
+        this.io.to(`channel_${channelId}`).emit('onMessage', ...messages);
       }
       this.io
         .to(`server_${serverId}`)
-        .emit('serverChannelUpdate', channelId, channel);
+        .emit('serverChannelUpdate', channelId, update);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -252,7 +560,7 @@ export class UpdateChannelsHandler extends SocketHandler {
           await new UpdateChannelHandler(this.io, this.socket).handle({
             serverId,
             channelId: channel.channelId,
-            channel: channel.channel,
+            channel: channel,
           });
         }),
       );
@@ -283,15 +591,69 @@ export class DeleteChannelHandler extends SocketHandler {
         'DELETECHANNEL',
       ).validate(data);
 
-      const { actions } = await new DeleteChannelService(
-        operatorId,
-        serverId,
-        channelId,
-      ).use();
+      const channel = await database.get.channel(channelId);
+      const channelUsers = await database.get.channelUsers(channelId);
+      const serverChannels = await database.get.serverChannels(serverId);
+      const server = await database.get.server(serverId);
+      const operatorMember = await database.get.member(operatorId, serverId);
+
+      if (operatorMember.permissionLevel < 5) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '你沒有足夠的權限刪除頻道',
+          part: 'DELETECHANNEL',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      const channelChildren = serverChannels?.filter(
+        (ch) => ch.categoryId === channelId,
+      );
+      const categoryChildren = serverChannels?.filter(
+        (ch) => ch.categoryId === channel.categoryId,
+      );
+
+      if (categoryChildren && categoryChildren.length <= 1) {
+        const categoryUpdate = {
+          type: 'channel',
+        };
+        await new UpdateChannelHandler(this.io, this.socket).handle({
+          channelId: channel.categoryId,
+          serverId: serverId,
+          channel: categoryUpdate,
+        });
+      }
+
+      if (channelChildren) {
+        await new UpdateChannelsHandler(this.io, this.socket).handle({
+          serverId: serverId,
+          channels: channelChildren.map((child, index) => ({
+            channel: {
+              channelId: child.channelId,
+              categoryId: null,
+              order: (categoryChildren?.length || 0) + 1 + index, // 1 is for lobby (-1 ~ serverChannels.length - 1)
+            },
+          })),
+        });
+      }
+
+      if (channelUsers) {
+        await Promise.all(
+          channelUsers.map(async (user: any) => {
+            await new ConnectChannelHandler(this.io, this.socket).handle({
+              channelId: server.lobbyId,
+              serverId: serverId,
+              userId: user.userId,
+            });
+          }),
+        );
+      }
+
+      // Delete channel
+      await database.delete.channel(channelId);
 
       this.io.to(`server_${serverId}`).emit('serverChannelDelete', channelId);
-
-      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({

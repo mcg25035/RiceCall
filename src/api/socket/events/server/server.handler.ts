@@ -1,11 +1,19 @@
+import { v4 as uuidv4 } from 'uuid';
+
 // Error
 import StandardizedError from '@/error';
 
 // Utils
 import Logger from '@/utils/logger';
+import { generateUniqueDisplayId } from '@/utils';
+
+// Socket
+import SocketServer from '@/api/socket';
 
 // Handler
 import { SocketHandler } from '@/api/socket/base.handler';
+import { ConnectChannelHandler } from '@/api/socket/events/channel/channel.handler';
+import { DisconnectChannelHandler } from '@/api/socket/events/channel/channel.handler';
 
 // Schemas
 import {
@@ -19,17 +27,8 @@ import {
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import {
-  SearchServerService,
-  CreateServerService,
-  UpdateServerService,
-  ConnectServerService,
-  DisconnectServerService,
-} from '@/api/socket/events/server/server.service';
-
-// Socket
-import SocketServer from '@/api/socket';
+// Database
+import { database } from '@/index';
 
 export class SearchServerHandler extends SocketHandler {
   async handle(data: any) {
@@ -41,9 +40,9 @@ export class SearchServerHandler extends SocketHandler {
         'SEARCHSERVER',
       ).validate(data);
 
-      const { serverSearch } = await new SearchServerService(query).use();
+      const result = await database.get.searchServer(query);
 
-      this.socket.emit('serverSearch', serverSearch);
+      this.socket.emit('serverSearch', result);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -71,35 +70,85 @@ export class ConnectServerHandler extends SocketHandler {
         'CONNECTSERVER',
       ).validate(data);
 
-      const {
-        openPopup,
-        serversUpdate,
-        serverChannelsUpdate,
-        serverMembersUpdate,
-        currentServerId,
-        actions,
-      } = await new ConnectServerService(operatorId, userId, serverId).use();
+      const user = await database.get.user(userId);
+      const server = await database.get.server(serverId);
+      const userMember = await database.get.member(userId, serverId);
+
+      if (operatorId !== userId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法移動其他用戶的群組',
+          part: 'CONNECTSERVER',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      } else {
+        if (
+          server.visibility === 'invisible' &&
+          (!userMember || userMember.permissionLevel < 2)
+        ) {
+          this.socket.emit('openPopup', {
+            type: 'applyMember',
+            id: 'applyMember',
+            initialData: {
+              serverId: serverId,
+              userId: userId,
+            },
+          });
+        }
+        if (userMember && userMember.isBlocked) {
+          this.socket.emit('openPopup', {
+            type: 'dialogError',
+            id: 'errorDialog',
+            initialData: {
+              title: '你已被加入黑名單，無法加入群組',
+            },
+          });
+        }
+      }
+
+      // Create new membership if there isn't one
+      if (!userMember) {
+        await database.set.member(userId, serverId, {
+          permissionLevel: 1,
+        });
+      }
+
+      // Update user-server
+      await database.set.userServer(userId, serverId, {
+        recent: true,
+        timestamp: Date.now(),
+      });
+
+      // Join lobby
+      await new ConnectChannelHandler(this.io, this.socket).handle({
+        channelId: server.lobbyId,
+        serverId: serverId,
+        userId: userId,
+      });
 
       const targetSocket =
         operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
-      if (openPopup) {
-        this.socket.emit('openPopup', openPopup);
-        return;
-      }
-
       if (targetSocket) {
-        if (currentServerId) {
-          targetSocket.leave(`server_${currentServerId}`);
+        if (user.currentServerId) {
+          targetSocket.leave(`server_${user.currentServerId}`);
         }
 
         targetSocket.join(`server_${serverId}`);
-        targetSocket.emit('serversUpdate', serversUpdate);
-        targetSocket.emit('serverChannelsUpdate', serverChannelsUpdate);
-        targetSocket.emit('serverMembersUpdate', serverMembersUpdate);
+        targetSocket.emit(
+          'serversUpdate',
+          await database.get.userServers(userId),
+        );
+        targetSocket.emit(
+          'serverChannelsUpdate',
+          await database.get.serverChannels(serverId),
+        );
+        targetSocket.emit(
+          'serverMembersUpdate',
+          await database.get.serverMembers(serverId),
+        );
       }
-
-      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -127,11 +176,48 @@ export class DisconnectServerHandler extends SocketHandler {
         'DISCONNECTSERVER',
       ).validate(data);
 
-      const { actions } = await new DisconnectServerService(
-        operatorId,
-        userId,
-        serverId,
-      ).use();
+      const user = await database.get.user(userId);
+      const userMember = await database.get.member(userId, serverId);
+      const operatorMember = await database.get.member(operatorId, serverId);
+
+      if (operatorId !== userId) {
+        if (serverId !== user.currentServerId) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '無法踢出不在該群組的用戶',
+            part: 'DISCONNECTSERVER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+        if (operatorMember.permissionLevel < 5) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限踢出其他用戶',
+            part: 'DISCONNECTSERVER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+        if (operatorMember.permissionLevel <= userMember.permissionLevel) {
+          throw new StandardizedError({
+            name: 'PermissionError',
+            message: '你沒有足夠的權限踢出該用戶',
+            part: 'DISCONNECTSERVER',
+            tag: 'PERMISSION_DENIED',
+            statusCode: 403,
+          });
+        }
+      }
+
+      // Leave current channel
+      if (user.currentChannelId) {
+        await new DisconnectChannelHandler(this.io, this.socket).handle({
+          userId: userId,
+          channelId: user.currentChannelId,
+          serverId: user.currentServerId,
+        });
+      }
 
       const targetSocket =
         operatorId === userId ? this.socket : SocketServer.getSocket(userId);
@@ -141,8 +227,6 @@ export class DisconnectServerHandler extends SocketHandler {
         targetSocket.emit('serverChannelsUpdate', []);
         targetSocket.emit('serverMembersUpdate', []);
       }
-
-      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -165,17 +249,68 @@ export class CreateServerHandler extends SocketHandler {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { server } = await new DataValidator(
+      const { server: preset } = await new DataValidator(
         CreateServerSchema,
         'CREATESERVER',
       ).validate(data);
 
-      const { actions } = await new CreateServerService(
-        operatorId,
-        server,
-      ).use();
+      const operator = await database.get.user(operatorId);
+      const operatorServers = await database.get.userServers(operatorId);
 
-      await Promise.all(actions.map((action) => action(this.io, this.socket)));
+      if (
+        operatorServers &&
+        operatorServers.filter((s: any) => s.owned).length >=
+          Math.min(3 + operator.level / 5, 10)
+      ) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '可擁有群組數量已達上限',
+          part: 'CREATESERVER',
+          tag: 'LIMIT_REACHED',
+          statusCode: 403,
+        });
+      }
+
+      // Create server
+      const serverId = uuidv4();
+      const displayId = await generateUniqueDisplayId();
+      await database.set.server(serverId, {
+        ...preset,
+        displayId,
+        ownerId: operatorId,
+        createdAt: Date.now(),
+      });
+
+      // Create channel (lobby)
+      const lobbyId = uuidv4();
+      await database.set.channel(lobbyId, {
+        name: '大廳',
+        isLobby: true,
+        serverId,
+        createdAt: Date.now(),
+      });
+
+      // Create member
+      await database.set.member(operatorId, serverId, {
+        permissionLevel: 6,
+        createdAt: Date.now(),
+      });
+
+      // Create user-server
+      await database.set.userServer(operatorId, serverId, {
+        owned: true,
+      });
+
+      // Update Server (lobby)
+      await database.set.server(serverId, {
+        lobbyId,
+      });
+
+      // Join the server
+      await new ConnectServerHandler(this.io, this.socket).handle({
+        userId: operatorId,
+        serverId: serverId,
+      });
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -198,14 +333,27 @@ export class UpdateServerHandler extends SocketHandler {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { serverId, server } = await new DataValidator(
+      const { serverId, server: update } = await new DataValidator(
         UpdateServerSchema,
         'UPDATESERVER',
       ).validate(data);
 
-      await new UpdateServerService(operatorId, serverId, server).use();
+      const operatorMember = await database.get.member(operatorId, serverId);
 
-      this.io.to(`server_${serverId}`).emit('serverUpdate', serverId, server);
+      if (operatorMember.permissionLevel < 5) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '你沒有足夠的權限更新該群組',
+          part: 'UPDATESERVER',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      // Update server
+      await database.set.server(serverId, update);
+
+      this.io.to(`server_${serverId}`).emit('serverUpdate', serverId, update);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({

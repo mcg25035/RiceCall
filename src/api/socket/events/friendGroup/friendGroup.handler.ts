@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 // Error
 import StandardizedError from '@/error';
 
@@ -17,30 +19,41 @@ import {
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import {
-  CreateFriendGroupService,
-  UpdateFriendGroupService,
-  DeleteFriendGroupService,
-} from '@/api/socket/events/friendGroup/friendGroup.service';
+// Database
+import { database } from '@/index';
 
 export class CreateFriendGroupHandler extends SocketHandler {
   async handle(data: any) {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { userId, group } = await new DataValidator(
+      const { userId, group: preset } = await new DataValidator(
         CreateFriendGroupSchema,
         'CREATEFRIENDGROUP',
       ).validate(data);
 
-      const { friendGroupAdd } = await new CreateFriendGroupService(
-        operatorId,
-        userId,
-        group,
-      ).use();
+      if (operatorId !== userId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法新增非自己的好友群組',
+          part: 'CREATEFRIENDGROUP',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
 
-      this.socket.emit('friendGroupAdd', friendGroupAdd);
+      // Create friend group
+      const friendGroupId = uuidv4();
+      await database.set.friendGroup(friendGroupId, {
+        ...preset,
+        userId: userId,
+        createdAt: Date.now(),
+      });
+
+      this.socket.emit(
+        'friendGroupAdd',
+        await database.get.friendGroup(friendGroupId),
+      );
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -63,19 +76,29 @@ export class UpdateFriendGroupHandler extends SocketHandler {
     try {
       const operatorId = this.socket.data.userId;
 
-      const { userId, friendGroupId, group } = await new DataValidator(
+      const {
+        userId,
+        friendGroupId,
+        group: update,
+      } = await new DataValidator(
         UpdateFriendGroupSchema,
         'UPDATEFRIENDGROUP',
       ).validate(data);
 
-      await new UpdateFriendGroupService(
-        operatorId,
-        userId,
-        friendGroupId,
-        group,
-      ).use();
+      if (operatorId !== userId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法更新非自己的好友群組',
+          part: 'UPDATEFRIENDGROUP',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
 
-      this.socket.emit('friendGroupUpdate', friendGroupId, group);
+      // Update friend group
+      await database.set.friendGroup(friendGroupId, update);
+
+      this.socket.emit('friendGroupUpdate', friendGroupId, update);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -103,11 +126,18 @@ export class DeleteFriendGroupHandler extends SocketHandler {
         'DELETEFRIENDGROUP',
       ).validate(data);
 
-      await new DeleteFriendGroupService(
-        operatorId,
-        userId,
-        friendGroupId,
-      ).use();
+      if (operatorId !== userId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法刪除非自己的好友群組',
+          part: 'DELETEFRIENDGROUP',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      // Delete friend group
+      await database.delete.friendGroup(friendGroupId);
 
       this.socket.emit('friendGroupDelete', friendGroupId);
     } catch (error: any) {
