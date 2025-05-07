@@ -24,7 +24,7 @@ export default class RegisterService {
     await database.set.user(userId, {
       name: this.username,
       avatar: userId,
-      avatarUrl: `data:image/png;base64,${serverConfig.url}:${serverConfig.port}/images/userAvatars/`,
+      avatarUrl: `${serverConfig.url}:${serverConfig.port}/images/userAvatars/`,
       createdAt: Date.now(),
     });
 
