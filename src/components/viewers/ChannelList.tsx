@@ -65,18 +65,50 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
       channelId,
       name: categoryName,
       visibility: categoryVisibility,
+      userLimit: channelUserLimit,
+
     } = category;
     const { permissionLevel, userId, serverId } = currentServer;
     const { channelId: currentChannelId } = currentChannel;
     const categoryChannels = serverChannels
       .filter((ch) => ch.type === 'channel')
       .filter((ch) => ch.categoryId === channelId);
+    const channelMembers = serverMembers.filter(
+        (mb) => mb.currentChannelId === channelId,
+      );
+    const subChannelIds = categoryChannels.map((ch) => ch.channelId);
+    const categoryMembers = serverMembers.filter(
+        (mb) => subChannelIds.includes(mb.currentChannelId),
+      );
     const userInCategory = categoryChannels.some(
       (ch) => ch.channelId === currentChannelId,
     );
+    const userInChannel = currentChannelId === channelId;
+    const canJoin =
+      !userInChannel &&
+      categoryVisibility !== 'readonly' &&
+      !(categoryVisibility === 'private' && permissionLevel < 3) &&
+      !(categoryVisibility === 'member' && permissionLevel < 2) &&
+      (channelUserLimit === 0 ||
+        channelUserLimit > channelMembers.length ||
+        permissionLevel > 4);
+    const canUsePassword =
+        !userInChannel &&
+        categoryVisibility === 'private' &&
+        permissionLevel < 3 &&
+        category.password;
     const canManageChannel = permissionLevel > 4;
 
     // Handlers
+    const handleJoinChannel = (
+      userId: User['userId'],
+      serverId: Server['serverId'],
+      channelId: Channel['channelId'],
+    ) => {
+      if (!socket) return;
+      socket.send.connectChannel({ userId, channelId, serverId });
+    };
+
     const handleDeleteChannel = (
       channelId: Channel['channelId'],
       serverId: Server['serverId'],
@@ -132,6 +164,56 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
       });
     };
 
+    const handleOpenChannelPassword = (
+      userId: User['userId'],
+      serverId: Server['serverId'],
+      channelId: Channel['channelId'],
+    ) => {
+      ipcService.popup.open(PopupType.CHANNEL_PASSWORD, 'channelPassword');
+      ipcService.initialData.onRequest('channelPassword', {
+        userId,
+        serverId,
+        channelId,
+      });
+    };
+
+    const handleChannelDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleChannelDragStart = (
+      e: React.DragEvent,
+      channelId: Channel['channelId'],
+    ) => {
+      e.dataTransfer.setData('type', 'moveChannelUser');
+      e.dataTransfer.setData('channelId', channelId);
+    };
+
+    const handleChannelDrop = (
+      e: React.DragEvent,
+      serverId: Server['serverId'],
+      channelId: Channel['channelId'],
+    ) => {
+      e.preventDefault();
+      if (!socket) return;
+      const moveType = e.dataTransfer.getData('type');
+      switch (moveType) {
+        case 'moveUser':
+          const targetUserId = e.dataTransfer.getData('userId');
+          const currentChannelId = e.dataTransfer.getData('currentChannelId');
+          if (!targetUserId) return;
+          if (currentChannelId === channelId) return;
+          socket.send.connectChannel({userId: targetUserId, channelId, serverId });
+          break;
+        case 'moveChannelUser':
+          const targetChannelId = e.dataTransfer.getData('channelId');
+          if (!targetChannelId) return;
+          if (targetChannelId === channelId) return;
+          console.log('moveAllUserEvent');
+          break
+      }
+    };
+
     // Effect
     useEffect(() => {
       if (setCategoryExpanded && userInCategory)
@@ -148,6 +230,17 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
         <div
           key={channelId}
           className={`${styles['channelTab']} `}
+          onDoubleClick={() => {
+            if (canJoin) {
+              handleJoinChannel(userId, serverId, channelId);
+            } else if (canUsePassword) {
+              handleOpenChannelPassword(userId, serverId, channelId);
+            }
+          }}
+          onDragOver={handleChannelDragOver}
+          draggable={permissionLevel >= 5 && channelMembers.length !== 0}
+          onDragStart={(e) => handleChannelDragStart(e, channelId)}
+          onDrop={(e) => handleChannelDrop(e, serverId, channelId)}
           onContextMenu={(e) => {
             contextMenu.showContextMenu(e.clientX, e.clientY, [
               {
@@ -173,10 +266,32 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
                 },
               },
               {
+                id: 'separator',
+                label: '',
+                show: canManageChannel,
+              },
+              {
+                id: 'moveAllUserToChannel',
+                label: '批量移動到我的房間',
+                show: canManageChannel && !userInChannel && channelMembers.length !== 0,
+                onClick: () => {/* handleMoveAllUserToChannel() */},
+              },
+              {
                 id: 'changeChannelOrder',
                 label: lang.tr.editChannelOrder,
                 show: canManageChannel,
                 onClick: () => handleOpenChangeChannelOrder(userId, serverId),
+              },
+              {
+                id: 'separator',
+                label: '',
+                show: canManageChannel,
+              },
+              {
+                id: 'setDefaultChannel',
+                label: '設為接待頻道',
+                show: canManageChannel,
+                onClick: () => {/* handleSetDefaultChannel() */},
               },
             ]);
           }}
@@ -195,6 +310,9 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
             }
           />
           <div className={styles['channelTabLable']}>{categoryName}</div>
+          <div className={styles['channelTabCount']}>
+            {`(${categoryMembers.length + channelMembers.length})`}
+          </div>
           {!expanded[channelId] && userInCategory && (
             <div className={styles['myLocationIcon']} />
           )}
@@ -207,6 +325,63 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
             display: expanded[channelId] ? 'block' : 'none',
           }}
         >
+          {categoryVisibility !== 'readonly' && (
+          <>
+          <div
+            key={channelId}
+            className={`${styles['channelTab']} `}
+          >
+            <div
+            className={`
+              ${styles['tabIcon']} 
+              ${expanded[channelId] ? styles['expanded'] : ''} 
+              ${styles[categoryVisibility]} 
+            `}
+            onClick={() =>
+              setExpanded((prev) => ({
+                ...prev,
+                [channelId]: !prev[channelId],
+              }))
+            }
+            />
+            <div
+              className={`${
+                styles['channelTabLable']
+              }`}
+            >
+              {'頻道大廳'}
+            </div>
+            
+              <div className={styles['channelTabCount']}>
+                {`(${channelMembers.length}${
+                  channelUserLimit > 0 ? `/${channelUserLimit}` : ''
+                })`}
+              </div>
+            {userInChannel && !expanded[channelId] && (
+              <div className={styles['myLocationIcon']} />
+            )}
+          </div>
+          <div
+            className={styles['userList']}
+            style={{
+              display: expanded[channelId] ? 'block' : 'none',
+            }}
+          >
+            {channelMembers
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((member) => (
+                <UserTab
+                  key={member.userId}
+                  member={member}
+                  friends={friends}
+                  currentChannel={currentChannel}
+                  currentServer={currentServer}
+                />
+              ))}
+          </div>
+          </>
+          )}
+          
           {categoryChannels
             .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
             .map((channel) => (
@@ -365,6 +540,43 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
       });
     };
 
+    const handleChannelDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleChannelDragStart = (
+      e: React.DragEvent,
+      channelId: Channel['channelId'],
+    ) => {
+      e.dataTransfer.setData('type', 'moveChannelUser');
+      e.dataTransfer.setData('channelId', channelId);
+    };
+
+    const handleChannelDrop = (
+      e: React.DragEvent,
+      serverId: Server['serverId'],
+      channelId: Channel['channelId'],
+    ) => {
+      e.preventDefault();
+      if (!socket) return;
+      const moveType = e.dataTransfer.getData('type');
+      switch (moveType) {
+        case 'moveUser':
+          const targetUserId = e.dataTransfer.getData('userId');
+          const currentChannelId = e.dataTransfer.getData('currentChannelId');
+          if (!targetUserId) return;
+          if (currentChannelId === channelId) return;
+          socket.send.connectChannel({userId: targetUserId, channelId, serverId });
+          break;
+        case 'moveChannelUser':
+          const targetChannelId = e.dataTransfer.getData('channelId');
+          if (!targetChannelId) return;
+          if (targetChannelId === channelId) return;
+          console.log('moveAllUserEvent');
+          break
+      }
+    };
+
     // Effect
     useEffect(() => {
       if (setChannelExpanded && userInChannel)
@@ -388,6 +600,10 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
               handleOpenChannelPassword(userId, serverId, channelId);
             }
           }}
+          onDragOver={handleChannelDragOver}
+          draggable={permissionLevel >= 5 && channelMembers.length !== 0}
+          onDragStart={(e) => handleChannelDragStart(e, channelId)}
+          onDrop={(e) => handleChannelDrop(e, serverId, channelId)}
           onContextMenu={(e) => {
             contextMenu.showContextMenu(e.clientX, e.clientY, [
               {
@@ -413,10 +629,32 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
                 },
               },
               {
+                id: 'separator',
+                label: '',
+                show: canManageChannel,
+              },
+              {
+                id: 'moveAllUserToChannel',
+                label: '批量移動到我的房間',
+                show: canManageChannel && !userInChannel && channelMembers.length !== 0,
+                onClick: () => {/* handleMoveAllUserToChannel() */},
+              },
+              {
                 id: 'editChannelOrder',
                 label: lang.tr.editChannelOrder,
                 show: canManageChannel,
                 onClick: () => handleOpenEditChannelOrder(serverId, userId),
+              },
+              {
+                id: 'separator',
+                label: '',
+                show: canManageChannel,
+              },
+              {
+                id: 'setDefaultChannel',
+                label: '設為接待頻道',
+                show: canManageChannel,
+                onClick: () => {/* handleSetDefaultChannel() */},
               },
             ]);
           }}
@@ -533,7 +771,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
     const canEditNickname =
       canManageMember || (isCurrentUser && userPermission > 1);
     const canChangeToGuest =
-      canManageMember && memberPermission !== 1 && userPermission > 5;
+      canManageMember && memberPermission !== 1 && userPermission > 4;
     const canChangeToMember =
       canManageMember &&
       memberPermission !== 2 &&
@@ -658,6 +896,16 @@ const UserTab: React.FC<UserTabProps> = React.memo(
       });
     };
 
+    const handleUserDragStart = (
+      e: React.DragEvent,
+      userId: User['userId'],
+      channelId: Channel['channelId'],
+    ) => {
+      e.dataTransfer.setData('type', 'moveUser');
+      e.dataTransfer.setData('userId', userId);
+      e.dataTransfer.setData('currentChannelId', channelId)
+    };
+
     return (
       <div
         key={memberUserId}
@@ -665,6 +913,8 @@ const UserTab: React.FC<UserTabProps> = React.memo(
         onClick={(e) => {
           contextMenu.showUserInfoBlock(e.clientX, e.clientY, member);
         }}
+        draggable={userPermission >= 5 && memberUserId !== userId}
+        onDragStart={(e) => handleUserDragStart(e, memberUserId, memberCurrentChannelId)}
         onContextMenu={(e) => {
           contextMenu.showContextMenu(
             e.clientX,
@@ -771,9 +1021,17 @@ const UserTab: React.FC<UserTabProps> = React.memo(
                 show: canManageMember,
               },
               {
+                id: 'send-member-application',
+                label: '邀請成為會員',
+                show: canManageMember && memberPermission === 1,
+                onClick: () => {
+                  /* sendMemberApplication() */
+                },
+              },
+              {
                 id: 'member-management',
                 label: lang.tr.memberManagement,
-                show: canManageMember,
+                show: canManageMember && memberPermission > 1,
                 icon: 'submenu',
                 hasSubmenu: true,
                 submenuItems: [
