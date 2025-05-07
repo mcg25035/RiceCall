@@ -34,10 +34,13 @@ const DirectMessageTab: React.FC<DirectMessageTabProps> = React.memo(
     const timestamp = lang.getFormatTimestamp(messageTimestamp);
 
     const processContent = (content: string) => {
-      return content.replace(
+      const replaced = content.replace(
         /{{GUEST_SEND_AN_EXTERNAL_LINK}}/g,
         lang.tr.GUEST_SEND_AN_EXTERNAL_LINK,
       );
+      // 判斷是否為純文字（沒有明顯 markdown 語法）
+      const isPlainText = !/[#>*\-\[\]`|!_~]/.test(replaced);
+      return isPlainText ? replaced.replace(/\n/g, '<br />') : replaced;
     };
 
     return (
@@ -83,12 +86,12 @@ const ChannelMessageTab: React.FC<ChannelMessageTabProps> = React.memo(
     const timestamp = lang.getFormatTimestamp(messageTimestamp);
 
     const processContent = (content: string) => {
-      return content
-        .replace(
-          /{{GUEST_SEND_AN_EXTERNAL_LINK}}/g,
-          lang.tr.GUEST_SEND_AN_EXTERNAL_LINK,
-        )
-        .replace(/\n/g, '<br />');
+      const replaced = content.replace(
+        /{{GUEST_SEND_AN_EXTERNAL_LINK}}/g,
+        lang.tr.GUEST_SEND_AN_EXTERNAL_LINK,
+      );
+      const isPlainText = !/[#>*\-\[\]`|!_~]/.test(replaced);
+      return isPlainText ? replaced.replace(/\n/g, '<br />') : replaced;
     };
 
     return (
