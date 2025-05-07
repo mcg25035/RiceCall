@@ -486,12 +486,12 @@ const RootPageComponent = () => {
     setServerChannels(channels);
   };
 
-  const handleOnMessagesUpdate = (channelMessage: ChannelMessage): void => {
+  const handleOnMessages = (...channelMessages: ChannelMessage[]): void => {
     setChannelMessages((prev) => ({
       ...prev,
-      [channelMessage.channelId]: [
-        ...(prev[channelMessage.channelId] || []),
-        channelMessage,
+      [channelMessages[0].channelId]: [
+        ...(prev[channelMessages[0].channelId] || []),
+        ...channelMessages,
       ],
     }));
   };
@@ -599,7 +599,7 @@ const RootPageComponent = () => {
       [SocketServerEvent.SERVER_CHANNEL_UPDATE]: handleServerChannelUpdate,
       [SocketServerEvent.SERVER_CHANNEL_DELETE]: handleServerChannelDelete,
       [SocketServerEvent.SERVER_CHANNELS_UPDATE]: handleServerChannelsUpdate,
-      [SocketServerEvent.ON_MESSAGE]: handleOnMessagesUpdate,
+      [SocketServerEvent.ON_MESSAGE]: handleOnMessages,
       [SocketServerEvent.PLAY_SOUND]: handlePlaySound,
       [SocketServerEvent.OPEN_POPUP]: handleOpenPopup,
       [SocketServerEvent.ERROR]: handleError,
