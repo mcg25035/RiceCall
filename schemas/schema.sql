@@ -60,7 +60,7 @@ CREATE TABLE `channels` (
   `user_limit` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `guest_text_gap_time` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `guest_text_wait_time` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `guest_text_max_length` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `guest_text_max_length` int(10) UNSIGNED NOT NULL DEFAULT 2000,
   `is_lobby` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `slowmode` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `forbid_text` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
