@@ -216,7 +216,9 @@ export class UpdateChannelHandler extends SocketHandler {
         channel,
       ).use();
 
-      this.io.to(`channel_${channelId}`).emit('onMessage', ...onMessages);
+      if (onMessages.length > 0) {
+        this.io.to(`channel_${channelId}`).emit('onMessage', ...onMessages);
+      }
       this.io
         .to(`server_${serverId}`)
         .emit('serverChannelUpdate', channelId, channel);
