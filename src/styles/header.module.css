@@ -221,6 +221,7 @@
   justify-content: center;
   width: max-content;
   min-width: 100px;
+  max-width: 150px;
   height: 30px;
   overflow: hidden;
   white-space: nowrap;
@@ -340,7 +341,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
+  max-width: 150px;
   max-height: 26px;
   padding: 0px 2px;
   font-size: 12px;
