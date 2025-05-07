@@ -32,30 +32,16 @@ function convertToCamelCase(obj: any) {
 
 function validateData(data: any, allowedFields: string[]) {
   const convertedData = convertToSnakeCase(data);
-  const keys = Object.keys(convertedData).filter((k) =>
-    allowedFields.includes(k),
+  const { keys, values } = Object.entries(convertedData).reduce(
+    (acc: { keys: string[]; values: any[] }, [key, value]) => {
+      if (allowedFields.includes(key)) {
+        acc.keys.push(key);
+        acc.values.push(value);
+      }
+      return acc;
+    },
+    { keys: [], values: [] },
   );
-  const values = keys.map((k) => convertedData[k]);
-
-  if (keys.length === 0 || values.length === 0) {
-    throw new StandardizedError({
-      name: 'ValidationError',
-      message: '無法更新資料',
-      part: 'DATABASE',
-      tag: 'DATA_INVALID',
-      statusCode: 401,
-    });
-  }
-
-  if (keys.length !== values.length) {
-    throw new StandardizedError({
-      name: 'ValidationError',
-      message: '無法更新資料',
-      part: 'DATABASE',
-      tag: 'DATA_INVALID',
-      statusCode: 401,
-    });
-  }
 
   return { keys, values };
 }
