@@ -73,14 +73,18 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
     const categoryChannels = serverChannels
       .filter((ch) => ch.type === 'channel')
       .filter((ch) => ch.categoryId === categoryId);
-    const categoryLobby = createDefault.channel({
-      ...category,
-      channelId: categoryId,
-      name: '頻道大廳',
-      type: 'channel',
-      categoryId: categoryId,
-      visibility: categoryVisibility,
-    });
+    const categoryLobby =
+      categoryVisibility !== 'readonly'
+        ? createDefault.channel({
+            ...category,
+            channelId: categoryId,
+            name: '頻道大廳',
+            type: 'channel',
+            categoryId: categoryId,
+            visibility: categoryVisibility,
+            order: -1,
+          })
+        : null;
     const categoryMembers = serverMembers.filter(
       (mb) =>
         categoryChannels
@@ -319,6 +323,7 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
           }}
         >
           {[categoryLobby, ...categoryChannels]
+            .filter((ch) => !!ch)
             .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
             .map((channel) => (
               <ChannelTab
@@ -643,6 +648,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
           }}
         >
           {channelMembers
+            .filter((mb) => !!mb)
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((member) => (
               <UserTab
@@ -1378,7 +1384,7 @@ const ChannelListViewer: React.FC<ChannelListViewerProps> = React.memo(
               />
             ) : (
               serverChannels
-                .filter((c) => !c.categoryId)
+                .filter((ch) => !!ch && !ch.categoryId)
                 .sort((a, b) =>
                   a.order !== b.order
                     ? a.order - b.order
