@@ -1,8 +1,11 @@
+import bcrypt from 'bcrypt';
+
 // Error
 import StandardizedError from '@/error';
 
 // Utils
 import Logger from '@/utils/logger';
+import { generateJWT } from '@/utils/jwt';
 
 // Types
 import { ResponseType } from '@/api/http';
@@ -16,8 +19,8 @@ import { LoginSchema } from '@/api/http/routers/login/login.schema';
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import LoginService from '@/api/http/routers/login/login.service';
+// Database
+import { database } from '@/index';
 
 export class LoginHandler extends HttpHandler {
   async handle(data: any): Promise<ResponseType> {
@@ -27,12 +30,54 @@ export class LoginHandler extends HttpHandler {
         'LOGIN',
       ).validate(data);
 
-      const result = await new LoginService(account, password).use();
+      const accountData = await database.get.account(account);
+      if (!accountData) {
+        throw new StandardizedError({
+          name: 'ValidationError',
+          message: '帳號或密碼錯誤',
+          part: 'LOGIN',
+          tag: 'INVALID_ACCOUNT_OR_PASSWORD',
+          statusCode: 401,
+        });
+      }
+
+      const isPasswordVerified = await bcrypt.compare(
+        password,
+        accountData.password,
+      );
+      if (!isPasswordVerified) {
+        throw new StandardizedError({
+          name: 'ValidationError',
+          message: '帳號或密碼錯誤',
+          part: 'LOGIN',
+          tag: 'INVALID_ACCOUNT_OR_PASSWORD',
+          statusCode: 401,
+        });
+      }
+
+      const user = await database.get.user(accountData.userId);
+      if (!user) {
+        throw new StandardizedError({
+          name: 'ValidationError',
+          message: '帳號或密碼錯誤',
+          part: 'LOGIN',
+          tag: 'INVALID_ACCOUNT_OR_PASSWORD',
+          statusCode: 401,
+        });
+      }
+
+      await database.set.user(accountData.userId, {
+        lastActiveAt: Date.now(),
+      });
+
+      const token = generateJWT({ userId: accountData.userId });
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: {
+          token,
+        },
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {

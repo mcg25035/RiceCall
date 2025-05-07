@@ -16,8 +16,8 @@ import { RefreshFriendGroupSchema } from './refreshFriendGroup.schema';
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import { RefreshFriendGroupService } from './refreshFriendGroup.service';
+// Database
+import { database } from '@/index';
 
 export class RefreshFriendGroupHandler extends HttpHandler {
   async handle(data: any): Promise<ResponseType> {
@@ -27,12 +27,12 @@ export class RefreshFriendGroupHandler extends HttpHandler {
         'REFRESHFRIENDGROUP',
       ).validate(data);
 
-      const result = await new RefreshFriendGroupService(friendGroupId).use();
+      const friendGroup = await database.get.friendGroup(friendGroupId);
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: friendGroup,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {

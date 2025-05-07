@@ -16,8 +16,8 @@ import { RefreshMemberApplicationSchema } from './refreshMemberApplication.schem
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import { RefreshMemberApplicationService } from './refreshMemberApplication.service';
+// Database
+import { database } from '@/index';
 
 export class RefreshMemberApplicationHandler extends HttpHandler {
   async handle(data: any): Promise<ResponseType> {
@@ -27,15 +27,15 @@ export class RefreshMemberApplicationHandler extends HttpHandler {
         'REFRESHMEMBERAPPLICATION',
       ).validate(data);
 
-      const result = await new RefreshMemberApplicationService(
+      const memberApplication = await database.get.memberApplication(
         userId,
         serverId,
-      ).use();
+      );
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: memberApplication,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {

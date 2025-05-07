@@ -16,13 +16,8 @@ import { RefreshServerSchema } from './refreshServer.schema';
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import {
-  RefreshServerService,
-  RefreshServerChannelsService,
-  RefreshServerMemberApplicationsService,
-  RefreshServerMembersService,
-} from './refreshServer.service';
+// Database
+import { database } from '@/index';
 
 export class RefreshServerHandler extends HttpHandler {
   async handle(data: any): Promise<ResponseType> {
@@ -32,12 +27,12 @@ export class RefreshServerHandler extends HttpHandler {
         'REFRESHSERVER',
       ).validate(data);
 
-      const result = await new RefreshServerService(serverId).use();
+      const server = await database.get.server(serverId);
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: server,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
@@ -68,12 +63,12 @@ export class RefreshServerChannelsHandler extends HttpHandler {
         'REFRESHSERVERCHANNELS',
       ).validate(data);
 
-      const result = await new RefreshServerChannelsService(serverId).use();
+      const serverChannels = await database.get.serverChannels(serverId);
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: serverChannels,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
@@ -104,14 +99,13 @@ export class RefreshServerMemberApplicationsHandler extends HttpHandler {
         'REFRESHSERVERMEMBERAPPLICATIONS',
       ).validate(data);
 
-      const result = await new RefreshServerMemberApplicationsService(
-        serverId,
-      ).use();
+      const serverMemberApplications =
+        await database.get.serverMemberApplications(serverId);
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: serverMemberApplications,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
@@ -142,12 +136,12 @@ export class RefreshServerMembersHandler extends HttpHandler {
         'REFRESHSERVERMEMBERS',
       ).validate(data);
 
-      const result = await new RefreshServerMembersService(serverId).use();
+      const serverMembers = await database.get.serverMembers(serverId);
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: serverMembers,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {

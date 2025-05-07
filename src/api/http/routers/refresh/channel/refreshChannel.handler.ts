@@ -16,8 +16,8 @@ import { RefreshChannelSchema } from './refreshChannel.schema';
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import { RefreshChannelService } from './refreshChannel.service';
+// Database
+import { database } from '@/index';
 
 export class RefreshChannelHandler extends HttpHandler {
   async handle(data: any): Promise<ResponseType> {
@@ -27,12 +27,12 @@ export class RefreshChannelHandler extends HttpHandler {
         'REFRESHCHANNEL',
       ).validate(data);
 
-      const result = await new RefreshChannelService(channelId).use();
+      const channel = await database.get.channel(channelId);
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: channel,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {

@@ -16,8 +16,8 @@ import { RefreshFriendApplicationSchema } from './refreshFriendApplication.schem
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import { RefreshFriendApplicationService } from './refreshFriendApplication.service';
+// Database
+import { database } from '@/index';
 
 export class RefreshFriendApplicationHandler extends HttpHandler {
   async handle(data: any): Promise<ResponseType> {
@@ -27,15 +27,15 @@ export class RefreshFriendApplicationHandler extends HttpHandler {
         'REFRESHFRIENDAPPLICATION',
       ).validate(data);
 
-      const result = await new RefreshFriendApplicationService(
+      const friendApplication = await database.get.friendApplication(
         senderId,
         receiverId,
-      ).use();
+      );
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: friendApplication,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {

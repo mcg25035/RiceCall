@@ -16,14 +16,8 @@ import { RefreshUserSchema } from './refreshUser.schema';
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import {
-  RefreshUserService,
-  RefreshUserFriendApplicationsService,
-  RefreshUserFriendGroupsService,
-  RefreshUserFriendsService,
-  RefreshUserServersService,
-} from './refreshUser.service';
+// Database
+import { database } from '@/index';
 
 export class RefreshUserHandler extends HttpHandler {
   async handle(data: any): Promise<ResponseType> {
@@ -33,12 +27,12 @@ export class RefreshUserHandler extends HttpHandler {
         'REFRESHUSER',
       ).validate(data);
 
-      const result = await new RefreshUserService(userId).use();
+      const user = await database.get.user(userId);
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: user,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
@@ -69,14 +63,14 @@ export class RefreshUserFriendApplicationsHandler extends HttpHandler {
         'REFRESHUSERFRIENDAPPLICATIONS',
       ).validate(data);
 
-      const result = await new RefreshUserFriendApplicationsService(
+      const userFriendApplications = await database.get.userFriendApplications(
         userId,
-      ).use();
+      );
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: userFriendApplications,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
@@ -107,12 +101,12 @@ export class RefreshUserFriendGroupsHandler extends HttpHandler {
         'REFRESHUSERFRIENDGROUPS',
       ).validate(data);
 
-      const result = await new RefreshUserFriendGroupsService(userId).use();
+      const userFriendGroups = await database.get.userFriendGroups(userId);
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: userFriendGroups,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
@@ -143,12 +137,12 @@ export class RefreshUserFriendsHandler extends HttpHandler {
         'REFRESHUSERFRIENDS',
       ).validate(data);
 
-      const result = await new RefreshUserFriendsService(userId).use();
+      const userFriends = await database.get.userFriends(userId);
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: userFriends,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
@@ -179,12 +173,12 @@ export class RefreshUserServersHandler extends HttpHandler {
         'REFRESHUSERSERVERS',
       ).validate(data);
 
-      const result = await new RefreshUserServersService(userId).use();
+      const userServers = await database.get.userServers(userId);
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: userServers,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {

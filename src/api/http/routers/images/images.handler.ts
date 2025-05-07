@@ -1,3 +1,6 @@
+import path from 'path';
+import fs from 'fs/promises';
+
 // Error
 import StandardizedError from '@/error';
 
@@ -10,22 +13,47 @@ import { ResponseType } from '@/api/http';
 // Handler
 import { HttpHandler } from '@/api/http/base.handler';
 
-// Services
-import ImagesService from '@/api/http/routers/images/images.service';
+// Config
+import { appConfig } from '@/config';
 
 export class ImagesHandler extends HttpHandler {
   async handle(): Promise<ResponseType> {
     try {
-      const filePath =
-        this.req.url?.replace('/images/', '/').split('?')[0].split('/') || [];
-      const fileName = filePath.pop() || '__default.webp';
+      const originalPath =
+        this.req.url?.replace('images', 'uploads').split('?')[0].split('/') ||
+        [];
+      const originalName = originalPath.pop() || '';
 
-      const result = await new ImagesService(filePath, fileName).use();
+      const fileName = originalName
+        ? `${appConfig.filePrefix}${originalName}`
+        : '__default.webp';
+
+      const filePath = path.join(...originalPath, fileName);
+
+      const file = await fs.readFile(filePath).catch((error) => {
+        if (error.code === 'ENOENT') {
+          throw new StandardizedError({
+            name: 'ServerError',
+            message: '找不到檔案',
+            part: 'GETFILE',
+            tag: 'FILE_NOT_FOUND',
+            statusCode: 404,
+          });
+        } else {
+          throw new StandardizedError({
+            name: 'ServerError',
+            message: `讀取檔案失敗: ${error.message}`,
+            part: 'GETFILE',
+            tag: 'READ_FILE_FAILED',
+            statusCode: 500,
+          });
+        }
+      });
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: file,
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {

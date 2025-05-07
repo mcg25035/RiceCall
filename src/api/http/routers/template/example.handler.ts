@@ -16,8 +16,8 @@ import { ExampleSchema } from '@/api/http/routers/template/example.schema';
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import ExampleService from '@/api/http/routers/template/example.service'; // TODO: change service file path
+// Database
+import { database } from '@/index';
 
 export class ExampleHandler extends HttpHandler {
   async handle(data: any): Promise<ResponseType> {
@@ -27,12 +27,12 @@ export class ExampleHandler extends HttpHandler {
         'EXAMPLE',
       ).validate(data);
 
-      const result = await new ExampleService(example).use(); // TODO: change service
+      // TODO: implement logic
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: {}, // TODO: implement data
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {

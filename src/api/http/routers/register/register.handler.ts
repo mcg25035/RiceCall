@@ -1,3 +1,6 @@
+import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
+
 // Error
 import StandardizedError from '@/error';
 
@@ -16,8 +19,11 @@ import { RegisterSchema } from '@/api/http/routers/register/register.schema';
 // Middleware
 import DataValidator from '@/middleware/data.validator';
 
-// Services
-import RegisterService from '@/api/http/routers/register/register.service';
+// Database
+import { database } from '@/index';
+
+// Config
+import { serverConfig } from '@/config';
 
 export class RegisterHandler extends HttpHandler {
   async handle(data: any): Promise<ResponseType> {
@@ -27,16 +33,26 @@ export class RegisterHandler extends HttpHandler {
         'REGISTER',
       ).validate(data);
 
-      const result = await new RegisterService(
-        account,
-        password,
-        username,
-      ).use();
+      // Create user data
+      const userId = uuidv4();
+      await database.set.user(userId, {
+        name: username,
+        avatar: userId,
+        avatarUrl: `${serverConfig.url}:${serverConfig.port}/images/userAvatars/`,
+        createdAt: Date.now(),
+      });
+
+      // Create account password list
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await database.set.account(account, {
+        password: hashedPassword,
+        userId: userId,
+      });
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: { account },
       };
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
