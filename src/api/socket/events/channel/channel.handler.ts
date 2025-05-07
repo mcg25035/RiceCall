@@ -209,14 +209,14 @@ export class UpdateChannelHandler extends SocketHandler {
         'UPDATECHANNEL',
       ).validate(data);
 
-      const { onMessage } = await new UpdateChannelService(
+      const { onMessages } = await new UpdateChannelService(
         operatorId,
         serverId,
         channelId,
         channel,
       ).use();
 
-      this.io.to(`channel_${channelId}`).emit('onMessage', onMessage);
+      this.io.to(`channel_${channelId}`).emit('onMessage', ...onMessages);
       this.io
         .to(`server_${serverId}`)
         .emit('serverChannelUpdate', channelId, channel);

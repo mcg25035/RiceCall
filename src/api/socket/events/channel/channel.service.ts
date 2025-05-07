@@ -342,105 +342,105 @@ export class UpdateChannelService {
       });
     }
 
-    if (this.update.voiceMode !== channel.voiceMode) {
+    if (
+      this.update.voiceMode !== undefined &&
+      this.update.voiceMode !== channel.voiceMode
+    ) {
       messages.push({
-        message: {
-          type: 'info',
-          content:
-            this.update.voiceMode === 'free'
-              ? 'VOICE_CHANGE_TO_FREE_SPEECH'
-              : this.update.voiceMode === 'forbidden'
-              ? 'VOICE_CHANGE_TO_FORBIDDEN_SPEECH'
-              : 'VOICE_CHANGE_TO_QUEUE',
-          timestamp: Date.now().valueOf(),
-        },
-        userId: this.operatorId,
         serverId: this.serverId,
         channelId: this.channelId,
+        type: 'info',
+        content:
+          this.update.voiceMode === 'free'
+            ? 'VOICE_CHANGE_TO_FREE_SPEECH'
+            : this.update.voiceMode === 'forbidden'
+            ? 'VOICE_CHANGE_TO_FORBIDDEN_SPEECH'
+            : 'VOICE_CHANGE_TO_QUEUE',
+        timestamp: Date.now().valueOf(),
       });
     }
 
-    if (this.update.forbidText !== channel.forbidText) {
+    if (
+      this.update.forbidText !== undefined &&
+      this.update.forbidText !== channel.forbidText
+    ) {
       messages.push({
-        message: {
-          type: 'info',
-          content: this.update.forbidText
-            ? 'TEXT_CHANGE_TO_FORBIDDEN_SPEECH'
-            : 'TEXT_CHANGE_TO_FREE_SPEECH',
-          timestamp: Date.now().valueOf(),
-        },
-        userId: this.operatorId,
         serverId: this.serverId,
         channelId: this.channelId,
+        type: 'info',
+        content: this.update.forbidText
+          ? 'TEXT_CHANGE_TO_FORBIDDEN_SPEECH'
+          : 'TEXT_CHANGE_TO_FREE_SPEECH',
+        timestamp: Date.now().valueOf(),
       });
     }
 
-    if (this.update.forbidGuestText !== channel.forbidGuestText) {
+    if (
+      this.update.forbidGuestText !== undefined &&
+      this.update.forbidGuestText !== channel.forbidGuestText
+    ) {
       messages.push({
-        message: {
-          type: 'info',
-          content: this.update.forbidGuestText
-            ? 'TEXT_CHANGE_TO_FORBIDDEN_TEXT'
-            : 'TEXT_CHANGE_TO_ALLOWED_TEXT',
-          timestamp: Date.now().valueOf(),
-        },
-        userId: this.operatorId,
         serverId: this.serverId,
         channelId: this.channelId,
+        type: 'info',
+        content: this.update.forbidGuestText
+          ? 'TEXT_CHANGE_TO_FORBIDDEN_TEXT'
+          : 'TEXT_CHANGE_TO_ALLOWED_TEXT',
+        timestamp: Date.now().valueOf(),
       });
     }
 
-    if (this.update.forbidGuestUrl !== channel.forbidGuestUrl) {
+    if (
+      this.update.forbidGuestUrl !== undefined &&
+      this.update.forbidGuestUrl !== channel.forbidGuestUrl
+    ) {
       messages.push({
-        message: {
-          type: 'info',
-          content: this.update.forbidGuestUrl
-            ? 'TEXT_CHANGE_TO_FORBIDDEN_URL'
-            : 'TEXT_CHANGE_TO_ALLOWED_URL',
-          timestamp: Date.now().valueOf(),
-        },
-        userId: this.operatorId,
         serverId: this.serverId,
         channelId: this.channelId,
+        type: 'info',
+        content: this.update.forbidGuestUrl
+          ? 'TEXT_CHANGE_TO_FORBIDDEN_URL'
+          : 'TEXT_CHANGE_TO_ALLOWED_URL',
+        timestamp: Date.now().valueOf(),
       });
     }
 
-    if (this.update.guestTextMaxLength !== channel.guestTextMaxLength) {
+    if (
+      this.update.guestTextMaxLength !== undefined &&
+      this.update.guestTextMaxLength !== channel.guestTextMaxLength
+    ) {
       messages.push({
-        message: {
-          type: 'info',
-          content: `TEXT_CHANGE_TO_MAX_LENGTH ${this.update.guestTextMaxLength}`,
-          timestamp: Date.now().valueOf(),
-        },
-        userId: this.operatorId,
         serverId: this.serverId,
         channelId: this.channelId,
+        type: 'info',
+        content: `TEXT_CHANGE_TO_MAX_LENGTH ${this.update.guestTextMaxLength}`,
+        timestamp: Date.now().valueOf(),
       });
     }
 
-    if (this.update.guestTextWaitTime !== channel.guestTextWaitTime) {
+    if (
+      this.update.guestTextWaitTime !== undefined &&
+      this.update.guestTextWaitTime !== channel.guestTextWaitTime
+    ) {
       messages.push({
-        message: {
-          type: 'info',
-          content: `TEXT_CHANGE_TO_WAIT_TIME ${this.update.guestTextWaitTime}`,
-          timestamp: Date.now().valueOf(),
-        },
-        userId: this.operatorId,
         serverId: this.serverId,
         channelId: this.channelId,
+        type: 'info',
+        content: `TEXT_CHANGE_TO_WAIT_TIME ${this.update.guestTextWaitTime}`,
+        timestamp: Date.now().valueOf(),
       });
     }
 
-    if (this.update.guestTextGapTime !== channel.guestTextGapTime) {
+    if (
+      this.update.guestTextGapTime !== undefined &&
+      this.update.guestTextGapTime !== channel.guestTextGapTime
+    ) {
       messages.push({
-        message: {
-          type: 'info',
-          content: `TEXT_CHANGE_TO_GAP_TIME ${this.update.guestTextGapTime}`,
-          timestamp: Date.now().valueOf(),
-        },
-        userId: this.operatorId,
         serverId: this.serverId,
         channelId: this.channelId,
+        type: 'info',
+        content: `TEXT_CHANGE_TO_GAP_TIME ${this.update.guestTextGapTime}`,
+        timestamp: Date.now().valueOf(),
       });
     }
 
@@ -448,7 +448,7 @@ export class UpdateChannelService {
     await database.set.channel(this.channelId, this.update);
 
     return {
-      onMessage: messages,
+      onMessages: messages,
     };
   }
 }
