@@ -617,7 +617,7 @@
 .serverBox {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  overflow: hidden;
   gap: 5px;
 }
 
@@ -625,6 +625,9 @@
   font-size: 1rem;
   line-height: 1rem;
   color: rgb(95, 95, 95);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .serverInfo {
