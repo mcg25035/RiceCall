@@ -138,6 +138,10 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       serverDisplayId: UserServer['displayId'],
     ) => {
       if (!socket) return;
+      if (currentServerId == serverId) {
+        mainTab.setSelectedTabId('server');
+        return;
+      }
       socket.send.connectServer({
         serverId,
         userId: userId,
@@ -326,12 +330,12 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
                             <SearchResultItem
                               key={server.serverId}
                               server={server}
-                              onClick={() =>
+                              onClick={() => {
                                 handleConnectServer(
                                   server.serverId,
                                   server.displayId,
-                                )
-                              }
+                                );
+                              }}
                             />
                           ))}
                         </>
@@ -345,12 +349,12 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
                             <SearchResultItem
                               key={server.serverId}
                               server={server}
-                              onClick={() =>
+                              onClick={() => {
                                 handleConnectServer(
                                   server.serverId,
                                   server.displayId,
-                                )
-                              }
+                                );
+                              }}
                             />
                           ))}
                         </>
@@ -434,12 +438,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             servers={recentServers}
             user={user}
             onServerClick={(server) => {
-              if (currentServerId == server.serverId) {
-                mainTab.setSelectedTabId('server');
-              } else {
-                setIsLoading(true);
-                setLoadingServerID(server.displayId);
-              }
+              handleConnectServer(server.serverId, server.displayId);
             }}
           />
           <ServerListSection
@@ -447,8 +446,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             servers={ownedServers}
             user={user}
             onServerClick={(server) => {
-              setIsLoading(true);
-              setLoadingServerID(server.displayId);
+              handleConnectServer(server.serverId, server.displayId);
             }}
           />
           <ServerListSection
@@ -456,8 +454,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             servers={favoriteServers}
             user={user}
             onServerClick={(server) => {
-              setIsLoading(true);
-              setLoadingServerID(server.displayId);
+              handleConnectServer(server.serverId, server.displayId);
             }}
           />
         </main>

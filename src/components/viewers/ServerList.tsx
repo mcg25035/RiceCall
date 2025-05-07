@@ -6,9 +6,6 @@ import homePage from '@/styles/pages/home.module.css';
 // Type
 import { UserServer, User } from '@/types';
 
-// Providers
-import { useSocket } from '@/providers/Socket';
-
 interface ServerCardProps {
   user: User;
   server: UserServer;
@@ -17,12 +14,8 @@ interface ServerCardProps {
 
 const ServerCard: React.FC<ServerCardProps> = React.memo(
   ({ user, server, onClick }) => {
-    // Hooks
-    const socket = useSocket();
-
     // Variables
     const {
-      serverId,
       name: serverName,
       avatarUrl: serverAvatarUrl,
       displayId: serverDisplayId,
@@ -32,25 +25,8 @@ const ServerCard: React.FC<ServerCardProps> = React.memo(
     const { userId } = user;
     const isOwner = serverOwnerId === userId;
 
-    // Handlers
-    const handleServerSelect = (
-      userId: User['userId'],
-      serverId: UserServer['serverId'],
-    ) => {
-      setTimeout(() => {
-        if (!socket) return;
-        socket.send.connectServer({ userId, serverId });
-      }, 1500);
-      onClick?.();
-    };
-
     return (
-      <div
-        className={homePage['serverCard']}
-        onClick={() => {
-          handleServerSelect(userId, serverId);
-        }}
-      >
+      <div className={homePage['serverCard']} onClick={onClick}>
         <div
           className={homePage['serverAvatarPicture']}
           style={{ backgroundImage: `url(${serverAvatarUrl})` }}

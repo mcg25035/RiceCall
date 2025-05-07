@@ -1,6 +1,5 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { marked } from 'marked';
 
 // CSS
 import setting from '@/styles/popups/setting.module.css';
@@ -102,7 +101,6 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     const [sortState, setSortState] = useState<1 | -1>(-1);
     const [sortField, setSortField] = useState<string>('permissionLevel');
     const [searchText, setSearchText] = useState('');
-    const [announcementPreview, setAnnouncementPreview] = useState('');
     const [showPreview, setShowPreview] = useState(false);
 
     // Variables
@@ -585,8 +583,6 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       if (showPreview) {
                         setShowPreview(false);
                       } else {
-                        const html = await marked.parse(serverAnnouncement);
-                        setAnnouncementPreview(html);
                         setShowPreview(true);
                       }
                     }}
