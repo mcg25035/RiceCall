@@ -71,7 +71,7 @@ export class ConnectChannelHandler extends SocketHandler {
           });
         }
         targetSocket.emit('userUpdate', userUpdate);
-        targetSocket.emit('serverUpdate', serverUpdate);
+        targetSocket.emit('serverUpdate', serverId, serverUpdate);
         targetSocket.join(`channel_${channelId}`);
         targetSocket.to(`channel_${channelId}`).emit('playSound', 'join');
         targetSocket.to(`channel_${channelId}`).emit('RTCJoin', {

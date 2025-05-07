@@ -43,11 +43,12 @@ export class SendMessageHandler extends SocketHandler {
         message,
       ).use();
 
-      this.io.to(`channel_${channelId}`).emit('onMessage', onMessage);
-      this.socket.emit('serverUpdate', serverUpdate);
+      this.socket.emit('serverUpdate', serverId, serverUpdate);
       this.socket
         .to(`channel_${channelId}`)
         .emit('playSound', 'recieveChannelMessage');
+
+      this.io.to(`channel_${channelId}`).emit('onMessage', onMessage);
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
