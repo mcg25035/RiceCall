@@ -46,11 +46,12 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
       voiceMode: channelVoiceMode,
       order: channelOrder,
       forbidText: channelForbidText,
-      forbidGuestText: channelGuestTextForbid,
-      forbidGuestUrl: channelGuestTextForbidUrl,
+      forbidGuestText: channelForbidGuestText,
+      forbidGuestUrl: channelForbidGuestUrl,
       guestTextMaxLength: channelGuestTextMaxLength,
       guestTextWaitTime: channelGuestTextWaitTime,
       guestTextGapTime: channelGuestTextGapTime,
+      bitrate: channelBitrate,
       isLobby: channelIsLobby,
     } = channel;
 
@@ -181,10 +182,18 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                     {lang.tr.channelAudioQuality}
                   </div>
                   <div className={popup['inputGroup']}>
-                    <div
-                      className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
-                    >
-                      <input type="radio" name="voiceQuality" defaultChecked />
+                    <div className={`${popup['inputBox']} ${popup['row']}`}>
+                      <input
+                        type="radio"
+                        name="voiceQuality"
+                        checked={channelBitrate === 64000}
+                        onChange={() => {
+                          setChannel((prev) => ({
+                            ...prev,
+                            bitrate: 64000,
+                          }));
+                        }}
+                      />
                       <div>
                         <label className={popup['label']}>
                           {lang.tr.chatMode}
@@ -195,10 +204,18 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                       </div>
                     </div>
 
-                    <div
-                      className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
-                    >
-                      <input type="radio" name="voiceQuality" />
+                    <div className={`${popup['inputBox']} ${popup['row']}`}>
+                      <input
+                        type="radio"
+                        name="voiceQuality"
+                        checked={channelBitrate === 256000}
+                        onChange={() => {
+                          setChannel((prev) => ({
+                            ...prev,
+                            bitrate: 256000,
+                          }));
+                        }}
+                      />
                       <div>
                         <label className={popup['label']}>
                           {lang.tr.entertainmentMode}
@@ -266,7 +283,6 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                   >
                     <input
                       type="radio"
-                      name="voiceQuality"
                       checked={channelVisibility === 'member'}
                       onChange={() => {
                         setChannel((prev) => ({
@@ -289,7 +305,6 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                   >
                     <input
                       type="radio"
-                      name="voiceQuality"
                       checked={channelVisibility === 'readonly'}
                       onChange={() => {
                         setChannel((prev) => ({
@@ -312,7 +327,6 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                   >
                     <input
                       type="radio"
-                      name="voiceQuality"
                       checked={channelVisibility === 'private'}
                       onChange={() => {
                         setChannel((prev) => ({
@@ -405,7 +419,7 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                   <div className={popup['inputBox']}>
                     <input
                       type="checkbox"
-                      checked={channelGuestTextForbid}
+                      checked={channelForbidGuestText}
                       onChange={(e) =>
                         setChannel((prev) => ({
                           ...prev,
@@ -421,11 +435,11 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                   <div className={popup['inputBox']}>
                     <input
                       type="checkbox"
-                      checked={channelGuestTextForbidUrl}
+                      checked={channelForbidGuestUrl}
                       onChange={(e) =>
                         setChannel((prev) => ({
                           ...prev,
-                          forbidGuestTextForbidUrl: e.target.checked,
+                          forbidGuestUrl: e.target.checked,
                         }))
                       }
                     />
@@ -515,11 +529,12 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                   voiceMode: channelVoiceMode,
                   order: channelOrder,
                   forbidText: channelForbidText,
-                  forbidGuestText: channelGuestTextForbid,
-                  forbidGuestUrl: channelGuestTextForbidUrl,
+                  forbidGuestText: channelForbidGuestText,
+                  forbidGuestUrl: channelForbidGuestUrl,
                   guestTextMaxLength: channelGuestTextMaxLength,
                   guestTextWaitTime: channelGuestTextWaitTime,
                   guestTextGapTime: channelGuestTextGapTime,
+                  bitrate: channelBitrate,
                 },
                 channelId,
                 serverId,
