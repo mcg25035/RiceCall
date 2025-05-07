@@ -176,10 +176,10 @@ export default class HttpServer {
             if (req.url === '/upload') {
               response = await new UploadHandler(req).handle(data);
             }
-          });
 
-          if (response) sendResponse(res, response);
-          return;
+            if (response) sendResponse(res, response);
+            return;
+          });
         }
       }
     });

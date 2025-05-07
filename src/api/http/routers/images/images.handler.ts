@@ -18,7 +18,7 @@ export class ImagesHandler extends HttpHandler {
     try {
       const filePath =
         this.req.url?.replace('/images/', '/').split('?')[0].split('/') || [];
-      const fileName = filePath.pop() || '__default.png';
+      const fileName = filePath.pop() || '__default.webp';
 
       const result = await new ImagesService(filePath, fileName).use();
 
