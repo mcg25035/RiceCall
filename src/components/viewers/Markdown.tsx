@@ -86,11 +86,11 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
     const safeMarkdownText =
       typeof markdownText === 'string' ? markdownText : '';
     const processedText = safeMarkdownText.replace(
-      /^(>\s*.*(?:\n>.*)*)/gm,
+      /^(> .*(?:\n> .*)*)/gm,
       (match) => {
         const content = match
           .split('\n')
-          .map((line) => line.replace(/^>\s*/, ''))
+          .map((line) => line.replace(/^> /, ''))
           .join(' ');
         return `> ${content}`;
       },
