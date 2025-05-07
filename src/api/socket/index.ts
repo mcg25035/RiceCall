@@ -57,6 +57,7 @@ import {
 import {
   SendMessageHandler,
   SendDirectMessageHandler,
+  ShakeWindowHandler,
 } from '@/api/socket/events/message/message.handler';
 import {
   RTCOfferHandler,
@@ -261,6 +262,9 @@ export default class SocketServer {
       });
       socket.on('directMessage', async (data) => {
         await new SendDirectMessageHandler(io, socket).handle(data);
+      });
+      socket.on('shakeWindow', async (data) => {
+        await new ShakeWindowHandler(io, socket).handle(data);
       });
 
       // RTC

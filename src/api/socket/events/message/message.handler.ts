@@ -14,6 +14,7 @@ import { SocketHandler } from '@/api/socket/base.handler';
 import {
   SendDirectMessageSchema,
   SendMessageSchema,
+  ShakeWindowSchema,
 } from '@/api/socket/events/message/message.schemas';
 
 // Middleware
@@ -149,6 +150,60 @@ export class SendDirectMessageHandler extends SocketHandler {
 
       this.socket.emit('error', error);
       new Logger('SendDirectMessage').error(error.message);
+    }
+  }
+}
+
+export class ShakeWindowHandler extends SocketHandler {
+  async handle(data: any) {
+    try {
+      const operatorId = this.socket.data.userId;
+
+      const { userId, targetId } = await new DataValidator(
+        ShakeWindowSchema,
+        'SHAKEWINDOW',
+      ).validate(data);
+
+      const friend = await database.get.userFriend(targetId, userId);
+
+      if (operatorId !== userId) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法搖動非自己的視窗',
+          part: 'SHAKEWINDOW',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      if (!friend) {
+        throw new StandardizedError({
+          name: 'PermissionError',
+          message: '無法搖動非好友的視窗',
+          part: 'SHAKEWINDOW',
+          tag: 'PERMISSION_DENIED',
+          statusCode: 403,
+        });
+      }
+
+      const targetSocket = SocketServer.getSocket(targetId);
+
+      if (targetSocket) {
+        targetSocket.emit('onShakeWindow', friend);
+      }
+    } catch (error: any) {
+      if (!(error instanceof StandardizedError)) {
+        error = new StandardizedError({
+          name: 'ServerError',
+          message: `搖動視窗時發生無法預期的錯誤: ${error.message}`,
+          part: 'SHAKEWINDOW',
+          tag: 'SERVER_ERROR',
+          statusCode: 500,
+        });
+      }
+
+      this.socket.emit('error', error);
+      new Logger('ShakeWindow').error(error.message);
     }
   }
 }

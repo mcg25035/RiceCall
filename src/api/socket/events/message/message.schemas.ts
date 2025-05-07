@@ -16,3 +16,10 @@ export const SendDirectMessageSchema = z
     directMessage: z.any(),
   })
   .strict();
+
+export const ShakeWindowSchema = z
+  .object({
+    userId: z.string(),
+    targetId: z.string(),
+  })
+  .strict();
