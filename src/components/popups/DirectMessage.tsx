@@ -14,6 +14,7 @@ import BadgeListViewer from '@/components/viewers/BadgeList';
 
 // Services
 import refreshService from '@/services/refresh.service';
+import ipcService from '@/services/ipc.service';
 
 // Utils
 import { createDefault } from '@/utils/createDefault';
@@ -99,18 +100,6 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
       return () => clearInterval(timer);
     };
 
-    const handleReceiveShake = (data: {
-      userId: User['userId'];
-      targetId: User['userId'];
-      targetName: User['name'];
-    }) => {
-      // check if the current conversation
-      const { userId: senderId, targetId: receiverId } = data;
-      if (senderId && receiverId && userId === receiverId) {
-        handleShakeWindow();
-      }
-    };
-
     const handleOnDirectMessage = (data: DirectMessage) => {
       if (!data) return;
       // !! THIS IS IMPORTANT !!
@@ -148,11 +137,14 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
 
     // Effects
     useEffect(() => {
+      ipcService.window.onShakeWindow(() => handleShakeWindow());
+    }, []);
+
+    useEffect(() => {
       if (!socket) return;
 
       const eventHandlers = {
         [SocketServerEvent.ON_DIRECT_MESSAGE]: handleOnDirectMessage,
-        [SocketServerEvent.ON_SHAKE_WINDOW]: handleReceiveShake,
       };
       const unsubscribe: (() => void)[] = [];
 

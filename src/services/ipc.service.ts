@@ -140,6 +140,11 @@ const ipcService = {
         window.open(url, '_blank');
       }
     },
+    onShakeWindow: (callback: () => void) => {
+      if (isElectron) {
+        ipcRenderer.on('shakeWindow', callback);
+      }
+    },
   },
 
   popup: {

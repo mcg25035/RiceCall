@@ -129,7 +129,6 @@ enum SocketServerEvent {
   // Message
   ON_MESSAGE = 'onMessage',
   ON_DIRECT_MESSAGE = 'onDirectMessage',
-  ON_SHAKE_WINDOW = 'onShakeWindow',
   // RTC
   RTC_OFFER = 'RTCOffer',
   RTC_ANSWER = 'RTCAnswer',
@@ -291,7 +290,7 @@ async function createMainWindow(): Promise<BrowserWindow | null> {
     mainWindow.loadURL('app://-');
   } else {
     mainWindow.loadURL(`${BASE_URI}`);
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
   }
 
   mainWindow.webContents.on('did-finish-load', () => {
@@ -348,7 +347,7 @@ async function createAuthWindow() {
     authWindow.loadURL('app://-/auth.html');
   } else {
     authWindow.loadURL(`${BASE_URI}/auth`);
-    authWindow.webContents.openDevTools();
+    // authWindow.webContents.openDevTools();
   }
 
   authWindow.webContents.on('did-finish-load', () => {
@@ -399,7 +398,7 @@ async function createPopup(
     popups[id].loadURL(`app://-/popup.html?type=${type}&id=${id}`);
   } else {
     popups[id].loadURL(`${BASE_URI}/popup?type=${type}&id=${id}`);
-    popups[id].webContents.openDevTools();
+    // popups[id].webContents.openDevTools();
   }
 
   return popups[id];
@@ -453,60 +452,6 @@ function connectSocket(token: string): Socket | null {
 
     Object.values(SocketServerEvent).forEach((event) => {
       socket.on(event, (...args) => {
-        // if (!userId && args[0] && args[0].userId) {
-        //   userId = args[0].userId;
-        // }
-
-        // shakeDirectMessage unique handling
-        if (event === SocketServerEvent.ON_SHAKE_WINDOW) {
-          const {
-            userId: fromUserId,
-            targetId: toUserId,
-            targetName: fromUserName,
-          } = args[0];
-
-          // check data validity
-          if (!fromUserId || !toUserId || !fromUserName) {
-            console.error('無效的抖動消息數據');
-            return;
-          }
-
-          // generate window key
-          const windowId = `directMessage_${fromUserId}`;
-
-          // check if direct message popup window exists
-          if (popups[windowId] && !popups[windowId].isDestroyed()) {
-            // is exists, set always on top to set top and cancel to avoid top-locked
-            popups[windowId].setAlwaysOnTop(true);
-            popups[windowId].setAlwaysOnTop(false);
-            popups[windowId].focus();
-          } else {
-            // not exists, create new direct message popup window
-            createPopup('directMessage', windowId, 600, 800).then((window) => {
-              if (!window) return;
-
-              window.setAlwaysOnTop(true);
-              window.setAlwaysOnTop(false);
-              window.focus();
-
-              window.webContents.send(
-                SocketServerEvent.ON_SHAKE_WINDOW,
-                ...args,
-              );
-
-              ipcMain.on('request-initial-data', (_, to) => {
-                if (to === windowId) {
-                  window.webContents.send('response-initial-data', windowId, {
-                    userId: toUserId,
-                    targetId: fromUserId,
-                    targetName: fromUserName,
-                  });
-                }
-              });
-            });
-          }
-        }
-
         console.log('socket.on', event, ...args);
         BrowserWindow.getAllWindows().forEach((window) => {
           window.webContents.send(event, ...args);
@@ -546,6 +491,48 @@ function connectSocket(token: string): Socket | null {
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('reconnect_error', error);
     });
+  });
+
+  socket.on('onShakeWindow', (data) => {
+    console.log('onShakeWindow', data);
+
+    // check data validity
+    if (!data) {
+      console.error('無效的抖動消息數據');
+      return;
+    }
+
+    // generate window key
+    const windowId = `directMessage-${data.targetId}`;
+
+    // check if direct message popup window exists
+    if (popups[windowId] && !popups[windowId].isDestroyed()) {
+      // is exists, set always on top to set top and cancel to avoid top-locked
+      popups[windowId].setAlwaysOnTop(true);
+      popups[windowId].setAlwaysOnTop(false);
+      popups[windowId].focus();
+      popups[windowId].webContents.send('shakeWindow');
+    } else {
+      // not exists, create new direct message popup window
+      createPopup('directMessage', windowId, 550, 650).then((window) => {
+        if (!window) return;
+
+        ipcMain.once('request-initial-data', async (_, to) => {
+          if (to === windowId) {
+            window.webContents.send('response-initial-data', windowId, {
+              userId: data.userId,
+              targetId: data.targetId,
+              targetName: data.name,
+            });
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            window.setAlwaysOnTop(true);
+            window.setAlwaysOnTop(false);
+            window.focus();
+            window.webContents.send('shakeWindow');
+          }
+        });
+      });
+    }
   });
 
   socket.connect();
