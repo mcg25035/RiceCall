@@ -86,14 +86,8 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
     const safeMarkdownText =
       typeof markdownText === 'string' ? markdownText : '';
     const processedText = safeMarkdownText.replace(
-      /^(> .*(?:\n> .*)*)/gm,
-      (match) => {
-        const content = match
-          .split('\n')
-          .map((line) => line.replace(/^> /, ''))
-          .join(' ');
-        return `> ${content}`;
-      },
+      /(^> .+)(\n)([^>\n])/gm,
+      '$1\n\n$3',
     );
     const withEmojis = processedText.replace(
       /\[emoji_(\d+)\]/g,
@@ -117,6 +111,10 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
         <h3 className={markdown.heading3} {...props} />
       ),
       p: ({ node, children, ...props }: any) => {
+        if (React.isValidElement(children) && children.type === 'blockquote') {
+          return children;
+        }
+
         const text = String(children);
         if (text.startsWith('> ')) {
           const quoteContent = text.replace(/^>\s*/, '');
