@@ -20,15 +20,3 @@ export const RTCCandidateSchema = z
     candidate: z.any(),
   })
   .strict();
-
-export const RTCJoinSchema = z
-  .object({
-    channelId: z.string(),
-  })
-  .strict();
-
-export const RTCLeaveSchema = z
-  .object({
-    channelId: z.string(),
-  })
-  .strict();

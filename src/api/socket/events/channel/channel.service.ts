@@ -16,10 +16,6 @@ import {
   UpdateChannelHandler,
   UpdateChannelsHandler,
 } from '@/api/socket/events/channel/channel.handler';
-import {
-  RTCJoinHandler,
-  RTCLeaveHandler,
-} from '@/api/socket/events/rtc/rtc.handler';
 
 export class ConnectChannelService {
   constructor(
@@ -37,7 +33,6 @@ export class ConnectChannelService {
   }
 
   async use() {
-    const actions: any[] = [];
     const user = await database.get.user(this.userId);
     const server = await database.get.server(this.serverId);
     const channel = await database.get.channel(this.channelId);
@@ -161,27 +156,12 @@ export class ConnectChannelService {
       await xpSystem.create(this.userId);
     }
 
-    if (user.currentChannelId) {
-      actions.push(async (io: Server, socket: Socket) => {
-        await new RTCLeaveHandler(io, socket).handle({
-          channelId: user.currentChannelId,
-        });
-      });
-    }
-
-    actions.push(async (io: Server, socket: Socket) => {
-      await new RTCJoinHandler(io, socket).handle({
-        channelId: this.channelId,
-      });
-    });
-
     return {
       userUpdate: updatedUser,
       serverMemberUpdate: { ...updatedUser, ...updatedMember },
       serverUpdate: updatedMember,
       currentChannelId: user.currentChannelId,
       currentServerId: user.currentServerId,
-      actions,
     };
   }
 }
@@ -200,7 +180,6 @@ export class DisconnectChannelService {
   }
 
   async use() {
-    const actions: any[] = [];
     const user = await database.get.user(this.userId);
     const userMember = await database.get.member(this.userId, this.serverId);
     const operatorMember = await database.get.member(
@@ -252,16 +231,9 @@ export class DisconnectChannelService {
     // Clear user xp interval
     await xpSystem.delete(this.userId);
 
-    actions.push(async (io: Server, socket: Socket) => {
-      await new RTCLeaveHandler(io, socket).handle({
-        channelId: this.channelId,
-      });
-    });
-
     return {
       userUpdate: updatedUser,
       serverMemberUpdate: updatedUser,
-      actions,
     };
   }
 }

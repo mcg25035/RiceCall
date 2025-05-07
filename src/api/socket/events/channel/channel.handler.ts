@@ -48,7 +48,6 @@ export class ConnectChannelHandler extends SocketHandler {
         serverUpdate,
         currentChannelId,
         currentServerId,
-        actions,
       } = await new ConnectChannelService(
         operatorId,
         userId,
@@ -66,11 +65,19 @@ export class ConnectChannelHandler extends SocketHandler {
           targetSocket
             .to(`channel_${currentChannelId}`)
             .emit('playSound', 'leave');
+          targetSocket.to(`channel_${currentChannelId}`).emit('RTCLeave', {
+            from: targetSocket.id,
+            userId: userId,
+          });
         }
         targetSocket.emit('userUpdate', userUpdate);
         targetSocket.emit('serverUpdate', serverUpdate);
         targetSocket.join(`channel_${channelId}`);
         targetSocket.to(`channel_${channelId}`).emit('playSound', 'join');
+        targetSocket.to(`channel_${channelId}`).emit('RTCJoin', {
+          from: targetSocket.id,
+          userId: userId,
+        });
       }
 
       if (currentServerId) {
@@ -86,8 +93,6 @@ export class ConnectChannelHandler extends SocketHandler {
       this.io
         .to(`server_${serverId}`)
         .emit('serverMemberUpdate', userId, serverId, serverMemberUpdate);
-
-      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -115,7 +120,7 @@ export class DisconnectChannelHandler extends SocketHandler {
         'DISCONNECTCHANNEL',
       ).validate(data);
 
-      const { userUpdate, serverMemberUpdate, actions } =
+      const { userUpdate, serverMemberUpdate } =
         await new DisconnectChannelService(
           operatorId,
           userId,
@@ -130,13 +135,15 @@ export class DisconnectChannelHandler extends SocketHandler {
         targetSocket.emit('userUpdate', userUpdate);
         targetSocket.leave(`channel_${channelId}`);
         targetSocket.to(`channel_${channelId}`).emit('playSound', 'leave');
+        targetSocket.to(`channel_${channelId}`).emit('RTCLeave', {
+          from: targetSocket.id,
+          userId: userId,
+        });
       }
 
       this.io
         .to(`server_${serverId}`)
         .emit('serverMemberUpdate', userId, serverId, serverMemberUpdate);
-
-      await Promise.all(actions.map((action) => action(this.io, this.socket)));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
