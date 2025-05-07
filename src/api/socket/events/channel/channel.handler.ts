@@ -248,9 +248,9 @@ export class UpdateChannelsHandler extends SocketHandler {
       await Promise.all(
         channels.map(async (channel: any) => {
           await new UpdateChannelHandler(this.io, this.socket).handle({
-            channelId: channel.channelId,
             serverId,
-            channel,
+            channelId: channel.channelId,
+            channel: channel.channel,
           });
         }),
       );
