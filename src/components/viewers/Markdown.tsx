@@ -7,13 +7,13 @@ import { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import DOMPurify from 'dompurify';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import hljs from 'highlight.js';
 
 // Components
 import emojis from '@/components/emojis';
 
 // CSS
+import 'highlight.js/styles/github-dark.css';
 import markdown from '@/styles/viewers/markdown.module.css';
 
 interface PurifyConfig {
@@ -71,16 +71,6 @@ interface MarkdownProps {
   forbidGuestUrl?: boolean;
 }
 
-const customStyle = {
-  keyword: { color: '#ff7b72' }, // 關鍵字
-  string: { color: '#79c0ff' }, // 字串
-  variable: { color: '#e6edf3' }, // 識別字、變數名稱、識別符號
-  function: { color: '#d2a8ff' }, // 函數名稱
-  operator: { color: '#e6edf3' }, // 運算子
-  punctuation: { color: '#e6edf3' }, // 標點符號
-  comment: { color: '#8b949e' }, // 註釋
-};
-
 const Markdown: React.FC<MarkdownProps> = React.memo(
   ({ markdownText, isGuest = false, forbidGuestUrl = false }) => {
     const safeMarkdownText =
@@ -104,30 +94,7 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
       h1: ({ node, ...props }: any) => <h1 {...props} />,
       h2: ({ node, ...props }: any) => <h2 {...props} />,
       h3: ({ node, ...props }: any) => <h3 {...props} />,
-      p: ({ node, ...props }: any) => {
-        // const text = String(children);
-
-        // if (text.startsWith('> ')) {
-        //   const quoteContent = text.replace(/^>\s*/, '');
-        //   return (
-        //     <blockquote className={markdown.blockquote}>
-        //       <p>{quoteContent}</p>
-        //     </blockquote>
-        //   );
-        // }
-
-        return <p {...props} />;
-
-        // if (React.isValidElement(children) && children.type === 'blockquote') {
-        //   return children;
-        // }
-
-        // return (
-        //   <p className={markdown.paragraph} {...props}>
-        //     {children}
-        //   </p>
-        // );
-      },
+      p: ({ node, ...props }: any) => <p {...props} />,
       ul: ({ node, ...props }: any) => <ul {...props} />,
       ol: ({ node, ...props }: any) => <ol {...props} />,
       li: ({ node, ...props }: any) => <li {...props} />,
@@ -148,19 +115,39 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
         if (isGuest && forbidGuestUrl) return <span {...props} />;
         return <img src={src} alt={alt} {...props} />;
       },
-      code: ({ node, ...props }: any) => <code {...props} />,
-      pre: ({ node, children, ...props }: any) => {
-        const text = String(children);
-        const codeString = text.replace(/\n$/, '');
+      code: ({ node, className, children, inline, ...props }: any) => {
+        const language = className?.replace('language-', '') ?? '';
+        console.log(className);
+        const code = String(children).trim();
 
         const handleCopy = () => {
-          navigator.clipboard.writeText(codeString);
+          navigator.clipboard.writeText(code.replace(/\n$/, ''));
           setIsCopied(true);
           setTimeout(() => setIsCopied(false), 2000);
         };
 
+        if (!inline && language && hljs.getLanguage(language)) {
+          const highlighted = hljs.highlight(code, { language }).value;
+          return (
+            <>
+              <button
+                className={markdown.copyButton}
+                onClick={handleCopy}
+                aria-label="複製程式碼"
+              >
+                {isCopied ? '已複製！' : '複製'}
+              </button>
+              <code
+                dangerouslySetInnerHTML={{ __html: highlighted }}
+                className={`hljs language-${language} ${markdown.codeWrapper} `}
+                {...props}
+              />
+            </>
+          );
+        }
+
         return (
-          <pre className={markdown.preBlock} {...props}>
+          <>
             <button
               className={markdown.copyButton}
               onClick={handleCopy}
@@ -168,10 +155,13 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
             >
               {isCopied ? '已複製！' : '複製'}
             </button>
-            {children}
-          </pre>
+            <code className={className} {...props}>
+              {children}
+            </code>
+          </>
         );
       },
+      pre: ({ node, ...props }: any) => <pre {...props} />,
     };
     return (
       <div className={markdown.markdownContent}>

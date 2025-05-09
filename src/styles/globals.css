@@ -144,3 +144,12 @@ button,
 a {
   outline: none;
 }
+
+.hljs span {
+  font-size: 0.875rem;
+  font-family: monospace;
+}
+
+.hljs {
+  line-height: 1.25rem;
+}

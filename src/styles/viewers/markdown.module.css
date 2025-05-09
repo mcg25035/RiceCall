@@ -78,7 +78,7 @@
 .markdownContent p code {
   margin-block: 0;
   margin-inline: 0;
-  padding: 0.25rem;
+  padding: 0.125rem 0.25rem;
   border-radius: 4px;
   color: #f1f5f9;
   background: #222;
@@ -87,12 +87,6 @@
 /* block code */
 .markdownContent pre {
   position: relative;
-  margin-block: 0.5rem;
-  margin-inline: 0;
-  padding: 0.5rem;
-  border-radius: 4px;
-  color: #f1f5f9;
-  background: #222;
 }
 
 .markdownContent hr {
@@ -169,6 +163,16 @@
 .tableWrapper::-webkit-scrollbar-thumb {
   background-color: #cbd5e1;
   border-radius: 4px;
+}
+
+.markdownContent .codeWrapper {
+  margin-block: 0.5rem;
+  margin-inline: 0;
+  padding: 0.5rem;
+  border-radius: 4px;
+  color: #f1f5f9;
+  background: #222;
+  font-family: monospace !important;
 }
 
 .settingMarkdownContainer {
