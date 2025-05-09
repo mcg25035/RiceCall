@@ -799,7 +799,7 @@ export default class Database {
           ORDER BY user_badges.\`order\`, user_badges.created_at DESC`,
           [userId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data) => convertToCamelCase(data));
       } catch (error: any) {
         if (!(error instanceof StandardizedError)) {
@@ -826,7 +826,7 @@ export default class Database {
           ORDER BY friend_groups.\`order\`, friend_groups.created_at DESC`,
           [userId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data) => convertToCamelCase(data));
       } catch (error: any) {
         if (!(error instanceof StandardizedError)) {
@@ -903,7 +903,7 @@ export default class Database {
           ORDER BY user_servers.timestamp DESC`,
           [userId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data: any) => {
           data.created_at = data.member_created_at;
           delete data.server_created_at;
@@ -1001,7 +1001,7 @@ export default class Database {
           ORDER BY f.created_at DESC`,
           [userId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data: any) => {
           data.created_at = data.friend_created_at;
           delete data.friend_created_at;
@@ -1079,7 +1079,7 @@ export default class Database {
           ORDER BY friend_applications.created_at DESC`,
           [userId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data: any) => {
           data.created_at = data.friend_application_created_at;
           delete data.friend_application_created_at;
@@ -1111,7 +1111,7 @@ export default class Database {
           ORDER BY servers.created_at DESC`,
           [`%${querys}%`, `${querys}`],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data) => convertToCamelCase(data));
       } catch (error: any) {
         if (!(error instanceof StandardizedError)) {
@@ -1164,7 +1164,7 @@ export default class Database {
           ORDER BY channels.\`order\`, channels.created_at DESC`,
           [serverId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data) => convertToCamelCase(data));
       } catch (error: any) {
         if (!(error instanceof StandardizedError)) {
@@ -1249,7 +1249,7 @@ export default class Database {
           ORDER BY m.created_at DESC`,
           [serverId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data: any) => {
           data.created_at = data.member_created_at;
           delete data.member_created_at;
@@ -1323,7 +1323,7 @@ export default class Database {
           ORDER BY member_applications.created_at DESC`,
           [serverId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data: any) => {
           data.created_at = data.member_application_created_at;
           delete data.member_application_created_at;
@@ -1409,7 +1409,7 @@ export default class Database {
           ORDER BY channels.\`order\`, channels.created_at DESC`,
           [channelId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data) => convertToCamelCase(data));
       } catch (error: any) {
         if (!(error instanceof StandardizedError)) {
@@ -1436,7 +1436,7 @@ export default class Database {
           ORDER BY users.created_at DESC`,
           [channelId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data: any) =>
           convertToCamelCase({ ...data, badges: [] }),
         );
@@ -1493,7 +1493,7 @@ export default class Database {
           ORDER BY friends.created_at DESC`,
           [friendGroupId],
         );
-        if (!datas || datas.length === 0) return null;
+        if (!datas) return [];
         return datas.map((data) => convertToCamelCase(data));
       } catch (error: any) {
         if (!(error instanceof StandardizedError)) {
