@@ -1485,10 +1485,12 @@ export default class Database {
         if (!friendGroupId) return null;
         const datas = await this.query(
           `SELECT 
-            friend_group_friends.*
-          FROM friend_group_friends 
-          WHERE friend_group_friends.friend_group_id = ?
-          ORDER BY friend_group_friends.created_at DESC`,
+            friends.*
+          FROM friend_groups
+          INNER JOIN friends
+          ON friend_groups.friend_group_id = friends.friend_group_id
+          WHERE friend_groups.friend_group_id = ?
+          ORDER BY friends.created_at DESC`,
           [friendGroupId],
         );
         if (!datas || datas.length === 0) return null;
