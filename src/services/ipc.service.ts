@@ -32,13 +32,7 @@ const ipcService = {
     }
   },
   onSocketEvent: (
-    event:
-      | SocketServerEvent
-      | 'connect'
-      | 'connect_error'
-      | 'reconnect'
-      | 'reconnect_error'
-      | 'disconnect',
+    event: SocketServerEvent | 'connect' | 'reconnect' | 'disconnect',
     callback: (...args: any[]) => void,
   ) => {
     if (isElectron) {
@@ -46,6 +40,23 @@ const ipcService = {
     } else {
       console.warn('IPC not available - not in Electron environment');
     }
+  },
+
+  // DeepLink methods
+  deepLink: {
+    onDeepLink: (callback: (serverId: string) => void) => {
+      if (isElectron) {
+        ipcRenderer.on('deepLink', (_: any, serverId: string) =>
+          callback(serverId),
+        );
+      }
+    },
+
+    offDeepLink: () => {
+      if (isElectron) {
+        ipcRenderer.removeAllListeners('deepLink');
+      }
+    },
   },
 
   // Remove specific listener
