@@ -150,7 +150,9 @@ export class ConnectChannelHandler extends SocketHandler {
       }
 
       // Setup user xp interval
-      await xpSystem.create(userId);
+      if (!user.currentChannelId) {
+        await xpSystem.create(userId);
+      }
 
       // Update user
       const updatedUser = {
