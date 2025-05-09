@@ -1,17 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
     "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "outDir": "./dist",
-    "rootDir": ".",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,
-    "skipLibCheck": true,
-    "noEmit": false,
-    "sourceMap": true
+    "sourceMap": true,
+    "outDir": "build"
   },
   "include": ["main.ts"],
   "exclude": ["node_modules"]

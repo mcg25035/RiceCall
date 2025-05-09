@@ -5,7 +5,7 @@
   "directories": {
     "output": "dist"
   },
-  "files": ["dist/**/*", "package.json", "out/**/*"],
+  "files": ["build/**/*", "out/**/*", "resources/**/*", "package.json"],
   "asar": true,
   "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
   "extraFiles": [
@@ -14,15 +14,15 @@
       "to": ".env"
     }
   ],
-  "win": {
-    "icon": "./resources/icon.ico",
-    "target": ["nsis", "portable"]
-  },
   "nsis": {
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
     "perMachine": true,
     "artifactName": "${productName}-${version}-${os}-${arch}-Setup.${ext}"
+  },
+  "win": {
+    "icon": "./resources/icon.ico",
+    "target": ["nsis", "portable"]
   },
   "mac": {
     "icon": "./resources/icon.icns",

@@ -220,16 +220,17 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
       ),
     };
     return (
-      <ReactMarkdown
-        className={markdown.markdownContent}
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-        components={components}
-        skipHtml={false}
-        unwrapDisallowed={false}
-      >
-        {sanitized}
-      </ReactMarkdown>
+      <div className={markdown.markdownContent}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw]}
+          components={components}
+          skipHtml={false}
+          unwrapDisallowed={false}
+        >
+          {sanitized}
+        </ReactMarkdown>
+      </div>
     );
   },
 );

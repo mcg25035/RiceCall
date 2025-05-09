@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import net from 'net';
-import DiscordRPC from 'discord-rpc';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { io, Socket } from 'socket.io-client';
+import DiscordRPC from 'discord-rpc';
+import dotenv from 'dotenv';
 import serve from 'electron-serve';
 import Store from 'electron-store';
-import { io, Socket } from 'socket.io-client';
 import ElectronUpdater from 'electron-updater';
 import {
   app,
@@ -17,11 +19,11 @@ import {
   nativeImage,
 } from 'electron';
 
+dotenv.config();
+
 let tray: Tray | null = null;
 let isLogin: boolean = false;
-let userId: string | null = null;
-
-const __dirname = process.cwd();
+const userId: string | null = null;
 
 // AutoUpdater
 const { autoUpdater } = ElectronUpdater;
@@ -147,7 +149,24 @@ enum SocketServerEvent {
 
 // Constants
 const DEV = process.argv.includes('--dev');
-const BASE_URI = DEV ? 'http://localhost:3000' : '';
+const BASE_URI = DEV ? 'http://localhost:3000' : 'app://-';
+const FILE_PATH = fileURLToPath(import.meta.url);
+const DIR_PATH = path.dirname(FILE_PATH);
+const ROOT_PATH = DEV ? DIR_PATH : path.join(DIR_PATH, '../');
+const APP_ICON =
+  process.platform === 'win32'
+    ? path.join(ROOT_PATH, 'resources', 'icon.ico')
+    : path.join(ROOT_PATH, 'resources', 'icon.png');
+const APP_TRAY_ICON = {
+  gray:
+    process.platform === 'win32'
+      ? path.join(ROOT_PATH, 'resources', 'tray_gray.ico')
+      : path.join(ROOT_PATH, 'resources', 'tray_gray.png'),
+  normal:
+    process.platform === 'win32'
+      ? path.join(ROOT_PATH, 'resources', 'tray.ico')
+      : path.join(ROOT_PATH, 'resources', 'tray.png'),
+};
 
 // Windows
 let mainWindow: BrowserWindow;
@@ -180,9 +199,7 @@ const defaultPrecence = {
   ],
 };
 
-if (app.isPackaged || !DEV) {
-  serve({ directory: path.join(__dirname, './out') });
-}
+const appServe = serve({ directory: path.join(ROOT_PATH, 'out') });
 
 // Functions
 function waitForPort(port: number) {
@@ -207,7 +224,7 @@ function waitForPort(port: number) {
         timeout -= 1000;
       });
 
-      client.connect({ port: port, host: '127.0.0.1' });
+      client.connect({ port: port, host: 'localhost' });
     }
     tryConnect();
   });
@@ -224,6 +241,15 @@ function focusWindow() {
     if (window.isMinimized()) window.restore();
     window.focus();
   }
+}
+
+function closePopups() {
+  Object.values(popups).forEach((popup) => {
+    if (popup && !popup.isDestroyed()) {
+      popup.close();
+    }
+  });
+  popups = {};
 }
 
 // Store Functions
@@ -256,13 +282,10 @@ async function createMainWindow(): Promise<BrowserWindow | null> {
   }
 
   if (DEV) {
-    try {
-      await waitForPort(3000);
-    } catch (err) {
-      console.error('Failed to connect to Next.js server:', err);
-      app.quit();
-      return null;
-    }
+    waitForPort(3000).catch((err) => {
+      console.error('Cannot connect to Next.js server:', err);
+      app.exit();
+    });
   }
 
   mainWindow = new BrowserWindow({
@@ -274,11 +297,7 @@ async function createMainWindow(): Promise<BrowserWindow | null> {
     transparent: true,
     resizable: true,
     hasShadow: true,
-    icon: path.join(
-      __dirname,
-      'resources',
-      process.platform === 'win32' ? 'icon.ico' : 'icon.png',
-    ),
+    icon: APP_ICON,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -287,11 +306,18 @@ async function createMainWindow(): Promise<BrowserWindow | null> {
   });
 
   if (app.isPackaged || !DEV) {
-    mainWindow.loadURL('app://-');
+    appServe(mainWindow).then(() => {
+      mainWindow.loadURL(`${BASE_URI}`);
+    });
   } else {
     mainWindow.loadURL(`${BASE_URI}`);
     // mainWindow.webContents.openDevTools();
   }
+
+  mainWindow.on('close', (e) => {
+    e.preventDefault();
+    mainWindow.hide();
+  });
 
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.webContents.send(
@@ -314,13 +340,10 @@ async function createAuthWindow() {
   }
 
   if (DEV) {
-    try {
-      await waitForPort(3000);
-    } catch (err) {
-      console.error('Failed to connect to Next.js server:', err);
+    waitForPort(3000).catch((err) => {
+      console.error('Cannot connect to Next.js server:', err);
       app.quit();
-      return;
-    }
+    });
   }
 
   authWindow = new BrowserWindow({
@@ -331,11 +354,7 @@ async function createAuthWindow() {
     resizable: false,
     hasShadow: true,
     fullscreen: false,
-    icon: path.join(
-      __dirname,
-      'resources',
-      process.platform === 'win32' ? 'icon.ico' : 'icon.png',
-    ),
+    icon: APP_ICON,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -344,16 +363,17 @@ async function createAuthWindow() {
   });
 
   if (app.isPackaged || !DEV) {
-    authWindow.loadURL('app://-/auth.html');
+    appServe(authWindow).then(() => {
+      authWindow.loadURL(`${BASE_URI}/auth.html`);
+    });
   } else {
     authWindow.loadURL(`${BASE_URI}/auth`);
     // authWindow.webContents.openDevTools();
   }
 
-  authWindow.webContents.on('did-finish-load', () => {
-    authWindow.webContents.send(
-      authWindow.isMaximized() ? 'window-maximized' : 'window-unmaximized',
-    );
+  authWindow.on('close', (e) => {
+    e.preventDefault();
+    app.exit();
   });
 
   return authWindow;
@@ -370,13 +390,10 @@ async function createPopup(
   }
 
   if (DEV) {
-    try {
-      await waitForPort(3000);
-    } catch (err) {
-      console.error('Failed to connect to Next.js server:', err);
-      app.quit();
-      return null;
-    }
+    waitForPort(3000).catch((err) => {
+      console.error('Cannot connect to Next.js server:', err);
+      app.exit();
+    });
   }
 
   popups[id] = new BrowserWindow({
@@ -395,22 +412,15 @@ async function createPopup(
   });
 
   if (app.isPackaged || !DEV) {
-    popups[id].loadURL(`app://-/popup.html?type=${type}&id=${id}`);
+    appServe(popups[id]).then(() => {
+      popups[id].loadURL(`${BASE_URI}/popup.html?type=${type}&id=${id}`);
+    });
   } else {
     popups[id].loadURL(`${BASE_URI}/popup?type=${type}&id=${id}`);
     // popups[id].webContents.openDevTools();
   }
 
   return popups[id];
-}
-
-function closePopups() {
-  Object.values(popups).forEach((popup) => {
-    if (popup && !popup.isDestroyed()) {
-      popup.close();
-    }
-  });
-  popups = {};
 }
 
 // Socket Functions
@@ -494,26 +504,16 @@ function connectSocket(token: string): Socket | null {
   });
 
   socket.on('onShakeWindow', (data) => {
-    console.log('onShakeWindow', data);
+    if (!data) return;
 
-    // check data validity
-    if (!data) {
-      console.error('無效的抖動消息數據');
-      return;
-    }
-
-    // generate window key
     const windowId = `directMessage-${data.targetId}`;
 
-    // check if direct message popup window exists
     if (popups[windowId] && !popups[windowId].isDestroyed()) {
-      // is exists, set always on top to set top and cancel to avoid top-locked
       popups[windowId].setAlwaysOnTop(true);
       popups[windowId].setAlwaysOnTop(false);
       popups[windowId].focus();
       popups[windowId].webContents.send('shakeWindow');
     } else {
-      // not exists, create new direct message popup window
       createPopup('directMessage', windowId, 550, 650).then((window) => {
         if (!window) return;
 
@@ -557,6 +557,13 @@ function disconnectSocket(): Socket | null {
 }
 
 // Auto Updater
+function checkUpdate() {
+  if (DEV) return;
+  autoUpdater.checkForUpdates().catch((error) => {
+    console.error('Cannot check for updates:', error);
+  });
+}
+
 function configureAutoUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
@@ -564,7 +571,7 @@ function configureAutoUpdater() {
 
   if (DEV) {
     autoUpdater.forceDevUpdateConfig = true;
-    autoUpdater.updateConfigPath = path.join(__dirname, 'dev-app-update.yml');
+    autoUpdater.updateConfigPath = path.join(ROOT_PATH, 'dev-app-update.yml');
   }
 
   autoUpdater.on('error', (error: any) => {
@@ -613,76 +620,55 @@ function configureAutoUpdater() {
         }
       });
   });
-}
 
-const configureUpdateChecker = async () => {
+  // Check update every hour
   setInterval(checkUpdate, 60 * 60 * 1000);
-};
-
-const checkUpdate = async () => {
-  try {
-    if (DEV) return;
-    await autoUpdater.checkForUpdates();
-  } catch (error) {
-    console.error('定期檢查更新失敗:', error);
-  }
-};
+  checkUpdate();
+}
 
 // Discord RPC Functions
 async function setActivity(presence: DiscordRPC.Presence) {
   if (!rpc) return;
-  try {
-    await rpc.setActivity(presence);
-  } catch (error) {
-    await rpc.setActivity(defaultPrecence);
-
-    console.error('設置 Discord RPC 時出錯:', error);
-  }
+  await rpc.setActivity(presence).catch((error) => {
+    console.error('Cannot set activity:', error);
+  });
 }
 
 async function configureDiscordRPC() {
-  try {
-    rpc = new DiscordRPC.Client({ transport: 'ipc' });
+  rpc = new DiscordRPC.Client({ transport: 'ipc' });
 
-    await rpc.login({ clientId: CLIENT_ID }).catch(() => {
-      console.warn('Discord RPC 登錄失敗, 將不會顯示 Discord 狀態');
-      rpc = null;
-    });
-
-    if (!rpc) return;
-
-    rpc.on('ready', () => {
-      setActivity(defaultPrecence);
-    });
-  } catch (error) {
-    rpc = null;
-
-    console.error('Discord RPC 初始化失敗:', error);
-  }
-}
-
-// Tray Icon
-function trayIcon(isGray = true) {
-  if (tray) tray.destroy();
-
-  const iconPath = isGray ? 'resources/tray_gray.ico' : 'resources/tray.ico';
-
-  tray = new Tray(nativeImage.createFromPath(path.join(__dirname, iconPath)));
-
-  tray.on('click', () => {
-    if (mainWindow && authWindow.isVisible()) {
-      authWindow.hide();
-    } else if (mainWindow && mainWindow.isVisible()) {
-      mainWindow.hide();
-    } else {
-      (authWindow || mainWindow)?.show();
-    }
+  rpc = await rpc.login({ clientId: CLIENT_ID }).catch(() => {
+    console.warn('Cannot login to Discord RPC, will not show Discord status');
+    return null;
   });
 
+  if (!rpc) return;
+
+  rpc.on('ready', () => {
+    setActivity(defaultPrecence);
+  });
+}
+
+// Tray Icon Functions
+function setTrayIcon(isLogin: boolean) {
+  if (!tray) return;
+  const trayIconPath = isLogin ? APP_TRAY_ICON.normal : APP_TRAY_ICON.gray;
   const contextMenu = Menu.buildFromTemplate([
-    { label: '打開主視窗', type: 'normal', click: () => app.focus() },
+    {
+      id: 'open-main-window',
+      label: '打開主視窗',
+      type: 'normal',
+      click: () => {
+        if (isLogin) {
+          mainWindow.show();
+        } else {
+          authWindow.show();
+        }
+      },
+    },
     { type: 'separator' },
     {
+      id: 'logout',
       label: '登出',
       type: 'normal',
       enabled: isLogin,
@@ -691,29 +677,53 @@ function trayIcon(isGray = true) {
         ipcMain.emit('logout');
       },
     },
-    { label: '退出', type: 'normal', click: () => app.quit() },
+    {
+      id: 'exit',
+      label: '退出',
+      type: 'normal',
+      click: () => app.exit(),
+    },
   ]);
 
-  tray.setToolTip(`RiceCall v${app.getVersion()}`);
+  tray.setImage(nativeImage.createFromPath(trayIconPath));
   tray.setContextMenu(contextMenu);
 }
 
+function configureTray() {
+  if (tray) tray.destroy();
+
+  const trayIconPath = APP_TRAY_ICON.gray;
+
+  tray = new Tray(nativeImage.createFromPath(trayIconPath));
+
+  tray.on('click', () => {
+    if (isLogin) {
+      mainWindow.show();
+    } else {
+      authWindow.show();
+    }
+  });
+
+  tray.setToolTip(`RiceCall v${app.getVersion()}`);
+
+  setTrayIcon(isLogin);
+}
+
 app.on('ready', async () => {
-  trayIcon(true);
+  configureAutoUpdater();
+  configureDiscordRPC();
+  configureTray();
+
   await createAuthWindow();
   await createMainWindow();
 
   mainWindow.hide();
   authWindow.show();
 
-  configureAutoUpdater();
-  configureUpdateChecker();
-  configureDiscordRPC();
-
   app.on('before-quit', () => {
     if (rpc) {
       rpc.destroy().catch((error) => {
-        console.error('Discord RPC 銷毀失敗:', error);
+        console.error('Cannot destroy Discord RPC:', error);
       });
     }
   });
@@ -728,13 +738,13 @@ app.on('ready', async () => {
     authWindow.hide();
     socketInstance = connectSocket(token);
     isLogin = true;
-    trayIcon(false);
+    setTrayIcon(isLogin);
   });
 
   ipcMain.on('logout', () => {
     if (rpc) {
       rpc.clearActivity().catch((error) => {
-        console.error('清除 Discord 狀態失敗:', error);
+        console.error('Cannot clear activity:', error);
       });
     }
     closePopups();
@@ -742,7 +752,7 @@ app.on('ready', async () => {
     authWindow.show();
     socketInstance = disconnectSocket();
     isLogin = false;
-    trayIcon(true);
+    setTrayIcon(isLogin);
   });
 
   ipcMain.on('get-socket-status', () => {
@@ -770,7 +780,6 @@ app.on('ready', async () => {
   });
 
   ipcMain.on('popup-submit', (_, to) => {
-    console.log('popup-submit', to);
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('popup-submit', to);
     });
@@ -780,6 +789,7 @@ app.on('ready', async () => {
   ipcMain.on('window-control', (event, command) => {
     const window = BrowserWindow.fromWebContents(event.sender);
     if (!window) return;
+    window.webContents.send(command);
     switch (command) {
       case 'minimize':
         window.minimize();
@@ -798,7 +808,6 @@ app.on('ready', async () => {
         window.close();
         break;
     }
-    window.webContents.send(command);
   });
 
   // Discord RPC handlers
@@ -877,15 +886,12 @@ app.whenReady().then(() => {
 if (!app.requestSingleInstanceLock()) {
   const hasDeepLink = process.argv.find((arg) => arg.startsWith('ricecall://'));
   if (hasDeepLink) {
-    // 如果是 deeplink 啟動，則退出新實例
-    console.log('防止多開');
     app.quit();
   }
 } else {
   app.on('second-instance', (event, argv) => {
     const url = argv.find((arg) => arg.startsWith('ricecall://'));
     if (url) {
-      console.log('接收到 deeplink (Windows second-instance):', url);
       handleDeepLink(url);
     } else {
       focusWindow();
@@ -895,7 +901,6 @@ if (!app.requestSingleInstanceLock()) {
 
 app.on('open-url', (event, url) => {
   event.preventDefault();
-  console.log('接收到 deeplink (macOS open-url):', url);
   handleDeepLink(url);
 });
 

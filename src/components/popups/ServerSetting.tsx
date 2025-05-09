@@ -1,5 +1,4 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // CSS
 import setting from '@/styles/popups/setting.module.css';
@@ -230,15 +229,6 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     ) => {
       if (!socket) return;
       socket.send.deleteMemberApplication({ userId, serverId });
-    };
-
-    const handleCreateMember = (
-      member: Partial<Member>,
-      userId: User['userId'],
-      serverId: Server['serverId'],
-    ) => {
-      if (!socket) return;
-      socket.send.createMember({ member, userId, serverId });
     };
 
     const handleUpdateMember = (
@@ -652,12 +642,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                             }
                           >
                             {field.name}
-                            {sortField === field.field &&
+                            {/* {sortField === field.field &&
                               (sortState === 1 ? (
                                 <ChevronUp size={16} />
                               ) : (
                                 <ChevronDown size={16} />
-                              ))}
+                              ))} */}
                           </th>
                         ))}
                       </tr>
@@ -981,12 +971,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                             }
                           >
                             {field.name}
-                            {sortField === field.field &&
+                            {/* {sortField === field.field &&
                               (sortState === 1 ? (
                                 <ChevronUp size={16} />
                               ) : (
                                 <ChevronDown size={16} />
-                              ))}
+                              ))} */}
                           </th>
                         ))}
                       </tr>
@@ -1029,7 +1019,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                         applicationUserId,
                                         serverId,
                                       );
-                                      handleCreateMember(
+                                      handleUpdateMember(
                                         { permissionLevel: 2 },
                                         applicationUserId,
                                         serverId,
@@ -1109,12 +1099,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                             }
                           >
                             {field.name}
-                            {sortField === field.field &&
+                            {/* {sortField === field.field &&
                               (sortState === 1 ? (
                                 <ChevronUp size={16} />
                               ) : (
                                 <ChevronDown size={16} />
-                              ))}
+                              ))} */}
                           </th>
                         ))}
                       </tr>

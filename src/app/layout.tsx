@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from 'next/font/google';
 
 // .css
 import '@/styles/globals.css';
-import '@radix-ui/themes/styles.css';
 
 // providers
 import Providers from './provider';
