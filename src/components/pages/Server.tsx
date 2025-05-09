@@ -39,7 +39,7 @@ interface ServerPageProps {
   serverChannels: Channel[];
   friends: UserFriend[];
   currentChannel: Channel;
-  channelMessages: Record<Channel['channelId'], ChannelMessage[]>;
+  channelMessages: ChannelMessage[];
   display: boolean;
 }
 
@@ -291,7 +291,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
               onMouseUp={() => setIsResizingAnnouncementArea(false)}
             />
             <div className={styles['messageArea']}>
-              <MessageViewer messages={channelMessages[channelId] || []} />
+              <MessageViewer messages={channelMessages} />
             </div>
             <div className={styles['inputArea']}>
               <MessageInputBox

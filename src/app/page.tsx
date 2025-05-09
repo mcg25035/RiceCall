@@ -339,9 +339,7 @@ const RootPageComponent = () => {
   const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
   const [serverChannels, setServerChannels] = useState<Channel[]>([]);
   const [channel, setChannel] = useState<Channel>(createDefault.channel());
-  const [channelMessages, setChannelMessages] = useState<
-    Record<Channel['channelId'], ChannelMessage[]>
-  >({});
+  const [channelMessages, setChannelMessages] = useState<ChannelMessage[]>([]);
 
   // Variables
   const { userId } = user;
@@ -487,13 +485,7 @@ const RootPageComponent = () => {
   };
 
   const handleOnMessages = (...channelMessages: ChannelMessage[]): void => {
-    setChannelMessages((prev) => ({
-      ...prev,
-      [channelMessages[0].channelId]: [
-        ...(prev[channelMessages[0].channelId] || []),
-        ...channelMessages,
-      ],
-    }));
+    setChannelMessages((prev) => [...prev, ...channelMessages]);
   };
 
   const handlePlaySound = (sound: string) => {
