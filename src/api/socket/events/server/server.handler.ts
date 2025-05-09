@@ -228,6 +228,16 @@ export class DisconnectServerHandler extends SocketHandler {
         targetSocket.leave(`server_${serverId}`);
         targetSocket.emit('serverChannelsUpdate', []);
         targetSocket.emit('serverMembersUpdate', []);
+        if (operatorId !== userId) {
+          targetSocket.emit('openPopup', {
+            type: 'dialogAlert',
+            id: 'kick',
+            initialData: {
+              title: '你已被踢出群組',
+              submitTo: 'kick',
+            },
+          });
+        }
       }
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
