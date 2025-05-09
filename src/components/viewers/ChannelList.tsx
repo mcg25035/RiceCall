@@ -582,7 +582,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
                 show: canMoveToChannel,
                 onClick: () => {
                   for (const userId of channelUserIds) {
-                    handleJoinChannel(userId, serverId, channelId);
+                    handleJoinChannel(userId, serverId, currentChannelId);
                   }
                 },
               },
