@@ -628,16 +628,14 @@ export class DeleteChannelHandler extends SocketHandler {
       }
 
       if (channelChildren) {
-        await new UpdateChannelsHandler(this.io, this.socket).handle({
-          serverId: serverId,
-          channels: channelChildren.map((child, index) => ({
-            channel: {
+        await Promise.all(
+          channelChildren.map(async (child, index) => {
+            await new DeleteChannelHandler(this.io, this.socket).handle({
+              serverId: serverId,
               channelId: child.channelId,
-              categoryId: null,
-              order: (categoryChildren?.length || 0) + 1 + index, // 1 is for lobby (-1 ~ serverChannels.length - 1)
-            },
-          })),
-        });
+            });
+          }),
+        );
       }
 
       if (channelUsers) {
