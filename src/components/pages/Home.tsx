@@ -152,12 +152,11 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     };
 
     const handleServerSearch = (servers: UserServer[]) => {
-      if (!servers.length) {
         setExactMatch(null);
         setPersonalResults([]);
         setRelatedResults([]);
-        return;
-      }
+
+      if (!servers.length) return;
 
       const sortedServers = servers.sort((a, b) => {
         const aHasId = a.displayId.toString().includes(searchQuery);
@@ -173,10 +172,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       setExactMatch(exact || null);
 
       const personal = sortedServers.filter((server) =>
-        servers.some(
-          (s) =>
-            s.recent || s.favorite || s.owned || s.serverId === server.serverId,
-        ),
+        servers.map((s) => s.serverId).includes(server.serverId),
       );
       setPersonalResults(personal);
 
