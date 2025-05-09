@@ -74,6 +74,13 @@ export class ConnectServerHandler extends SocketHandler {
       const server = await database.get.server(serverId);
       const userMember = await database.get.member(userId, serverId);
 
+      // Create new membership if there isn't one
+      if (!userMember) {
+        await database.set.member(userId, serverId, {
+          permissionLevel: 1,
+        });
+      }
+
       if (operatorId !== userId) {
         throw new StandardizedError({
           name: 'PermissionError',
@@ -105,13 +112,6 @@ export class ConnectServerHandler extends SocketHandler {
             },
           });
         }
-      }
-
-      // Create new membership if there isn't one
-      if (!userMember) {
-        await database.set.member(userId, serverId, {
-          permissionLevel: 1,
-        });
       }
 
       // Update user-server
