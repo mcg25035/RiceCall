@@ -102,6 +102,7 @@ export class ConnectServerHandler extends SocketHandler {
               userId: userId,
             },
           });
+          return;
         }
         if (userMember && userMember.isBlocked) {
           this.socket.emit('openPopup', {
@@ -111,6 +112,7 @@ export class ConnectServerHandler extends SocketHandler {
               title: '你已被加入黑名單，無法加入群組',
             },
           });
+          return;
         }
       }
 
