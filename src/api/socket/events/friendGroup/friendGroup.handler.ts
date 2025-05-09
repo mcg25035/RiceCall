@@ -8,6 +8,7 @@ import Logger from '@/utils/logger';
 
 // Handler
 import { SocketHandler } from '@/api/socket/base.handler';
+import { UpdateFriendHandler } from '@/api/socket/events/friend/friend.handler';
 
 // Schemas
 import {
@@ -126,6 +127,10 @@ export class DeleteFriendGroupHandler extends SocketHandler {
         'DELETEFRIENDGROUP',
       ).validate(data);
 
+      const friendGroupFriends = await database.get.friendGroupFriends(
+        friendGroupId,
+      );
+
       if (operatorId !== userId) {
         throw new StandardizedError({
           name: 'PermissionError',
@@ -134,6 +139,20 @@ export class DeleteFriendGroupHandler extends SocketHandler {
           tag: 'PERMISSION_DENIED',
           statusCode: 403,
         });
+      }
+
+      if (friendGroupFriends && friendGroupFriends.length > 0) {
+        await Promise.all(
+          friendGroupFriends.map(async (friend) => {
+            await new UpdateFriendHandler(this.io, this.socket).handle({
+              userId: friend.userId,
+              targetId: friend.targetId,
+              friend: {
+                friendGroupId: null,
+              },
+            });
+          }),
+        );
       }
 
       // Delete friend group

@@ -1480,6 +1480,33 @@ export default class Database {
       }
     },
 
+    friendGroupFriends: async (friendGroupId: string) => {
+      try {
+        if (!friendGroupId) return null;
+        const datas = await this.query(
+          `SELECT 
+            friend_group_friends.*
+          FROM friend_group_friends 
+          WHERE friend_group_friends.friend_group_id = ?
+          ORDER BY friend_group_friends.created_at DESC`,
+          [friendGroupId],
+        );
+        if (!datas || datas.length === 0) return null;
+        return datas.map((data) => convertToCamelCase(data));
+      } catch (error: any) {
+        if (!(error instanceof StandardizedError)) {
+          error = new StandardizedError({
+            name: 'ServerError',
+            message: `查詢 friendGroupFriends.${friendGroupId} 時發生無法預期的錯誤: ${error.message}`,
+            part: 'DATABASE',
+            tag: 'dATABASE.ERROR',
+            statusCode: 500,
+          });
+        }
+        throw error;
+      }
+    },
+
     member: async (userId: string, serverId: string) => {
       try {
         if (!userId || !serverId) return null;
