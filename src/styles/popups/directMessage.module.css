@@ -92,7 +92,7 @@
   width: fit-content;
   padding: 10px;
   flex-direction: column;
-  border-right: 2px solid #e0e0e4;
+  border-right: 1px solid #e0e0e4;
 }
 
 .avatarPicture {
@@ -263,7 +263,7 @@
   flex: 1;
   display: block;
   border: none;
-  outline: none;
+
   padding: 8px;
   resize: none;
   overflow: auto;

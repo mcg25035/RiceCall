@@ -35,25 +35,21 @@ const ApplyMemberPopup: React.FC<ApplyMemberPopupProps> = React.memo(
 
     // State
     const [section, setSection] = useState<number>(0);
-    const [serverName, setServerName] = useState<Server['name']>(
-      createDefault.server().name,
-    );
-    const [serverAvatarUrl, setServerAvatarUrl] = useState<Server['avatarUrl']>(
-      createDefault.server().avatarUrl,
-    );
-    const [serverDisplayId, setServerDisplayId] = useState<Server['displayId']>(
-      createDefault.server().displayId,
-    );
-    const [serverApplyNotice, setServerApplyNotice] = useState<
-      Server['applyNotice']
-    >(createDefault.server().applyNotice);
-    const [applicationDescription, setApplicationDescription] = useState<
-      MemberApplication['description']
-    >(createDefault.memberApplication().description);
+    const [server, setServer] = useState<Server>(createDefault.server());
+    const [memberApplication, setMemberApplication] =
+      useState<MemberApplication>(createDefault.memberApplication());
 
     // Variables
     const { userId, serverId } = initialData;
+    const {
+      name: serverName,
+      avatarUrl: serverAvatarUrl,
+      displayId: serverDisplayId,
+      applyNotice: serverApplyNotice,
+    } = server;
+    const { description: applicationDescription } = memberApplication;
 
+    // Handlers
     const handleCreatMemberApplication = (
       memberApplication: Partial<MemberApplication>,
       userId: User['userId'],
@@ -67,27 +63,13 @@ const ApplyMemberPopup: React.FC<ApplyMemberPopupProps> = React.memo(
       });
     };
 
-    const handleServerUpdate = (data: Server | null) => {
-      if (!data) data = createDefault.server();
-      setServerName(data.name);
-      setServerDisplayId(data.displayId);
-      setServerAvatarUrl(data.avatarUrl);
-      setServerApplyNotice(data.applyNotice);
-    };
-
-    const handleMemberApplicationUpdate = (data: MemberApplication | null) => {
-      if (data) setSection(1);
-      if (!data) return;
-      setApplicationDescription(data.description);
-    };
-
     const handleOpenSuccessDialog = (message: string) => {
-      ipcService.popup.open(PopupType.DIALOG_SUCCESS);
-      ipcService.initialData.onRequest(PopupType.DIALOG_SUCCESS, {
+      ipcService.popup.open(PopupType.DIALOG_SUCCESS, 'successDialog');
+      ipcService.initialData.onRequest('successDialog', {
         title: message,
-        submitTo: PopupType.DIALOG_SUCCESS,
+        submitTo: 'successDialog',
       });
-      ipcService.popup.onSubmit(PopupType.DIALOG_SUCCESS, () => {
+      ipcService.popup.onSubmit('successDialog', () => {
         handleClose();
       });
     };
@@ -110,8 +92,13 @@ const ApplyMemberPopup: React.FC<ApplyMemberPopupProps> = React.memo(
             serverId: serverId,
           }),
         ]).then(([server, memberApplication]) => {
-          handleServerUpdate(server);
-          handleMemberApplicationUpdate(memberApplication);
+          if (server) {
+            setServer(server);
+          }
+          if (memberApplication) {
+            setSection(1);
+            setMemberApplication(memberApplication);
+          }
         });
       };
       refresh();
@@ -157,7 +144,10 @@ const ApplyMemberPopup: React.FC<ApplyMemberPopupProps> = React.memo(
                     <textarea
                       rows={2}
                       onChange={(e) =>
-                        setApplicationDescription(e.target.value)
+                        setMemberApplication((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
                       }
                       value={applicationDescription}
                     />

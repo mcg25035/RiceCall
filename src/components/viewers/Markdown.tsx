@@ -1,15 +1,20 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import DOMPurify from 'dompurify';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-// Componenets
+// Components
 import emojis from '@/components/emojis';
+
+// CSS
+import markdown from '@/styles/viewers/markdown.module.css';
 
 interface PurifyConfig {
   ALLOWED_TAGS: string[];
@@ -66,131 +71,162 @@ interface MarkdownProps {
   forbidGuestUrl?: boolean;
 }
 
+const customStyle = {
+  keyword: { color: '#ff7b72' }, // 關鍵字
+  string: { color: '#79c0ff' }, // 字串
+  variable: { color: '#e6edf3' }, // 識別字、變數名稱、識別符號
+  function: { color: '#d2a8ff' }, // 函數名稱
+  operator: { color: '#e6edf3' }, // 運算子
+  punctuation: { color: '#e6edf3' }, // 標點符號
+  comment: { color: '#8b949e' }, // 註釋
+};
+
 const Markdown: React.FC<MarkdownProps> = React.memo(
   ({ markdownText, isGuest = false, forbidGuestUrl = false }) => {
     const safeMarkdownText =
       typeof markdownText === 'string' ? markdownText : '';
-    const withEmojis = safeMarkdownText.replace(
+    const processedText = safeMarkdownText.replace(
+      /(^> .+)(\n)([^>\n])/gm,
+      '$1\n\n$3',
+    );
+    const withEmojis = processedText.replace(
       /\[emoji_(\d+)\]/g,
       (match: string, id: string) => {
         const emojiId = parseInt(id);
         if (!emojis.find((emoji) => emoji.id === emojiId)) return match;
-        return `<img src="/smiles/${
-          emojiId + 1
-        }.gif" alt="[emoji_${id}]" class="inline-block w-5 h-5 align-text-bottom" />`;
+        return `<img src="/smiles/${emojiId + 1}.gif" alt="[emoji_${id}]" />`;
       },
     );
     const sanitized = DOMPurify.sanitize(withEmojis, PURIFY_CONFIG);
+    const [isCopied, setIsCopied] = useState(false);
+
     const components: Components = {
       h1: ({ node, ...props }: any) => (
-        <h1 className="text-2xl font-bold mb-2" {...props} />
+        <h1 className={markdown.heading1} {...props} />
       ),
       h2: ({ node, ...props }: any) => (
-        <h2 className="text-xl font-bold mb-1" {...props} />
+        <h2 className={markdown.heading2} {...props} />
       ),
       h3: ({ node, ...props }: any) => (
-        <h3 className="text-lg font-bold" {...props} />
+        <h3 className={markdown.heading3} {...props} />
       ),
-      p: ({ node, ...props }: any) => (
-        <div className="leading-relaxed" {...props} />
-      ),
-      ul: ({ node, ...props }: any) => (
-        <ul className="list-disc list-inside" {...props} />
-      ),
-      li: ({ node, ...props }: any) => (
-        <li className="leading-normal" {...props} />
-      ),
-      ol: ({ node, ...props }: any) => (
-        <ol className="list-decimal list-inside" {...props} />
-      ),
-      blockquote: ({ node, ...props }: any) => (
-        <blockquote
-          className="border-l-4 border-gray-300 pl-4 italic overflow-x-auto"
-          {...props}
-        />
-      ),
-      a: ({ node, href, ...props }: any) => {
-        if (isGuest && forbidGuestUrl) {
-          return <div className="text-gray-400" {...props} />;
+      p: ({ node, children, ...props }: any) => {
+        if (React.isValidElement(children) && children.type === 'blockquote') {
+          return children;
+        }
+
+        const text = String(children);
+        if (text.startsWith('> ')) {
+          const quoteContent = text.replace(/^>\s*/, '');
+          return (
+            <blockquote className={markdown.blockquote}>
+              <p>{quoteContent}</p>
+            </blockquote>
+          );
         }
         return (
-          <a
-            target="_blank"
-            href={href}
-            className="text-blue-600 hover:text-blue-800 underline transition duration-200"
-            {...props}
-          />
+          <p className={markdown.paragraph} {...props}>
+            {children}
+          </p>
+        );
+      },
+      ul: ({ node, ...props }: any) => (
+        <ul className={markdown.unorderedList} {...props} />
+      ),
+      ol: ({ node, ...props }: any) => (
+        <ol className={markdown.orderedList} {...props} />
+      ),
+      li: ({ node, ...props }: any) => (
+        <li className={markdown.listItem} {...props} />
+      ),
+      blockquote: ({ node, children, ...props }: any) => {
+        return (
+          <blockquote className={markdown.blockquote}>{children}</blockquote>
+        );
+      },
+      a: ({ node, href, ...props }: any) => {
+        if (isGuest && forbidGuestUrl) {
+          return <span className={markdown.disabledLink} {...props} />;
+        }
+        return (
+          <a target="_blank" href={href} className={markdown.link} {...props} />
         );
       },
       table: ({ node, ...props }: any) => (
-        <div className="overflow-x-auto mb-4 max-w-full">
-          <table
-            className="w-full border-collapse border border-gray-200"
-            {...props}
-          />
+        <div className={markdown.tableWrapper}>
+          <table className={markdown.table} {...props} />
         </div>
       ),
       th: ({ node, ...props }: any) => (
-        <th
-          className="px-4 py-2 bg-gray-50 text-left text-sm font-semibold text-gray-600 border border-gray-200"
-          {...props}
-        />
+        <th className={markdown.tableHeader} {...props} />
       ),
       td: ({ node, ...props }: any) => (
-        <td
-          className="px-4 py-2 text-sm text-gray-600 border border-gray-200"
-          {...props}
-        />
+        <td className={markdown.tableCell} {...props} />
       ),
       hr: ({ node, ...props }: any) => (
-        <hr className="my-6 border-t border-gray-200" {...props} />
-      ),
-      video: ({ node, ...props }: any) => <video {...props} />,
-      source: ({ node, ...props }: any) => <source {...props} />,
-      audio: ({ node, ...props }: any) => <audio {...props} />,
-      iframe: ({ node, ...props }: any) => (
-        <iframe
-          className="w-full h-64 border border-gray-200 rounded-lg"
-          {...props}
-        />
+        <hr className={markdown.horizontalRule} {...props} />
       ),
       img: ({ node, src, alt, ...props }: any) => {
         if (isGuest && forbidGuestUrl) {
-          return <div className="text-gray-400" {...props} />;
+          return <span className={markdown.disabledImage} {...props} />;
         }
         return (
-          <img
-            className="max-w-full h-auto rounded-lg"
-            src={src}
-            alt={alt}
-            {...props}
-          />
+          <img className={markdown.image} src={src} alt={alt} {...props} />
         );
       },
-      code: ({ node, ...props }: any) => (
-        <code className="bg-gray-100 text-gray-800 rounded px-1" {...props} />
-      ),
-      pre: ({ node, ...props }: any) => (
-        <pre
-          className="bg-gray-100 text-gray-800 rounded p-2 overflow-x-auto"
-          {...props}
-        />
-      ),
-      strong: ({ node, ...props }: any) => (
-        <strong className="font-semibold text-gray-800" {...props} />
-      ),
-      em: ({ node, ...props }: any) => (
-        <em className="italic text-gray-600" {...props} />
-      ),
-      br: ({ node, ...props }: any) => <br className="my-2" {...props} />,
-    };
+      code: ({ node, inline, className, children, ...props }: any) => {
+        const match = /language-(\w+)/.exec(className || '');
+        const language = match ? match[1] : 'text';
 
+        if (!inline) {
+          const codeString = String(children).replace(/\n$/, '');
+
+          const handleCopy = () => {
+            navigator.clipboard.writeText(codeString);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+          };
+
+          return (
+            <div className={markdown.codeWrapper}>
+              <button
+                className={markdown.copyButton}
+                onClick={handleCopy}
+                aria-label="複製程式碼"
+              >
+                {isCopied ? '已複製！' : '複製'}
+              </button>
+              <SyntaxHighlighter
+                language={language}
+                style={{ ...vscDarkPlus, ...customStyle }}
+                PreTag="div"
+                className={markdown.codeBlock}
+                {...props}
+              >
+                {codeString}
+              </SyntaxHighlighter>
+            </div>
+          );
+        }
+
+        return (
+          <code className={markdown.inlineCode} {...props}>
+            {children}
+          </code>
+        );
+      },
+      pre: ({ node, ...props }: any) => (
+        <pre className={markdown.preBlock} {...props} />
+      ),
+    };
     return (
       <ReactMarkdown
-        className="markdown-content whitespace-pre-wrap"
+        className={markdown.markdownContent}
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={components}
+        skipHtml={false}
+        unwrapDisallowed={false}
       >
         {sanitized}
       </ReactMarkdown>
@@ -209,8 +245,8 @@ interface MarkdownViewerProps {
 const MarkdownViewer: React.FC<MarkdownViewerProps> = React.memo(
   ({ markdownText, isGuest = false, forbidGuestUrl = false }) => {
     return (
-      <div className="flex-1 overflow-x-hidden">
-        <div className="max-w-full overflow-x-auto">
+      <div className={markdown.container}>
+        <div className={markdown.markdownContent}>
           <Markdown
             markdownText={markdownText}
             isGuest={isGuest}

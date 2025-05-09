@@ -9,13 +9,7 @@ import homePage from '@/styles/pages/home.module.css';
 import ServerListViewer from '@/components/viewers/ServerList';
 
 // Type
-import {
-  PopupType,
-  Server,
-  SocketServerEvent,
-  User,
-  UserServer,
-} from '@/types';
+import { PopupType, SocketServerEvent, User, UserServer } from '@/types';
 
 // Providers
 import { useSocket } from '@/providers/Socket';
@@ -24,13 +18,12 @@ import { useMainTab } from '@/providers/MainTab';
 
 // Services
 import ipcService from '@/services/ipc.service';
-import refreshService from '@/services/refresh.service';
 
 export interface ServerListSectionProps {
   title: string;
-  servers: Server[];
+  servers: UserServer[];
   user: User;
-  onServerClick?: (server: Server) => void;
+  onServerClick?: (server: UserServer) => void;
 }
 
 const ServerListSection: React.FC<ServerListSectionProps> = ({
@@ -73,7 +66,7 @@ const ServerListSection: React.FC<ServerListSectionProps> = ({
 };
 
 const SearchResultItem: React.FC<{
-  server: Server;
+  server: UserServer;
   onClick: () => void;
 }> = ({ server, onClick }) => (
   <div className={homePage['dropdownItem']} onClick={onClick}>
@@ -95,40 +88,40 @@ const SearchResultItem: React.FC<{
 
 interface HomePageProps {
   user: User;
-  userServer: UserServer;
+  servers: UserServer[];
+  currentServer: UserServer;
   display: boolean;
 }
 
 const HomePageComponent: React.FC<HomePageProps> = React.memo(
-  ({ user, userServer, display }) => {
+  ({ user, servers, currentServer, display }) => {
     // Hooks
     const lang = useLanguage();
     const socket = useSocket();
     const mainTab = useMainTab();
 
     // Refs
-    const refreshed = useRef(false);
     const searchRef = useRef<HTMLDivElement>(null);
 
     // States
-    const [userServers, setUserServers] = useState<UserServer[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [exactMatch, setExactMatch] = useState<Server | null>(null);
-    const [personalResults, setPersonalResults] = useState<Server[]>([]);
-    const [relatedResults, setRelatedResults] = useState<Server[]>([]);
+    const [exactMatch, setExactMatch] = useState<UserServer | null>(null);
+    const [personalResults, setPersonalResults] = useState<UserServer[]>([]);
+    const [relatedResults, setRelatedResults] = useState<UserServer[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingServerID, setLoadingServerID] = useState<string>();
+    const [section, setSection] = useState<number>(0);
 
     // Variables
     const { userId, name: userName, currentServerId } = user;
     const hasResults =
       exactMatch || personalResults.length > 0 || relatedResults.length > 0;
-    const recentServers = userServers
+    const recentServers = servers
       .filter((s) => s.recent)
       .sort((a, b) => b.timestamp - a.timestamp);
-    const favoriteServers = userServers.filter((s) => s.favorite);
-    const ownedServers = userServers.filter((s) => s.permissionLevel > 1);
+    const favoriteServers = servers.filter((s) => s.favorite);
+    const ownedServers = servers.filter((s) => s.permissionLevel > 1);
 
     // Handlers
     const handleSearchServer = (query: string) => {
@@ -141,10 +134,14 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     };
 
     const handleConnectServer = (
-      serverId: Server['serverId'],
-      serverDisplayId: Server['displayId'],
+      serverId: UserServer['serverId'],
+      serverDisplayId: UserServer['displayId'],
     ) => {
       if (!socket) return;
+      if (currentServerId == serverId) {
+        mainTab.setSelectedTabId('server');
+        return;
+      }
       socket.send.connectServer({
         serverId,
         userId: userId,
@@ -154,12 +151,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       setLoadingServerID(serverDisplayId);
     };
 
-    const handleUserServersUpdate = (data: UserServer[] | null) => {
-      if (!data) data = [];
-      setUserServers(data);
-    };
-
-    const handleServerSearch = (servers: Server[]) => {
+    const handleServerSearch = (servers: UserServer[]) => {
       if (!servers.length) {
         setExactMatch(null);
         setPersonalResults([]);
@@ -181,7 +173,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       setExactMatch(exact || null);
 
       const personal = sortedServers.filter((server) =>
-        userServers.some(
+        servers.some(
           (s) =>
             s.recent || s.favorite || s.owned || s.serverId === server.serverId,
         ),
@@ -195,7 +187,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     };
 
     const handleOpenCreateServer = (userId: User['userId']) => {
-      ipcService.popup.open(PopupType.CREATE_SERVER);
+      ipcService.popup.open(PopupType.CREATE_SERVER, 'createServer');
       ipcService.initialData.onRequest(PopupType.CREATE_SERVER, { userId });
     };
 
@@ -228,7 +220,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
 
       const eventHandlers = {
         [SocketServerEvent.SERVER_SEARCH]: handleServerSearch,
-        [SocketServerEvent.USER_SERVERS_UPDATE]: handleUserServersUpdate,
       };
       const unsubscribe: (() => void)[] = [];
 
@@ -243,28 +234,13 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     }, [socket, searchQuery]);
 
     useEffect(() => {
-      if (!userId || refreshed.current) return;
-      const refresh = async () => {
-        refreshed.current = true;
-        Promise.all([
-          refreshService.userServers({
-            userId: userId,
-          }),
-        ]).then(([userServers]) => {
-          handleUserServersUpdate(userServers);
-        });
-      };
-      refresh();
-    }, [userId]);
-
-    useEffect(() => {
       if (mainTab.selectedTabId == 'server') {
-        if (!userServer) return;
+        if (!currentServer) return;
         setIsLoading(false);
         setLoadingServerID('');
         localStorage.removeItem('trigger-handle-server-select');
       }
-    }, [userServer, isLoading, mainTab]);
+    }, [currentServer, isLoading, mainTab]);
 
     useEffect(() => {
       if (!lang) return;
@@ -300,7 +276,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     return (
       <div
         className={homePage['homeWrapper']}
-        style={{ display: display ? 'flex' : 'none' }}
+        style={display ? {} : { display: 'none' }}
       >
         {/* Header */}
         <header className={homePage['homeHeader']}>
@@ -354,12 +330,12 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
                             <SearchResultItem
                               key={server.serverId}
                               server={server}
-                              onClick={() =>
+                              onClick={() => {
                                 handleConnectServer(
                                   server.serverId,
                                   server.displayId,
-                                )
-                              }
+                                );
+                              }}
                             />
                           ))}
                         </>
@@ -373,12 +349,12 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
                             <SearchResultItem
                               key={server.serverId}
                               server={server}
-                              onClick={() =>
+                              onClick={() => {
                                 handleConnectServer(
                                   server.serverId,
                                   server.displayId,
-                                )
-                              }
+                                );
+                              }}
                             />
                           ))}
                         </>
@@ -397,46 +373,72 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             </div>
           </div>
           <div className={homePage['mid']}>
-            <button
-              className={`${homePage['navegateItem']} ${homePage['active']}`}
+            <div
+              className={`${homePage['navegateItem']} ${
+                section === 0 ? homePage['active'] : ''
+              }`}
               data-key="60060"
+              onClick={() => setSection(0)}
             >
               {lang.tr.home}
-            </button>
-            <button className={homePage['navegateItem']} data-key="30014">
+            </div>
+            <div
+              className={`${homePage['navegateItem']} ${
+                section === 1 ? homePage['active'] : ''
+              }`}
+              data-key="30014"
+              onClick={() => setSection(1)}
+            >
               {lang.tr.game}
-            </button>
-            <button className={homePage['navegateItem']} data-key="30375">
+            </div>
+            <div
+              className={`${homePage['navegateItem']} ${
+                section === 2 ? homePage['active'] : ''
+              }`}
+              data-key="30375"
+              onClick={() => setSection(2)}
+            >
               {lang.tr.live}
-            </button>
+            </div>
           </div>
           <div className={homePage['right']}>
-            <button
+            <div
               className={homePage['navegateItem']}
               data-key="30014"
               onClick={() => handleOpenCreateServer(userId)}
             >
               {lang.tr.createServers}
-            </button>
-            <button className={homePage['navegateItem']} data-key="60004">
+            </div>
+            <div
+              className={homePage['navegateItem']}
+              data-key="60004"
+              onClick={() => setSection(3)}
+            >
               {lang.tr.personalExclusive}
-            </button>
+            </div>
           </div>
         </header>
 
         {/* Main Content */}
-        <main className={homePage['homeContent']}>
+
+        {/* Announcement */}
+        <webview
+          src="https://ricecall.com.tw/announcement"
+          className={homePage['webview']}
+          style={section === 0 ? {} : { display: 'none' }}
+        />
+
+        {/* Personal Exclusive */}
+        <main
+          className={homePage['homeContent']}
+          style={section === 3 ? {} : { display: 'none' }}
+        >
           <ServerListSection
             title={lang.tr.recentVisits}
             servers={recentServers}
             user={user}
             onServerClick={(server) => {
-              if (currentServerId == server.serverId) {
-                mainTab.setSelectedTabId('server');
-              } else {
-                setIsLoading(true);
-                setLoadingServerID(server.displayId);
-              }
+              handleConnectServer(server.serverId, server.displayId);
             }}
           />
           <ServerListSection
@@ -444,8 +446,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             servers={ownedServers}
             user={user}
             onServerClick={(server) => {
-              setIsLoading(true);
-              setLoadingServerID(server.displayId);
+              handleConnectServer(server.serverId, server.displayId);
             }}
           />
           <ServerListSection
@@ -453,10 +454,17 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             servers={favoriteServers}
             user={user}
             onServerClick={(server) => {
-              setIsLoading(true);
-              setLoadingServerID(server.displayId);
+              handleConnectServer(server.serverId, server.displayId);
             }}
           />
+        </main>
+
+        {/* Not Available */}
+        <main
+          className={homePage['homeContent']}
+          style={section === 1 || section === 2 ? {} : { display: 'none' }}
+        >
+          <div>{'Sorry, this page is not available yet'}</div>
         </main>
 
         {/* Loading */}

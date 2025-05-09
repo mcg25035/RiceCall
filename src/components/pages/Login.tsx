@@ -3,20 +3,11 @@ import React, { useEffect, useRef, useState } from 'react';
 // CSS
 import styles from '@/styles/pages/login.module.css';
 
-// Utils
-import { createValidators } from '@/utils/validators';
-
 // Services
 import authService from '@/services/auth.service';
 
 // Providers
 import { useLanguage } from '@/providers/Language';
-
-interface FormErrors {
-  general?: string;
-  account?: string;
-  password?: string;
-}
 
 interface FormDatas {
   account: string;
@@ -38,7 +29,6 @@ interface LoginPageProps {
 const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
   // Hooks
   const lang = useLanguage();
-  const validators = React.useMemo(() => createValidators(lang), [lang]);
 
   // Refs
   const comboRef = useRef<HTMLDivElement>(null);
@@ -50,7 +40,6 @@ const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
     rememberAccount: false,
     autoLogin: false,
   });
-  const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [accountSelectBox, setAccountSelectBox] = useState<boolean>(false);
   const [accountList, setAccountList] = useState<AccountItem[]>([]);
@@ -98,21 +87,6 @@ const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
       setFormData((prev) => ({
         ...prev,
         [name]: type === 'checkbox' ? checked : value,
-      }));
-    }
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (name === 'account') {
-      setErrors((prev) => ({
-        ...prev,
-        account: validators.validateAccount(value),
-      }));
-    } else if (name === 'password') {
-      setErrors((prev) => ({
-        ...prev,
-        password: validators.validatePassword(value),
       }));
     }
   };
@@ -202,9 +176,6 @@ const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
           )}
           {!isLoading && (
             <>
-              {errors.general && (
-                <div className={styles['errorBox']}>{errors.general}</div>
-              )}
               <div className={styles['inputBox']}>
                 <label className={styles['label']}>{lang.tr.account}</label>
                 <div className={styles['loginAccountBox']} ref={comboRef}>
@@ -213,7 +184,7 @@ const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
                     name="account"
                     value={formData.account}
                     onChange={handleInputChange}
-                    onBlur={handleBlur}
+                    onBlur={() => {}}
                     placeholder={lang.tr.pleaseInputAccount}
                     className={styles['input']}
                   />
@@ -285,17 +256,12 @@ const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    onBlur={handleBlur}
+                    onBlur={() => {}}
                     placeholder={lang.tr.pleaseInputPassword}
                     className={styles['input']}
                   />
                 </div>
               </div>
-              {errors && (
-                <div className={styles['warningMessage']}>
-                  {errors.account || errors.password || ''}
-                </div>
-              )}
               <div className={styles['checkWrapper']}>
                 <label className={styles['checkBox']}>
                   <input
@@ -324,6 +290,7 @@ const LoginPage: React.FC<LoginPageProps> = React.memo(({ setSection }) => {
                 className={styles['button']}
                 onClick={handleSubmit}
                 tabIndex={-1}
+                disabled={!formData.account || !formData.password}
               >
                 {lang.tr.login}
               </button>

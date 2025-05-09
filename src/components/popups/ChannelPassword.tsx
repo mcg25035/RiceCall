@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 
 // Types
 import { User, Channel, Server } from '@/types';
@@ -12,7 +12,6 @@ import popup from '@/styles/popup.module.css';
 import setting from '@/styles/popups/setting.module.css';
 
 // Services
-import refreshService from '@/services/refresh.service';
 import ipcService from '@/services/ipc.service';
 
 interface ChannelPasswordPopupProps {
@@ -27,14 +26,11 @@ const ChannelPasswordPopup: React.FC<ChannelPasswordPopupProps> = React.memo(
     const socket = useSocket();
     const lang = useLanguage();
 
-    // Variables
-    const { userId, serverId, channelId } = initialData;
-
-    // Refs
-    const refreshRef = useRef(false);
-
     // States
     const [password, setPassword] = useState<string | null>(null);
+
+    // Variables
+    const { userId, serverId, channelId } = initialData;
 
     // Handlers
     const handleJoinChannel = (
@@ -50,20 +46,6 @@ const ChannelPasswordPopup: React.FC<ChannelPasswordPopupProps> = React.memo(
     const handleClose = () => {
       ipcService.window.close();
     };
-
-    // Effects
-    useEffect(() => {
-      if (!channelId || refreshRef.current) return;
-      const refresh = async () => {
-        refreshRef.current = true;
-        Promise.all([
-          refreshService.channel({
-            channelId: channelId,
-          }),
-        ]);
-      };
-      refresh();
-    }, [channelId]);
 
     return (
       <div className={popup['popupContainer']}>

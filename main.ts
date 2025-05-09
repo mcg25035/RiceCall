@@ -1,5 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import net from 'net';
+import DiscordRPC from 'discord-rpc';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import serve from 'electron-serve';
+import Store from 'electron-store';
+import { io, Socket } from 'socket.io-client';
+import ElectronUpdater from 'electron-updater';
 import {
   app,
   BrowserWindow,
@@ -10,157 +16,152 @@ import {
   Menu,
   nativeImage,
 } from 'electron';
-import serve from 'electron-serve';
-import net from 'net';
-import DiscordRPC from 'discord-rpc';
-import { io } from 'socket.io-client';
-import electronUpdater from 'electron-updater';
-import Store from 'electron-store';
-import dotenv from 'dotenv';
-dotenv.config();
 
-let tray = null,
-  isLogin = false,
-  userId = null;
+let tray: Tray | null = null;
+let isLogin: boolean = false;
+let userId: string | null = null;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const { autoUpdater } = electronUpdater;
-const store = new Store();
+const __dirname = process.cwd();
 
-const SocketClientEvent = {
+// AutoUpdater
+const { autoUpdater } = ElectronUpdater;
+
+// Store
+type StoreSchema = {
+  theme: string;
+  audioInputDevice: string;
+  audioOutputDevice: string;
+};
+const store = new Store<StoreSchema>();
+
+enum SocketClientEvent {
   // User
-  SEARCH_USER: 'searchUser',
-  UPDATE_USER: 'updateUser',
+  SEARCH_USER = 'searchUser',
+  UPDATE_USER = 'updateUser',
   // Server
-  SEARCH_SERVER: 'searchServer',
-  CONNECT_SERVER: 'connectServer',
-  DISCONNECT_SERVER: 'disconnectServer',
-  CREATE_SERVER: 'createServer',
-  UPDATE_SERVER: 'updateServer',
-  DELETE_SERVER: 'deleteServer',
-  // Category
-  CREATE_CATEGORY: 'createCategory',
-  UPDATE_CATEGORY: 'updateCategory',
-  DELETE_CATEGORY: 'deleteCategory',
+  SEARCH_SERVER = 'searchServer',
+  CONNECT_SERVER = 'connectServer',
+  DISCONNECT_SERVER = 'disconnectServer',
+  CREATE_SERVER = 'createServer',
+  UPDATE_SERVER = 'updateServer',
+  DELETE_SERVER = 'deleteServer',
   // Channel
-  CONNECT_CHANNEL: 'connectChannel',
-  DISCONNECT_CHANNEL: 'disconnectChannel',
-  CREATE_CHANNEL: 'createChannel',
-  UPDATE_CHANNEL: 'updateChannel',
-  UPDATE_CHANNELS: 'updateChannels',
-  DELETE_CHANNEL: 'deleteChannel',
+  CONNECT_CHANNEL = 'connectChannel',
+  DISCONNECT_CHANNEL = 'disconnectChannel',
+  CREATE_CHANNEL = 'createChannel',
+  UPDATE_CHANNEL = 'updateChannel',
+  UPDATE_CHANNELS = 'updateChannels',
+  DELETE_CHANNEL = 'deleteChannel',
   // Friend Group
-  CREATE_FRIEND_GROUP: 'createFriendGroup',
-  UPDATE_FRIEND_GROUP: 'updateFriendGroup',
-  DELETE_FRIEND_GROUP: 'deleteFriendGroup',
+  CREATE_FRIEND_GROUP = 'createFriendGroup',
+  UPDATE_FRIEND_GROUP = 'updateFriendGroup',
+  DELETE_FRIEND_GROUP = 'deleteFriendGroup',
   // Member
-  CREATE_MEMBER: 'createMember',
-  UPDATE_MEMBER: 'updateMember',
-  DELETE_MEMBER: 'deleteMember',
+  CREATE_MEMBER = 'createMember',
+  UPDATE_MEMBER = 'updateMember',
+  DELETE_MEMBER = 'deleteMember',
   // Friend
-  CREATE_FRIEND: 'createFriend',
-  UPDATE_FRIEND: 'updateFriend',
-  DELETE_FRIEND: 'deleteFriend',
+  CREATE_FRIEND = 'createFriend',
+  UPDATE_FRIEND = 'updateFriend',
+  DELETE_FRIEND = 'deleteFriend',
   // Member Application
-  CREATE_MEMBER_APPLICATION: 'createMemberApplication',
-  UPDATE_MEMBER_APPLICATION: 'updateMemberApplication',
-  DELETE_MEMBER_APPLICATION: 'deleteMemberApplication',
+  CREATE_MEMBER_APPLICATION = 'createMemberApplication',
+  UPDATE_MEMBER_APPLICATION = 'updateMemberApplication',
+  DELETE_MEMBER_APPLICATION = 'deleteMemberApplication',
   // Friend Application
-  CREATE_FRIEND_APPLICATION: 'createFriendApplication',
-  UPDATE_FRIEND_APPLICATION: 'updateFriendApplication',
-  DELETE_FRIEND_APPLICATION: 'deleteFriendApplication',
+  CREATE_FRIEND_APPLICATION = 'createFriendApplication',
+  UPDATE_FRIEND_APPLICATION = 'updateFriendApplication',
+  DELETE_FRIEND_APPLICATION = 'deleteFriendApplication',
   // Message
-  SEND_MESSAGE: 'message',
-  SEND_DIRECT_MESSAGE: 'directMessage',
+  SEND_MESSAGE = 'message',
+  SEND_DIRECT_MESSAGE = 'directMessage',
+  SEND_SHAKE_WINDOW = 'shakeWindow',
   // RTC
-  RTC_OFFER: 'RTCOffer',
-  RTC_ANSWER: 'RTCAnswer',
-  RTC_ICE_CANDIDATE: 'RTCIceCandidate',
+  RTC_OFFER = 'RTCOffer',
+  RTC_ANSWER = 'RTCAnswer',
+  RTC_ICE_CANDIDATE = 'RTCIceCandidate',
   // Echo
-  PING: 'ping',
-};
-
-const SocketServerEvent = {
-  // Notification
-  NOTIFICATION: 'notification', // not used yet
-  // User
-  USER_SEARCH: 'userSearch',
-  USER_UPDATE: 'userUpdate',
-  USER_SERVERS_UPDATE: 'userServersUpdate',
-  USER_FRIEND_GROUPS_UPDATE: 'userFriendGroupsUpdate',
-  USER_FRIENDS_UPDATE: 'userFriendsUpdate',
-  USER_FRIEND_APPLICATIONS_UPDATE: 'userFriendApplicationsUpdate',
-  // Server
-  SERVER_SEARCH: 'serverSearch',
-  SERVER_UPDATE: 'serverUpdate',
-  SERVER_CHANNELS_UPDATE: 'serverChannelsUpdate',
-  SERVER_MEMBERS_UPDATE: 'serverMembersUpdate',
-  SERVER_MEMBER_APPLICATIONS_UPDATE: 'serverMemberApplicationsUpdate',
-  // Channel
-  CHANNEL_UPDATE: 'channelUpdate',
-  // Category
-  CATEGORY_UPDATE: 'categoryUpdate',
-  // Friend Group
-  FRIEND_GROUP_UPDATE: 'friendGroupUpdate',
-  // Member
-  MEMBER_UPDATE: 'memberUpdate',
-  // Member Application
-  MEMBER_APPLICATION_UPDATE: 'memberApplicationUpdate',
-  // Friend
-  FRIEND_UPDATE: 'friendUpdate',
-  // Friend Application
-  FRIEND_APPLICATION_UPDATE: 'friendApplicationUpdate',
-  // Direct Message
-  ON_MESSAGE: 'onMessage',
-  ON_DIRECT_MESSAGE: 'onDirectMessage',
-  // Popup
-  OPEN_POPUP: 'openPopup',
-  // RTC
-  RTC_OFFER: 'RTCOffer',
-  RTC_ANSWER: 'RTCAnswer',
-  RTC_ICE_CANDIDATE: 'RTCIceCandidate',
-  RTC_JOIN: 'RTCJoin',
-  RTC_LEAVE: 'RTCLeave',
-  // Error
-  ERROR: 'error',
-  // Play
-  PLAY_SOUND: 'playSound',
-  // Echo
-  PONG: 'pong',
-};
-
-let isDev = process.argv.includes('--dev');
-
-const appServe = app.isPackaged
-  ? serve({
-      directory: path.join(__dirname, './out'),
-    })
-  : !isDev
-  ? serve({
-      directory: path.join(__dirname, './out'),
-    })
-  : null;
-
-let baseUri = '';
-
-if (isDev) {
-  baseUri = 'http://127.0.0.1:3000';
+  PING = 'ping',
 }
 
-// Track windows
-let mainWindow = null;
-let authWindow = null;
-let popups = {};
+enum SocketServerEvent {
+  // Notification
+  NOTIFICATION = 'notification', // not used yet
+  // User
+  USER_SEARCH = 'userSearch',
+  USER_UPDATE = 'userUpdate',
+  // Friend Group
+  FRIEND_GROUP_ADD = 'friendGroupAdd',
+  FRIEND_GROUP_UPDATE = 'friendGroupUpdate',
+  FRIEND_GROUP_DELETE = 'friendGroupDelete',
+  FRIEND_GROUPS_UPDATE = 'friendGroupsUpdate',
+  // Friend
+  FRIEND_ADD = 'friendAdd',
+  FRIEND_UPDATE = 'friendUpdate',
+  FRIEND_DELETE = 'friendDelete',
+  FRIENDS_UPDATE = 'friendsUpdate',
+  // Friend Application
+  FRIEND_APPLICATION_ADD = 'friendApplicationAdd',
+  FRIEND_APPLICATION_UPDATE = 'friendApplicationUpdate',
+  FRIEND_APPLICATION_DELETE = 'friendApplicationDelete',
+  FRIEND_APPLICATIONS_UPDATE = 'friendApplicationsUpdate',
+  // Server
+  SERVER_SEARCH = 'serverSearch',
+  SERVER_ADD = 'serverAdd',
+  SERVER_UPDATE = 'serverUpdate',
+  SERVER_DELETE = 'serverDelete',
+  SERVERS_UPDATE = 'serversUpdate',
+  // Channel
+  SERVER_CHANNEL_ADD = 'serverChannelAdd',
+  SERVER_CHANNEL_UPDATE = 'serverChannelUpdate',
+  SERVER_CHANNEL_DELETE = 'serverChannelDelete',
+  SERVER_CHANNELS_UPDATE = 'serverChannelsUpdate',
+  // Member
+  SERVER_MEMBER_ADD = 'serverMemberAdd',
+  SERVER_MEMBER_UPDATE = 'serverMemberUpdate',
+  SERVER_MEMBER_DELETE = 'serverMemberDelete',
+  SERVER_MEMBERS_UPDATE = 'serverMembersUpdate',
+  // Member Application
+  SERVER_MEMBER_APPLICATION_ADD = 'serverMemberApplicationAdd',
+  SERVER_MEMBER_APPLICATION_UPDATE = 'serverMemberApplicationUpdate',
+  SERVER_MEMBER_APPLICATION_DELETE = 'serverMemberApplicationDelete',
+  SERVER_MEMBER_APPLICATIONS_UPDATE = 'serverMemberApplicationsUpdate',
+  // Message
+  ON_MESSAGE = 'onMessage',
+  ON_DIRECT_MESSAGE = 'onDirectMessage',
+  // RTC
+  RTC_OFFER = 'RTCOffer',
+  RTC_ANSWER = 'RTCAnswer',
+  RTC_ICE_CANDIDATE = 'RTCIceCandidate',
+  RTC_JOIN = 'RTCJoin',
+  RTC_LEAVE = 'RTCLeave',
+  // Play
+  PLAY_SOUND = 'playSound',
+  // Echo
+  PONG = 'pong',
+  // Error
+  ERROR = 'error',
+  // Popup
+  OPEN_POPUP = 'openPopup',
+}
 
-// Socket connection
+// Constants
+const DEV = process.argv.includes('--dev');
+const BASE_URI = DEV ? 'http://localhost:3000' : '';
+
+// Windows
+let mainWindow: BrowserWindow;
+let authWindow: BrowserWindow;
+let popups: Record<string, BrowserWindow> = {};
+
+// Socket
 const WS_URL = process.env.NEXT_PUBLIC_SERVER_URL;
-let socketInstance = null;
+let socketInstance: Socket | null = null;
 
 // Discord RPC
-const clientId = '1242441392341516288';
-DiscordRPC.register(clientId);
-let rpc = null;
+const CLIENT_ID = '1242441392341516288';
+DiscordRPC.register(CLIENT_ID);
+let rpc: DiscordRPC.Client | null = null;
 
 const defaultPrecence = {
   details: '正在使用應用',
@@ -179,24 +180,26 @@ const defaultPrecence = {
   ],
 };
 
-function waitForPort(port) {
+if (app.isPackaged || !DEV) {
+  serve({ directory: path.join(__dirname, './out') });
+}
+
+// Functions
+function waitForPort(port: number) {
   return new Promise((resolve, reject) => {
     let timeout = 30000; // 30 seconds timeout
-    let timer;
 
     function tryConnect() {
       const client = new net.Socket();
 
       client.once('connect', () => {
-        clearTimeout(timer);
         client.destroy();
-        resolve();
+        resolve(null);
       });
 
       client.once('error', () => {
         client.destroy();
         if (timeout <= 0) {
-          clearTimeout(timer);
           reject(new Error('Timeout waiting for port'));
           return;
         }
@@ -210,7 +213,21 @@ function waitForPort(port) {
   });
 }
 
-function setAutoLaunch(enable) {
+function focusWindow() {
+  const window =
+    authWindow.isDestroyed() === false
+      ? authWindow
+      : mainWindow.isDestroyed() === false
+      ? mainWindow
+      : null;
+  if (window) {
+    if (window.isMinimized()) window.restore();
+    window.focus();
+  }
+}
+
+// Store Functions
+function setAutoLaunch(enable: boolean) {
   try {
     app.setLoginItemSettings({
       openAtLogin: enable,
@@ -221,7 +238,7 @@ function setAutoLaunch(enable) {
   }
 }
 
-function isAutoLaunchEnabled() {
+function isAutoLaunchEnabled(): boolean {
   try {
     const settings = app.getLoginItemSettings();
     return settings.openAtLogin;
@@ -231,25 +248,28 @@ function isAutoLaunchEnabled() {
   }
 }
 
-async function createMainWindow() {
+// Windows Functions
+async function createMainWindow(): Promise<BrowserWindow | null> {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.focus();
     return mainWindow;
   }
 
-  if (isDev) {
+  if (DEV) {
     try {
       await waitForPort(3000);
     } catch (err) {
       console.error('Failed to connect to Next.js server:', err);
       app.quit();
-      return;
+      return null;
     }
   }
 
   mainWindow = new BrowserWindow({
-    minWidth: 950,
-    minHeight: 700,
+    width: 1080,
+    height: 720,
+    minWidth: 800,
+    minHeight: 600,
     frame: false,
     transparent: true,
     resizable: true,
@@ -262,16 +282,15 @@ async function createMainWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      webviewTag: true,
     },
   });
 
-  if (app.isPackaged || !isDev) {
-    appServe(mainWindow).then(() => {
-      mainWindow.loadURL('app://-');
-    });
+  if (app.isPackaged || !DEV) {
+    mainWindow.loadURL('app://-');
   } else {
-    mainWindow.loadURL(`${baseUri}`);
-    mainWindow.webContents.openDevTools();
+    mainWindow.loadURL(`${BASE_URI}`);
+    // mainWindow.webContents.openDevTools();
   }
 
   mainWindow.webContents.on('did-finish-load', () => {
@@ -285,10 +304,6 @@ async function createMainWindow() {
     return { action: 'deny' };
   });
 
-  mainWindow.webContents.on('close', () => {
-    app.quit();
-  });
-
   return mainWindow;
 }
 
@@ -298,7 +313,7 @@ async function createAuthWindow() {
     return authWindow;
   }
 
-  if (isDev) {
+  if (DEV) {
     try {
       await waitForPort(3000);
     } catch (err) {
@@ -309,12 +324,13 @@ async function createAuthWindow() {
   }
 
   authWindow = new BrowserWindow({
-    width: 610,
-    height: 450,
-    resizable: false,
+    width: 640,
+    height: 480,
     frame: false,
     transparent: true,
+    resizable: false,
     hasShadow: true,
+    fullscreen: false,
     icon: path.join(
       __dirname,
       'resources',
@@ -323,16 +339,15 @@ async function createAuthWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      webviewTag: true,
     },
   });
 
-  if (app.isPackaged || !isDev) {
-    appServe(authWindow).then(() => {
-      authWindow.loadURL('app://-/auth.html');
-    });
+  if (app.isPackaged || !DEV) {
+    authWindow.loadURL('app://-/auth.html');
   } else {
-    authWindow.loadURL(`${baseUri}/auth`);
-    authWindow.webContents.openDevTools();
+    authWindow.loadURL(`${BASE_URI}/auth`);
+    // authWindow.webContents.openDevTools();
   }
 
   authWindow.webContents.on('did-finish-load', () => {
@@ -341,37 +356,30 @@ async function createAuthWindow() {
     );
   });
 
-  authWindow.webContents.on('close', () => {
-    app.quit();
-  });
-
   return authWindow;
 }
 
-async function createPopup(type, height, width, additionalData = {}) {
-  // 針對DirectMessage類型，使用targetId來區分不同的對話視窗
-  let windowKey = type;
-  if (type === 'directMessage' && additionalData.targetId) {
-    windowKey = `${type}_${additionalData.targetId}`;
+async function createPopup(
+  type: string,
+  id: string,
+  height: number,
+  width: number,
+): Promise<BrowserWindow | null> {
+  if (popups[id] && !popups[id].isDestroyed()) {
+    popups[id].destroy();
   }
 
-  // Track popup windows
-  if (popups[windowKey] && !popups[windowKey].isDestroyed()) {
-    popups[windowKey].focus();
-    return popups[windowKey];
-  }
-
-  if (isDev) {
+  if (DEV) {
     try {
       await waitForPort(3000);
     } catch (err) {
       console.error('Failed to connect to Next.js server:', err);
       app.quit();
-      return;
+      return null;
     }
   }
 
-  popups[windowKey] = new BrowserWindow({
+  popups[id] = new BrowserWindow({
     width: width ?? 800,
     height: height ?? 600,
     resizable: false,
@@ -379,75 +387,74 @@ async function createPopup(type, height, width, additionalData = {}) {
     transparent: true,
     hasShadow: true,
     modal: true,
-    parent: null,
+    fullscreen: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
 
-  if (app.isPackaged || !isDev) {
-    appServe(popups[windowKey]).then(() => {
-      popups[windowKey].loadURL(`app://-/popup.html?type=${type}`);
-    });
+  if (app.isPackaged || !DEV) {
+    popups[id].loadURL(`app://-/popup.html?type=${type}&id=${id}`);
   } else {
-    popups[windowKey].loadURL(`${baseUri}/popup?type=${type}`);
-    popups[windowKey].webContents.openDevTools();
+    popups[id].loadURL(`${BASE_URI}/popup?type=${type}&id=${id}`);
+    // popups[id].webContents.openDevTools();
   }
 
-  popups[windowKey].webContents.on('resize', (_, width, height) => {
-    popups[windowKey].webContents.setSize(width, height);
-  });
-
-  popups[windowKey].webContents.on('closed', () => {
-    popups[windowKey] = null;
-  });
-
-  return popups[windowKey];
+  return popups[id];
 }
 
-function connectSocket(token) {
+function closePopups() {
+  Object.values(popups).forEach((popup) => {
+    if (popup && !popup.isDestroyed()) {
+      popup.close();
+    }
+  });
+  popups = {};
+}
+
+// Socket Functions
+function connectSocket(token: string): Socket | null {
   if (!token) return null;
 
   if (socketInstance) {
-    socketInstance.disconnect();
-    socketInstance = disconnectSocket(socketInstance);
+    socketInstance = disconnectSocket();
   }
 
   const socket = io(WS_URL, {
     transports: ['websocket'],
     reconnection: true,
-    // reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
     autoConnect: false,
     query: {
       jwt: token,
+      token: token,
     },
   });
 
-  const ipcHandlers = Object.values(SocketClientEvent).reduce((acc, event) => {
-    acc[event] = (_, data) => socket.emit(event, data);
-    return acc;
-  }, {});
-
   socket.on('connect', () => {
-    Object.values(SocketClientEvent).forEach((event) => {
+    for (const event of Object.values(SocketClientEvent)) {
       ipcMain.removeAllListeners(event);
-    });
+    }
 
-    Object.entries(ipcHandlers).forEach(([event, handler]) => {
-      ipcMain.on(event, handler);
+    for (const event of Object.values(SocketServerEvent)) {
+      socket.removeAllListeners(event);
+    }
+
+    Object.values(SocketClientEvent).forEach((event) => {
+      ipcMain.on(event, (_, ...args) => {
+        console.log('socket.emit', event, ...args);
+        socket.emit(event, ...args);
+      });
     });
 
     Object.values(SocketServerEvent).forEach((event) => {
-      socket.on(event, (data) => {
-        if (!userId && data && data.userId) {
-          userId = data.userId;
-        }
+      socket.on(event, (...args) => {
+        console.log('socket.on', event, ...args);
         BrowserWindow.getAllWindows().forEach((window) => {
-          window.webContents.send(event, data);
+          window.webContents.send(event, ...args);
         });
       });
     });
@@ -459,7 +466,7 @@ function connectSocket(token) {
   });
 
   socket.on('connect_error', (error) => {
-    console.error('Socket 連線失敗:', error);
+    console.error('Socket 連線失敗:', error.message);
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('connect_error', error);
     });
@@ -480,54 +487,88 @@ function connectSocket(token) {
   });
 
   socket.on('reconnect_error', (error) => {
-    console.error('Socket 重新連線失敗:', error);
+    console.error('Socket 重新連線失敗:', error.message);
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('reconnect_error', error);
     });
   });
 
-  socket.ipcHandlers = ipcHandlers;
+  socket.on('onShakeWindow', (data) => {
+    console.log('onShakeWindow', data);
+
+    // check data validity
+    if (!data) {
+      console.error('無效的抖動消息數據');
+      return;
+    }
+
+    // generate window key
+    const windowId = `directMessage-${data.targetId}`;
+
+    // check if direct message popup window exists
+    if (popups[windowId] && !popups[windowId].isDestroyed()) {
+      // is exists, set always on top to set top and cancel to avoid top-locked
+      popups[windowId].setAlwaysOnTop(true);
+      popups[windowId].setAlwaysOnTop(false);
+      popups[windowId].focus();
+      popups[windowId].webContents.send('shakeWindow');
+    } else {
+      // not exists, create new direct message popup window
+      createPopup('directMessage', windowId, 550, 650).then((window) => {
+        if (!window) return;
+
+        ipcMain.once('request-initial-data', async (_, to) => {
+          if (to === windowId) {
+            window.webContents.send('response-initial-data', windowId, {
+              userId: data.userId,
+              targetId: data.targetId,
+              targetName: data.name,
+            });
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            window.setAlwaysOnTop(true);
+            window.setAlwaysOnTop(false);
+            window.focus();
+            window.webContents.send('shakeWindow');
+          }
+        });
+      });
+    }
+  });
+
+  socket.connect();
+
   return socket;
 }
 
-function disconnectSocket(socket) {
-  if (!socket) return null;
+function disconnectSocket(): Socket | null {
+  if (!socketInstance) return null;
 
-  if (socket.ipcHandlers) {
-    Object.entries(socket.ipcHandlers).forEach(([event, handler]) => {
-      ipcMain.removeListener(event, handler);
-    });
+  for (const event of Object.values(SocketClientEvent)) {
+    ipcMain.removeAllListeners(event);
   }
 
-  Object.values(SocketServerEvent).forEach((event) => {
-    socket.off(event);
-  });
+  for (const event of Object.values(SocketServerEvent)) {
+    socketInstance.removeAllListeners(event);
+  }
+
+  socketInstance.disconnect();
 
   return null;
 }
 
-async function setActivity(activity) {
-  if (!rpc) return;
-  try {
-    rpc.setActivity(activity);
-  } catch (error) {
-    console.error('設置Rich Presence時出錯:', error);
-    rpc.setActivity(defaultPrecence);
-  }
-}
-
+// Auto Updater
 function configureAutoUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowDowngrade = false;
 
-  if (isDev) {
+  if (DEV) {
     autoUpdater.forceDevUpdateConfig = true;
     autoUpdater.updateConfigPath = path.join(__dirname, 'dev-app-update.yml');
   }
 
-  autoUpdater.on('error', (error) => {
-    if (isDev && error.message.includes('dev-app-update.yml')) {
+  autoUpdater.on('error', (error: any) => {
+    if (DEV && error.message.includes('dev-app-update.yml')) {
       console.info('開發環境中跳過更新檢查');
       return;
     }
@@ -538,7 +579,7 @@ function configureAutoUpdater() {
     });
   });
 
-  autoUpdater.on('update-available', (info) => {
+  autoUpdater.on('update-available', (info: any) => {
     dialog.showMessageBox({
       type: 'info',
       title: '有新版本可用',
@@ -551,14 +592,14 @@ function configureAutoUpdater() {
     console.info('目前是最新版本');
   });
 
-  autoUpdater.on('download-progress', (progressObj) => {
+  autoUpdater.on('download-progress', (progressObj: any) => {
     let message = `下載速度: ${progressObj.bytesPerSecond}`;
     message = `${message} - 已下載 ${progressObj.percent}%`;
     message = `${message} (${progressObj.transferred}/${progressObj.total})`;
     console.info(message);
   });
 
-  autoUpdater.on('update-downloaded', (info) => {
+  autoUpdater.on('update-downloaded', (info: any) => {
     dialog
       .showMessageBox({
         type: 'info',
@@ -574,45 +615,60 @@ function configureAutoUpdater() {
   });
 }
 
-async function configureDiscordRPC() {
-  try {
-    rpc = new DiscordRPC.Client({ transport: 'ipc' });
-    await rpc.login({ clientId }).catch(() => {
-      console.warn('Discord RPC登錄失敗, 將不會顯示Discord Rich Presence');
-      rpc = null;
-    });
-
-    if (rpc) {
-      rpc.on('ready', () => {
-        setActivity(defaultPrecence);
-      });
-    }
-  } catch (error) {
-    console.error('Discord RPC初始化失敗:', error);
-    rpc = null;
-  }
-}
-
 const configureUpdateChecker = async () => {
+  setInterval(checkUpdate, 60 * 60 * 1000);
+};
+
+const checkUpdate = async () => {
   try {
-    if (!isDev) {
-      await autoUpdater.checkForUpdates();
-      setInterval(updateChecker, 60 * 60 * 1000);
-    }
+    if (DEV) return;
+    await autoUpdater.checkForUpdates();
   } catch (error) {
     console.error('定期檢查更新失敗:', error);
   }
 };
 
-// 托盤圖標設定
-function trayIcon(isGray = true) {
-  if (tray) {
-    tray.destroy();
+// Discord RPC Functions
+async function setActivity(presence: DiscordRPC.Presence) {
+  if (!rpc) return;
+  try {
+    await rpc.setActivity(presence);
+  } catch (error) {
+    await rpc.setActivity(defaultPrecence);
+
+    console.error('設置 Discord RPC 時出錯:', error);
   }
-  const iconPath = isGray ? 'tray_gray.ico' : 'tray.ico';
-  tray = new Tray(
-    nativeImage.createFromPath(path.join(__dirname, 'resources', iconPath)),
-  );
+}
+
+async function configureDiscordRPC() {
+  try {
+    rpc = new DiscordRPC.Client({ transport: 'ipc' });
+
+    await rpc.login({ clientId: CLIENT_ID }).catch(() => {
+      console.warn('Discord RPC 登錄失敗, 將不會顯示 Discord 狀態');
+      rpc = null;
+    });
+
+    if (!rpc) return;
+
+    rpc.on('ready', () => {
+      setActivity(defaultPrecence);
+    });
+  } catch (error) {
+    rpc = null;
+
+    console.error('Discord RPC 初始化失敗:', error);
+  }
+}
+
+// Tray Icon
+function trayIcon(isGray = true) {
+  if (tray) tray.destroy();
+
+  const iconPath = isGray ? 'resources/tray_gray.ico' : 'resources/tray.ico';
+
+  tray = new Tray(nativeImage.createFromPath(path.join(__dirname, iconPath)));
+
   tray.on('click', () => {
     if (mainWindow && authWindow.isVisible()) {
       authWindow.hide();
@@ -622,6 +678,7 @@ function trayIcon(isGray = true) {
       (authWindow || mainWindow)?.show();
     }
   });
+
   const contextMenu = Menu.buildFromTemplate([
     { label: '打開主視窗', type: 'normal', click: () => app.focus() },
     { type: 'separator' },
@@ -636,17 +693,9 @@ function trayIcon(isGray = true) {
     },
     { label: '退出', type: 'normal', click: () => app.quit() },
   ]);
+
   tray.setToolTip(`RiceCall v${app.getVersion()}`);
   tray.setContextMenu(contextMenu);
-}
-
-function closePopups() {
-  Object.values(popups).forEach((win) => {
-    if (win && !win.isDestroyed()) {
-      win.close();
-    }
-  });
-  popups = {};
 }
 
 app.on('ready', async () => {
@@ -663,11 +712,9 @@ app.on('ready', async () => {
 
   app.on('before-quit', () => {
     if (rpc) {
-      try {
-        rpc.destroy();
-      } catch (error) {
-        console.error('Discord RPC銷毀失敗:', error);
-      }
+      rpc.destroy().catch((error) => {
+        console.error('Discord RPC 銷毀失敗:', error);
+      });
     }
   });
 
@@ -679,28 +726,25 @@ app.on('ready', async () => {
   ipcMain.on('login', (_, token) => {
     mainWindow.show();
     authWindow.hide();
-    console.log(token);
     socketInstance = connectSocket(token);
-    socketInstance.connect();
     isLogin = true;
     trayIcon(false);
   });
-  ipcMain.on('logout', async () => {
+
+  ipcMain.on('logout', () => {
     if (rpc) {
-      try {
-        await rpc.clearActivity();
-      } catch (error) {
-        console.error('清除Discord狀態失敗:', error);
-      }
+      rpc.clearActivity().catch((error) => {
+        console.error('清除 Discord 狀態失敗:', error);
+      });
     }
     closePopups();
     mainWindow.hide();
     authWindow.show();
-    socketInstance.disconnect();
-    socketInstance = disconnectSocket(socketInstance);
+    socketInstance = disconnectSocket();
     isLogin = false;
     trayIcon(true);
   });
+
   ipcMain.on('get-socket-status', () => {
     return socketInstance && socketInstance.connected
       ? 'connected'
@@ -708,22 +752,25 @@ app.on('ready', async () => {
   });
 
   // Initial data request handlers
-  ipcMain.on('request-initial-data', (_, to) => {
+  ipcMain.on('request-initial-data', (_, from) => {
     BrowserWindow.getAllWindows().forEach((window) => {
-      window.webContents.send('request-initial-data', to);
+      window.webContents.send('request-initial-data', from);
     });
   });
-  ipcMain.on('response-initial-data', (_, from, data) => {
+
+  ipcMain.on('response-initial-data', (_, to, data) => {
     BrowserWindow.getAllWindows().forEach((window) => {
-      window.webContents.send('response-initial-data', from, data);
+      window.webContents.send('response-initial-data', to, data);
     });
   });
 
   // Popup handlers
-  ipcMain.on('open-popup', (event, type, height, width, additionalData) => {
-    createPopup(type, height, width, additionalData);
+  ipcMain.on('open-popup', (_, type, id, height, width) => {
+    createPopup(type, id, height, width);
   });
+
   ipcMain.on('popup-submit', (_, to) => {
+    console.log('popup-submit', to);
     BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send('popup-submit', to);
     });
@@ -738,19 +785,20 @@ app.on('ready', async () => {
         window.minimize();
         break;
       case 'maximize':
-        if (window.isMaximized()) {
-          window.unmaximize();
-        } else {
-          window.maximize();
-        }
+        window.maximize();
+        window.setResizable(false);
+        window.setMovable(false);
         break;
       case 'unmaximize':
         window.unmaximize();
+        window.setResizable(true);
+        window.setMovable(true);
         break;
       case 'close':
         window.close();
         break;
     }
+    window.webContents.send(command);
   });
 
   // Discord RPC handlers
@@ -758,31 +806,44 @@ app.on('ready', async () => {
     setActivity(updatePresence);
   });
 
-  // Auto launch handlers
-  ipcMain.on('set-auto-launch', (_, enable) => {
-    setAutoLaunch(enable);
+  // System settings handlers
+  ipcMain.on('get-system-settings', (event) => {
+    const settings = {
+      autoLaunch: isAutoLaunchEnabled(),
+      inputAudioDevice: store.get('audioInputDevice'),
+      outputAudioDevice: store.get('audioOutputDevice'),
+    };
+    event.reply('system-settings-status', settings);
   });
+
   ipcMain.on('get-auto-launch', (event) => {
     event.reply('auto-launch-status', isAutoLaunchEnabled());
   });
 
-  // Audio device handlers
-  ipcMain.on('set-audio-device', (_, deviceId, type) => {
-    if (type === 'input') {
-      store.set('audioInputDevice', deviceId);
-    } else if (type === 'output') {
-      store.set('audioOutputDevice', deviceId);
-    }
+  ipcMain.on('get-input-audio-device', (event) => {
+    event.reply('input-audio-device-status', store.get('audioInputDevice'));
+  });
+
+  ipcMain.on('get-output-audio-device', (event) => {
+    event.reply('output-audio-device-status', store.get('audioOutputDevice'));
+  });
+
+  ipcMain.on('set-auto-launch', (_, enable) => {
+    setAutoLaunch(enable);
+  });
+
+  ipcMain.on('set-input-audio-device', (_, deviceId) => {
+    store.set('audioInputDevice', deviceId);
     BrowserWindow.getAllWindows().forEach((window) => {
-      window.webContents.send('audio-device-status', type, deviceId);
+      window.webContents.send('input-audio-device-status', deviceId);
     });
   });
-  ipcMain.on('get-audio-device', (event, type) => {
-    if (type === 'input') {
-      event.reply('audio-device-status', type, store.get('audioInputDevice'));
-    } else if (type === 'output') {
-      event.reply('audio-device-status', type, store.get('audioOutputDevice'));
-    }
+
+  ipcMain.on('set-output-audio-device', (_, deviceId) => {
+    store.set('audioOutputDevice', deviceId);
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.webContents.send('output-audio-device-status', deviceId);
+    });
   });
 
   // Open external url handlers
@@ -805,6 +866,7 @@ app.whenReady().then(() => {
   const protocolClient = process.execPath;
   const args =
     process.platform === 'win32' ? [path.resolve(process.argv[1])] : undefined;
+
   app.setAsDefaultProtocolClient(
     'ricecall',
     app.isPackaged ? undefined : protocolClient,
@@ -812,7 +874,6 @@ app.whenReady().then(() => {
   );
 });
 
-// 防止多開
 if (!app.requestSingleInstanceLock()) {
   const hasDeepLink = process.argv.find((arg) => arg.startsWith('ricecall://'));
   if (hasDeepLink) {
@@ -832,7 +893,6 @@ if (!app.requestSingleInstanceLock()) {
   });
 }
 
-// macOS 處理 deeplink
 app.on('open-url', (event, url) => {
   event.preventDefault();
   console.log('接收到 deeplink (macOS open-url):', url);
@@ -840,7 +900,7 @@ app.on('open-url', (event, url) => {
 });
 
 // 集中處理 DeepLink
-async function handleDeepLink(url) {
+async function handleDeepLink(url: string) {
   if (!url) return;
   try {
     const { hostname } = new URL(url);
@@ -869,12 +929,12 @@ async function handleDeepLink(url) {
             (serverInfoList) => {
               // 對照DisplayId 如果找不到就不會進群也不會通知前端
               const matchedServer = serverInfoList.find(
-                (server) => server.displayId === serverId,
+                (server: any) => server.displayId === serverId,
               );
               if (matchedServer) {
                 mainWindow.show();
                 mainWindow.focus();
-                socketInstance.emit(SocketClientEvent.CONNECT_SERVER, {
+                socketInstance?.emit(SocketClientEvent.CONNECT_SERVER, {
                   userId,
                   serverId: matchedServer.serverId,
                 });
@@ -886,19 +946,5 @@ async function handleDeepLink(url) {
     }
   } catch (error) {
     console.error('解析deeplink錯誤:', error);
-  }
-}
-
-// 集中處理聚焦視窗
-function focusWindow() {
-  const window =
-    authWindow?.isDestroyed() === false
-      ? authWindow
-      : mainWindow?.isDestroyed() === false
-      ? mainWindow
-      : null;
-  if (window) {
-    if (window.isMinimized()) window.restore();
-    window.focus();
   }
 }

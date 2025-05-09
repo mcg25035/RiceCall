@@ -32,18 +32,38 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
     // Refs
     const refreshRef = useRef(false);
 
+    // States
+    const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]);
+    const [friend, setFriend] = useState<Friend>(createDefault.friend());
+
     // Variables
     const { userId, targetId } = initialData;
-
-    // States
-    const [userFriendGroups, setUserFriendGroups] = useState<FriendGroup[]>([]);
-    const [friendGroup, setFriendGroup] = useState<Friend['friendGroupId']>(
-      createDefault.friend().friendGroupId,
-    );
+    const { friendGroupId } = friend;
 
     // Handlers
     const handleClose = () => {
       ipcService.window.close();
+    };
+
+    const handleFriendGroupAdd = (data: FriendGroup) => {
+      setFriendGroups((prev) => [...prev, data]);
+    };
+
+    const handleFriendGroupUpdate = (
+      id: FriendGroup['friendGroupId'],
+      data: Partial<FriendGroup>,
+    ) => {
+      setFriendGroups((prev) =>
+        prev.map((item) =>
+          item.friendGroupId === id ? { ...item, ...data } : item,
+        ),
+      );
+    };
+
+    const handleFriendGroupDelete = (id: FriendGroup['friendGroupId']) => {
+      setFriendGroups((prev) =>
+        prev.filter((item) => item.friendGroupId !== id),
+      );
     };
 
     const handleUpdateFriend = (
@@ -55,23 +75,14 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
       socket.send.updateFriend({ friend, userId, targetId });
     };
 
-    const handleUserFriendGroupsUpdate = (data: FriendGroup[] | null) => {
-      if (!data) data = [];
-      setUserFriendGroups(data);
-    };
-
-    const handleFriendUpdate = (data: Friend | null) => {
-      if (!data) data = createDefault.friend();
-      setFriendGroup(data.friendGroupId);
-    };
-
     // Effects
     useEffect(() => {
       if (!socket) return;
 
       const eventHandlers = {
-        [SocketServerEvent.USER_FRIEND_GROUPS_UPDATE]:
-          handleUserFriendGroupsUpdate,
+        [SocketServerEvent.FRIEND_GROUP_ADD]: handleFriendGroupAdd,
+        [SocketServerEvent.FRIEND_GROUP_UPDATE]: handleFriendGroupUpdate,
+        [SocketServerEvent.FRIEND_GROUP_DELETE]: handleFriendGroupDelete,
       };
       const unsubscribe: (() => void)[] = [];
 
@@ -97,9 +108,13 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
             userId: userId,
             targetId: targetId,
           }),
-        ]).then(([userFriendGroups, friend]) => {
-          handleUserFriendGroupsUpdate(userFriendGroups);
-          handleFriendUpdate(friend);
+        ]).then(([friendGroups, friend]) => {
+          if (friendGroups) {
+            setFriendGroups(friendGroups);
+          }
+          if (friend) {
+            setFriend(friend);
+          }
         });
       };
       refresh();
@@ -117,13 +132,16 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
                 <div className={popup['selectBox']}>
                   <select
                     className={popup['input']}
-                    value={friendGroup || ''}
+                    value={friendGroupId || ''}
                     onChange={(e) => {
-                      setFriendGroup(e.target.value);
+                      setFriend((prev) => ({
+                        ...prev,
+                        friendGroupId: e.target.value,
+                      }));
                     }}
                   >
                     <option value={''}>{lang.tr.none}</option>
-                    {userFriendGroups.map((group) => (
+                    {friendGroups.map((group) => (
                       <option
                         key={group.friendGroupId}
                         value={group.friendGroupId}
@@ -143,7 +161,7 @@ const EditFriendPopup: React.FC<EditFriendPopupProps> = React.memo(
             className={`${popup['button']}`}
             onClick={() => {
               handleUpdateFriend(
-                { friendGroupId: friendGroup },
+                { friendGroupId: friendGroupId },
                 userId,
                 targetId,
               );

@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 // Types
-import { FriendGroup, PopupType, SocketServerEvent, User } from '@/types';
+import { FriendGroup, User } from '@/types';
 
 // Providers
 import { useSocket } from '@/providers/Socket';
@@ -14,6 +14,9 @@ import setting from '@/styles/popups/setting.module.css';
 // Services
 import ipcService from '@/services/ipc.service';
 
+// Utils
+import { createDefault } from '@/utils/createDefault';
+
 interface CreateFriendGroupPopupProps {
   userId: User['userId'];
 }
@@ -25,14 +28,16 @@ const CreateFriendGroupPopup: React.FC<CreateFriendGroupPopupProps> =
     const lang = useLanguage();
 
     // States
-    const [groupName, setGroupName] = useState<string>('');
-    const [groupOrder, setGroupOrder] = useState<number>(0);
+    const [friendGroup, setFriendGroup] = useState<FriendGroup>(
+      createDefault.friendGroup(),
+    );
 
     // Variables
     const { userId } = initialData;
+    const { name: groupName, order: groupOrder } = friendGroup;
 
     // Handlers
-    const handleAddSubGroups = (
+    const handleCreateFriendGroup = (
       group: Partial<FriendGroup>,
       userId: User['userId'],
     ) => {
@@ -40,36 +45,9 @@ const CreateFriendGroupPopup: React.FC<CreateFriendGroupPopupProps> =
       socket.send.createFriendGroup({ group, userId });
     };
 
-    const handleUserSearch = useCallback((name: User | null) => {
-      if (!name) return;
-      ipcService.popup.open(PopupType.APPLY_FRIEND);
-      ipcService.initialData.onRequest(PopupType.APPLY_FRIEND, {}, () =>
-        handleClose(),
-      );
-    }, []);
-
     const handleClose = () => {
       ipcService.window.close();
     };
-
-    // Effects
-    useEffect(() => {
-      if (!socket) return;
-
-      const eventHandlers = {
-        [SocketServerEvent.USER_SEARCH]: handleUserSearch,
-      };
-      const unsubscribe: (() => void)[] = [];
-
-      Object.entries(eventHandlers).map(([event, handler]) => {
-        const unsub = socket.on[event as SocketServerEvent](handler);
-        unsubscribe.push(unsub);
-      });
-
-      return () => {
-        unsubscribe.forEach((unsub) => unsub());
-      };
-    }, [socket, handleUserSearch]);
 
     return (
       <form className={popup['popupContainer']}>
@@ -91,7 +69,12 @@ const CreateFriendGroupPopup: React.FC<CreateFriendGroupPopupProps> =
                     type="text"
                     value={groupName}
                     maxLength={20}
-                    onChange={(e) => setGroupName(e.target.value)}
+                    onChange={(e) =>
+                      setFriendGroup((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
                     required
                   />
                 </div>
@@ -112,7 +95,10 @@ const CreateFriendGroupPopup: React.FC<CreateFriendGroupPopupProps> =
                     max={999}
                     min={-999}
                     onChange={(e) =>
-                      setGroupOrder(parseInt(e.target.value) || 0)
+                      setFriendGroup((prev) => ({
+                        ...prev,
+                        order: parseInt(e.target.value) || 0,
+                      }))
                     }
                     required
                   />
@@ -129,11 +115,8 @@ const CreateFriendGroupPopup: React.FC<CreateFriendGroupPopupProps> =
             }`}
             disabled={!groupName.trim()}
             onClick={() => {
-              handleAddSubGroups(
-                {
-                  name: groupName,
-                  order: groupOrder,
-                },
+              handleCreateFriendGroup(
+                { name: groupName, order: groupOrder },
                 userId,
               );
               handleClose();

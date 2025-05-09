@@ -4,25 +4,18 @@ import React from 'react';
 import homePage from '@/styles/pages/home.module.css';
 
 // Type
-import { Server, User } from '@/types';
-
-// Providers
-import { useSocket } from '@/providers/Socket';
+import { UserServer, User } from '@/types';
 
 interface ServerCardProps {
   user: User;
-  server: Server;
+  server: UserServer;
   onClick?: () => void;
 }
 
 const ServerCard: React.FC<ServerCardProps> = React.memo(
   ({ user, server, onClick }) => {
-    // Hooks
-    const socket = useSocket();
-
     // Variables
     const {
-      serverId,
       name: serverName,
       avatarUrl: serverAvatarUrl,
       displayId: serverDisplayId,
@@ -32,25 +25,8 @@ const ServerCard: React.FC<ServerCardProps> = React.memo(
     const { userId } = user;
     const isOwner = serverOwnerId === userId;
 
-    // Handlers
-    const handleServerSelect = (
-      userId: User['userId'],
-      serverId: Server['serverId'],
-    ) => {
-      setTimeout(() => {
-        if (!socket) return;
-        socket.send.connectServer({ userId, serverId });
-      }, 1500);
-      onClick?.();
-    };
-
     return (
-      <div
-        className={homePage['serverCard']}
-        onClick={() => {
-          handleServerSelect(userId, serverId);
-        }}
-      >
+      <div className={homePage['serverCard']} onClick={onClick}>
         <div
           className={homePage['serverAvatarPicture']}
           style={{ backgroundImage: `url(${serverAvatarUrl})` }}
@@ -80,8 +56,8 @@ ServerCard.displayName = 'ServerCard';
 // ServerGrid Component
 interface ServerListViewerProps {
   user: User;
-  servers: Server[];
-  onServerClick?: (server: Server) => void;
+  servers: UserServer[];
+  onServerClick?: (server: UserServer) => void;
 }
 
 const ServerListViewer: React.FC<ServerListViewerProps> = React.memo(

@@ -16,8 +16,11 @@ import {
   Server,
   User,
   Channel,
-  Member,
   UserServer,
+  FriendGroup,
+  UserFriend,
+  ServerMember,
+  ChannelMessage,
 } from '@/types';
 
 // Pages
@@ -30,8 +33,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 // Utils
 import { createDefault } from '@/utils/createDefault';
-import { StandardizedError } from '@/utils/errorHandler';
-import { errorHandler } from '@/utils/errorHandler';
+import StandardizedError, { errorHandler } from '@/utils/errorHandler';
 
 // Providers
 import WebRTCProvider from '@/providers/WebRTC';
@@ -44,6 +46,7 @@ import { useMainTab } from '@/providers/MainTab';
 // Services
 import ipcService from '@/services/ipc.service';
 import authService from '@/services/auth.service';
+import refreshService from '@/services/refresh.service';
 
 interface HeaderProps {
   user: User;
@@ -96,16 +99,13 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
 
   const handleOpenUserSetting = (userId: User['userId']) => {
     const targetId = userId;
-    ipcService.popup.open(PopupType.USER_INFO);
-    ipcService.initialData.onRequest(PopupType.USER_INFO, {
-      userId,
-      targetId,
-    });
+    ipcService.popup.open(PopupType.USER_INFO, 'userSetting');
+    ipcService.initialData.onRequest('userSetting', { userId, targetId });
   };
 
   const handleOpenSystemSetting = () => {
-    ipcService.popup.open(PopupType.SYSTEM_SETTING);
-    ipcService.initialData.onRequest(PopupType.SYSTEM_SETTING, {});
+    ipcService.popup.open(PopupType.SYSTEM_SETTING, 'systemSetting');
+    ipcService.initialData.onRequest('systemSetting', {});
   };
 
   const handleLogout = () => {
@@ -113,8 +113,11 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
   };
 
   const handleFullscreen = () => {
-    ipcService.window.maximize();
-    setIsFullscreen(!isFullscreen);
+    if (isFullscreen) {
+      ipcService.window.unmaximize();
+    } else {
+      ipcService.window.maximize();
+    }
   };
 
   const handleMinimize = () => {
@@ -129,6 +132,17 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
     lang.set(language);
     localStorage.setItem('language', language);
   };
+
+  // Effects
+  useEffect(() => {
+    ipcService.window.onMaximize(() => {
+      setIsFullscreen(true);
+    });
+
+    ipcService.window.onUnmaximize(() => {
+      setIsFullscreen(false);
+    });
+  }, []);
 
   return (
     <div className={header['header']}>
@@ -254,7 +268,7 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
                     },
                     {
                       id: 'language-select-cn',
-                      label: '簡體中文',
+                      label: '简体中文',
                       onClick: () => handleLanguageChange('cn'),
                     },
                     {
@@ -318,33 +332,168 @@ const RootPageComponent = () => {
 
   // States
   const [user, setUser] = useState<User>(createDefault.user());
+  const [servers, setServers] = useState<UserServer[]>([]);
+  const [friends, setFriends] = useState<UserFriend[]>([]);
+  const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]);
   const [server, setServer] = useState<UserServer>(createDefault.userServer());
+  const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
+  const [serverChannels, setServerChannels] = useState<Channel[]>([]);
   const [channel, setChannel] = useState<Channel>(createDefault.channel());
+  const [channelMessages, setChannelMessages] = useState<
+    Record<Channel['channelId'], ChannelMessage[]>
+  >({});
+
+  // Variables
+  const { userId } = user;
 
   // Handlers
-  const handleUserUpdate = (data: Partial<User> | null) => {
-    if (!data) data = createDefault.user();
-    setUser((prev) => ({ ...prev, ...data }));
+  const handleUserUpdate = (user: Partial<User>) => {
+    setUser((prev) => ({ ...prev, ...user }));
   };
 
-  const handleServerUpdate = (data: Partial<Server> | null) => {
-    if (data != null) {
-      if (data.serverId) mainTab.setSelectedTabId('server');
-    } else {
-      mainTab.setSelectedTabId('home');
-    }
-    if (!data) data = createDefault.server();
-    setServer((prev) => ({ ...prev, ...data }));
+  const handleServerAdd = (server: UserServer) => {
+    setServers((prev) => [...prev, server]);
   };
 
-  const handleMemberUpdate = (data: Partial<Member> | null): void => {
-    if (!data) data = createDefault.member();
-    setServer((prev) => ({ ...prev, ...data }));
+  const handleServerUpdate = (
+    id: UserServer['serverId'],
+    server: UserServer,
+  ) => {
+    setServers((prev) =>
+      prev.map((item) =>
+        item.serverId === id ? { ...item, ...server } : item,
+      ),
+    );
   };
 
-  const handleCurrentChannelUpdate = (data: Partial<Channel> | null) => {
-    if (!data) data = createDefault.channel();
-    setChannel((prev) => ({ ...prev, ...data }));
+  const handleServerDelete = (id: UserServer['serverId']) => {
+    setServers((prev) => prev.filter((item) => item.serverId !== id));
+  };
+
+  const handleServersUpdate = (servers: UserServer[]) => {
+    setServers(servers);
+  };
+
+  const handleFriendAdd = (friend: UserFriend) => {
+    setFriends((prev) => [...prev, friend]);
+  };
+
+  const handleFriendUpdate = (
+    userId: UserFriend['userId'],
+    targetId: UserFriend['targetId'],
+    friend: Partial<UserFriend>,
+  ) => {
+    setFriends((prev) =>
+      prev.map((item) =>
+        item.userId === userId && item.targetId === targetId
+          ? { ...item, ...friend }
+          : item,
+      ),
+    );
+  };
+
+  const handleFriendDelete = (
+    userId: UserFriend['userId'],
+    targetId: UserFriend['targetId'],
+  ) => {
+    setFriends((prev) =>
+      prev.filter(
+        (item) => !(item.userId === userId && item.targetId === targetId),
+      ),
+    );
+  };
+
+  const handleFriendsUpdate = (friends: UserFriend[]) => {
+    setFriends(friends);
+  };
+
+  const handleFriendGroupAdd = (friendGroup: FriendGroup) => {
+    setFriendGroups((prev) => [...prev, friendGroup]);
+  };
+
+  const handleFriendGroupUpdate = (
+    id: FriendGroup['friendGroupId'],
+    friendGroup: Partial<FriendGroup>,
+  ) => {
+    setFriendGroups((prev) =>
+      prev.map((item) =>
+        item.friendGroupId === id ? { ...item, ...friendGroup } : item,
+      ),
+    );
+  };
+
+  const handleFriendGroupDelete = (id: FriendGroup['friendGroupId']) => {
+    setFriendGroups((prev) => prev.filter((item) => item.friendGroupId !== id));
+  };
+
+  const handleFriendGroupsUpdate = (friendGroups: FriendGroup[]) => {
+    setFriendGroups(friendGroups);
+  };
+
+  const handleServerMemberAdd = (member: ServerMember): void => {
+    setServerMembers((prev) => [...prev, member]);
+  };
+
+  const handleServerMemberUpdate = (
+    userId: ServerMember['userId'],
+    serverId: ServerMember['serverId'],
+    member: Partial<ServerMember>,
+  ): void => {
+    setServerMembers((prev) =>
+      prev.map((item) =>
+        item.userId === userId && item.serverId === serverId
+          ? { ...item, ...member }
+          : item,
+      ),
+    );
+  };
+
+  const handleServerMemberDelete = (
+    userId: ServerMember['userId'],
+    serverId: ServerMember['serverId'],
+  ): void => {
+    setServerMembers((prev) =>
+      prev.filter(
+        (item) => !(item.userId === userId && item.serverId === serverId),
+      ),
+    );
+  };
+
+  const handleServerMembersUpdate = (members: ServerMember[]) => {
+    setServerMembers(members);
+  };
+
+  const handleServerChannelAdd = (channel: Channel): void => {
+    setServerChannels((prev) => [...prev, channel]);
+  };
+
+  const handleServerChannelUpdate = (
+    id: Channel['channelId'],
+    channel: Partial<Channel>,
+  ): void => {
+    setServerChannels((prev) =>
+      prev.map((item) =>
+        item.channelId === id ? { ...item, ...channel } : item,
+      ),
+    );
+  };
+
+  const handleServerChannelDelete = (id: Channel['channelId']): void => {
+    setServerChannels((prev) => prev.filter((item) => item.channelId !== id));
+  };
+
+  const handleServerChannelsUpdate = (channels: Channel[]) => {
+    setServerChannels(channels);
+  };
+
+  const handleOnMessages = (...channelMessages: ChannelMessage[]): void => {
+    setChannelMessages((prev) => ({
+      ...prev,
+      [channelMessages[0].channelId]: [
+        ...(prev[channelMessages[0].channelId] || []),
+        ...channelMessages,
+      ],
+    }));
   };
 
   const handlePlaySound = (sound: string) => {
@@ -365,12 +514,40 @@ const RootPageComponent = () => {
     new errorHandler(error).show();
   };
 
-  const handleOpenPopup = (data: { type: PopupType; initialData: any }) => {
-    ipcService.popup.open(data.type);
-    ipcService.initialData.onRequest(data.type, data.initialData);
-    ipcService.popup.onSubmit(data.type, () => {
-      switch (data.type) {
-        case PopupType.DIALOG_ALERT:
+  const handleConnectError = () => {
+    new errorHandler(
+      new StandardizedError({
+        name: 'ConnectError',
+        message: '連線失敗',
+        part: 'SOCKET',
+        tag: 'CONNECT_ERROR',
+        statusCode: 500,
+      }),
+    ).show();
+  };
+
+  const handleReconnectError = () => {
+    new errorHandler(
+      new StandardizedError({
+        name: 'ReconnectError',
+        message: '重新連線失敗',
+        part: 'SOCKET',
+        tag: 'RECONNECT_ERROR',
+        statusCode: 500,
+      }),
+    ).show();
+  };
+
+  const handleOpenPopup = (popup: {
+    type: PopupType;
+    id: string; // FIXME: Server didn't return this
+    initialData: any;
+  }) => {
+    ipcService.popup.open(popup.type, popup.id);
+    ipcService.initialData.onRequest(popup.id, popup.initialData);
+    ipcService.popup.onSubmit(popup.id, () => {
+      switch (popup.id) {
+        case 'logout':
           ipcService.auth.logout();
           break;
       }
@@ -379,20 +556,59 @@ const RootPageComponent = () => {
 
   // Effects
   useEffect(() => {
+    const channel =
+      serverChannels.find((item) => item.channelId === user.currentChannelId) ||
+      createDefault.channel();
+    setChannel(channel);
+  }, [user.currentChannelId, serverChannels]);
+
+  useEffect(() => {
+    if (user.currentServerId) {
+      if (mainTab.selectedTabId === 'home') mainTab.setSelectedTabId('server');
+    } else {
+      if (mainTab.selectedTabId === 'server') mainTab.setSelectedTabId('home');
+    }
+    const server =
+      servers.find((item) => item.serverId === user.currentServerId) ||
+      createDefault.userServer();
+    setServer(server);
+  }, [user.currentServerId, servers]);
+
+  useEffect(() => {
     if (!socket) return;
 
     const eventHandlers = {
       [SocketServerEvent.USER_UPDATE]: handleUserUpdate,
+      [SocketServerEvent.SERVER_ADD]: handleServerAdd,
       [SocketServerEvent.SERVER_UPDATE]: handleServerUpdate,
-      [SocketServerEvent.MEMBER_UPDATE]: handleMemberUpdate,
-      [SocketServerEvent.CHANNEL_UPDATE]: handleCurrentChannelUpdate,
+      [SocketServerEvent.SERVER_DELETE]: handleServerDelete,
+      [SocketServerEvent.SERVERS_UPDATE]: handleServersUpdate,
+      [SocketServerEvent.FRIEND_ADD]: handleFriendAdd,
+      [SocketServerEvent.FRIEND_UPDATE]: handleFriendUpdate,
+      [SocketServerEvent.FRIEND_DELETE]: handleFriendDelete,
+      [SocketServerEvent.FRIENDS_UPDATE]: handleFriendsUpdate,
+      [SocketServerEvent.FRIEND_GROUP_ADD]: handleFriendGroupAdd,
+      [SocketServerEvent.FRIEND_GROUP_UPDATE]: handleFriendGroupUpdate,
+      [SocketServerEvent.FRIEND_GROUP_DELETE]: handleFriendGroupDelete,
+      [SocketServerEvent.FRIEND_GROUPS_UPDATE]: handleFriendGroupsUpdate,
+      [SocketServerEvent.SERVER_MEMBER_ADD]: handleServerMemberAdd,
+      [SocketServerEvent.SERVER_MEMBER_UPDATE]: handleServerMemberUpdate,
+      [SocketServerEvent.SERVER_MEMBER_DELETE]: handleServerMemberDelete,
+      [SocketServerEvent.SERVER_MEMBERS_UPDATE]: handleServerMembersUpdate,
+      [SocketServerEvent.SERVER_CHANNEL_ADD]: handleServerChannelAdd,
+      [SocketServerEvent.SERVER_CHANNEL_UPDATE]: handleServerChannelUpdate,
+      [SocketServerEvent.SERVER_CHANNEL_DELETE]: handleServerChannelDelete,
+      [SocketServerEvent.SERVER_CHANNELS_UPDATE]: handleServerChannelsUpdate,
+      [SocketServerEvent.ON_MESSAGE]: handleOnMessages,
       [SocketServerEvent.PLAY_SOUND]: handlePlaySound,
       [SocketServerEvent.OPEN_POPUP]: handleOpenPopup,
       [SocketServerEvent.ERROR]: handleError,
+      [SocketServerEvent.CONNECT_ERROR]: handleConnectError,
+      [SocketServerEvent.RECONNECT_ERROR]: handleReconnectError,
     };
     const unsubscribe: (() => void)[] = [];
 
-    Object.entries(eventHandlers).map(([event, handler]) => {
+    Object.entries(eventHandlers).forEach(([event, handler]) => {
       const unsub = socket.on[event as SocketServerEvent](handler);
       unsubscribe.push(unsub);
     });
@@ -401,6 +617,34 @@ const RootPageComponent = () => {
       unsubscribe.forEach((unsub) => unsub());
     };
   }, [socket]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const refresh = async () => {
+      Promise.all([
+        refreshService.userServers({
+          userId: userId,
+        }),
+        refreshService.userFriends({
+          userId: userId,
+        }),
+        refreshService.userFriendGroups({
+          userId: userId,
+        }),
+      ]).then(([servers, friends, friendGroups]) => {
+        if (servers) {
+          setServers(servers);
+        }
+        if (friends) {
+          setFriends(friends);
+        }
+        if (friendGroups) {
+          setFriendGroups(friendGroups);
+        }
+      });
+    };
+    refresh();
+  }, [userId]);
 
   useEffect(() => {
     if (socket.isConnected) {
@@ -426,15 +670,25 @@ const RootPageComponent = () => {
       <>
         <HomePage
           user={user}
-          userServer={server}
+          servers={servers}
+          currentServer={server}
           display={mainTab.selectedTabId === 'home'}
         />
-        <FriendPage user={user} display={mainTab.selectedTabId === 'friends'} />
+        <FriendPage
+          user={user}
+          friends={friends}
+          friendGroups={friendGroups}
+          display={mainTab.selectedTabId === 'friends'}
+        />
         <ExpandedProvider>
           <ServerPage
             user={user}
-            userServer={server}
-            channel={channel}
+            currentServer={server}
+            currentChannel={channel}
+            friends={friends}
+            serverMembers={serverMembers}
+            serverChannels={serverChannels}
+            channelMessages={channelMessages}
             display={mainTab.selectedTabId === 'server'}
           />
         </ExpandedProvider>

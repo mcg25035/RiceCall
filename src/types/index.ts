@@ -395,6 +395,18 @@ export interface Translation {
   unmute: string;
   editChannelOrder: string;
   editChannelName: string;
+  unblock: string;
+  userInfo: string;
+  registering: string;
+  micMuted: string;
+  create: string;
+  changeName: string;
+  moveUp: string;
+  moveDown: string;
+  moveTop: string;
+  moveBottom: string;
+  close: string;
+  showTo: string;
 }
 
 export type LanguageKey = 'tw' | 'cn' | 'en' | 'jp';
@@ -421,6 +433,7 @@ export type User = {
   vip: number;
   xp: number;
   requiredXp: number;
+  // progress: number; (Not used but still in database column)
   birthYear: number;
   birthMonth: number;
   birthDay: number;
@@ -431,6 +444,39 @@ export type User = {
   lastActiveAt: number;
   createdAt: number;
   badges: Badge[];
+};
+
+export type Badge = {
+  badgeId: string;
+  name: string;
+  rare: string;
+  description: string;
+  order: number;
+  createdAt: number;
+};
+
+export type FriendGroup = {
+  friendGroupId: string;
+  userId: string;
+  name: string;
+  order: number;
+  createdAt: number;
+};
+
+export type Friend = {
+  userId: string;
+  targetId: string;
+  isBlocked: boolean;
+  friendGroupId: string | null;
+  createdAt: number;
+};
+
+export type FriendApplication = User & {
+  // Change name to UserFriendApplication and separate
+  senderId: string;
+  receiverId: string;
+  description: string;
+  createdAt: number;
 };
 
 export type Server = {
@@ -463,7 +509,7 @@ export type BaseChannel = {
   guestTextGapTime: number;
   guestTextWaitTime: number;
   guestTextMaxLength: number;
-  // isRoot: boolean;
+  // isRoot: boolean; (Not used but still in database column)
   isLobby: boolean;
   slowmode: boolean;
   forbidText: boolean;
@@ -486,29 +532,6 @@ export type Channel = BaseChannel & {
   type: 'channel';
 };
 
-export type Friend = {
-  userId: string;
-  targetId: string;
-  isBlocked: boolean;
-  friendGroupId: string | null;
-  createdAt: number;
-};
-
-export type FriendApplication = User & {
-  senderId: string;
-  receiverId: string;
-  description: string;
-  createdAt: number;
-};
-
-export type FriendGroup = {
-  friendGroupId: string;
-  userId: string;
-  name: string;
-  order: number;
-  createdAt: number;
-};
-
 export type Member = {
   userId: string;
   serverId: string;
@@ -522,22 +545,15 @@ export type Member = {
 };
 
 export type MemberApplication = User & {
+  // Change name to ServerMemberApplication and separate
   userId: string;
   serverId: string;
   description: string;
   createdAt: number;
 };
 
-export type Badge = {
-  badgeId: string;
-  name: string;
-  rare: string;
-  description: string;
-  order: number;
-  createdAt: number;
-};
-
 export type Message = {
+  // Change name to BaseMessage
   messageId: string;
   content: string;
   type: 'general' | 'info' | 'dm';
@@ -573,7 +589,7 @@ export type UserServerStatus = {
 
 export type UserServer = Server & Member & UserServerStatus;
 
-export type UserFriend = Friend & User;
+export type UserFriend = User & Friend;
 
 export type ServerMember = User & Member;
 
@@ -614,6 +630,18 @@ export enum SocketClientEvent {
   // User
   SEARCH_USER = 'searchUser',
   UPDATE_USER = 'updateUser',
+  // Friend Group
+  CREATE_FRIEND_GROUP = 'createFriendGroup',
+  UPDATE_FRIEND_GROUP = 'updateFriendGroup',
+  DELETE_FRIEND_GROUP = 'deleteFriendGroup',
+  // Friend
+  CREATE_FRIEND = 'createFriend',
+  UPDATE_FRIEND = 'updateFriend',
+  DELETE_FRIEND = 'deleteFriend',
+  // Friend Application
+  CREATE_FRIEND_APPLICATION = 'createFriendApplication',
+  UPDATE_FRIEND_APPLICATION = 'updateFriendApplication',
+  DELETE_FRIEND_APPLICATION = 'deleteFriendApplication',
   // Server
   SEARCH_SERVER = 'searchServer',
   CONNECT_SERVER = 'connectServer',
@@ -621,10 +649,6 @@ export enum SocketClientEvent {
   CREATE_SERVER = 'createServer',
   UPDATE_SERVER = 'updateServer',
   DELETE_SERVER = 'deleteServer',
-  // Category
-  CREATE_CATEGORY = 'createCategory',
-  UPDATE_CATEGORY = 'updateCategory',
-  DELETE_CATEGORY = 'deleteCategory',
   // Channel
   CONNECT_CHANNEL = 'connectChannel',
   DISCONNECT_CHANNEL = 'disconnectChannel',
@@ -632,35 +656,25 @@ export enum SocketClientEvent {
   UPDATE_CHANNEL = 'updateChannel',
   UPDATE_CHANNELS = 'updateChannels',
   DELETE_CHANNEL = 'deleteChannel',
-  // Friend Group
-  CREATE_FRIEND_GROUP = 'createFriendGroup',
-  UPDATE_FRIEND_GROUP = 'updateFriendGroup',
-  DELETE_FRIEND_GROUP = 'deleteFriendGroup',
   // Member
   CREATE_MEMBER = 'createMember',
   UPDATE_MEMBER = 'updateMember',
   DELETE_MEMBER = 'deleteMember',
-  // Friend
-  CREATE_FRIEND = 'createFriend',
-  UPDATE_FRIEND = 'updateFriend',
-  DELETE_FRIEND = 'deleteFriend',
   // Member Application
   CREATE_MEMBER_APPLICATION = 'createMemberApplication',
   UPDATE_MEMBER_APPLICATION = 'updateMemberApplication',
   DELETE_MEMBER_APPLICATION = 'deleteMemberApplication',
-  // Friend Application
-  CREATE_FRIEND_APPLICATION = 'createFriendApplication',
-  UPDATE_FRIEND_APPLICATION = 'updateFriendApplication',
-  DELETE_FRIEND_APPLICATION = 'deleteFriendApplication',
   // Message
   SEND_MESSAGE = 'message',
   SEND_DIRECT_MESSAGE = 'directMessage',
+  SEND_SHAKE_WINDOW = 'shakeWindow',
   // RTC
   RTC_OFFER = 'RTCOffer',
   RTC_ANSWER = 'RTCAnswer',
   RTC_ICE_CANDIDATE = 'RTCIceCandidate',
   // Echo
   PING = 'ping',
+  // Direct Message Shake
 }
 
 export enum SocketServerEvent {
@@ -669,47 +683,63 @@ export enum SocketServerEvent {
   // User
   USER_SEARCH = 'userSearch',
   USER_UPDATE = 'userUpdate',
-  USER_FRIENDS_UPDATE = 'userFriendsUpdate',
-  USER_FRIEND_GROUPS_UPDATE = 'userFriendGroupsUpdate',
-  USER_FRIEND_APPLICATIONS_UPDATE = 'userFriendApplicationsUpdate',
-  USER_SERVERS_UPDATE = 'userServersUpdate',
+  // Friend Group
+  FRIEND_GROUP_ADD = 'friendGroupAdd',
+  FRIEND_GROUP_UPDATE = 'friendGroupUpdate',
+  FRIEND_GROUP_DELETE = 'friendGroupDelete',
+  FRIEND_GROUPS_UPDATE = 'friendGroupsUpdate',
+  // Friend
+  FRIEND_ADD = 'friendAdd',
+  FRIEND_UPDATE = 'friendUpdate',
+  FRIEND_DELETE = 'friendDelete',
+  FRIENDS_UPDATE = 'friendsUpdate',
+  // Friend Application
+  FRIEND_APPLICATION_ADD = 'friendApplicationAdd',
+  FRIEND_APPLICATION_UPDATE = 'friendApplicationUpdate',
+  FRIEND_APPLICATION_DELETE = 'friendApplicationDelete',
+  FRIEND_APPLICATIONS_UPDATE = 'friendApplicationsUpdate',
   // Server
   SERVER_SEARCH = 'serverSearch',
+  SERVER_ADD = 'serverAdd',
   SERVER_UPDATE = 'serverUpdate',
-  SERVER_CHANNELS_UPDATE = 'serverChannelsUpdate',
-  SERVER_MEMBERS_UPDATE = 'serverMembersUpdate',
-  SERVER_MEMBER_APPLICATIONS_UPDATE = 'serverMemberApplicationsUpdate',
+  SERVER_DELETE = 'serverDelete',
+  SERVERS_UPDATE = 'serversUpdate',
   // Channel
-  CHANNEL_UPDATE = 'channelUpdate',
-  // Category
-  CATEGORY_UPDATE = 'categoryUpdate',
-  // Friend Group
-  FRIEND_GROUP_UPDATE = 'friendGroupUpdate',
+  SERVER_CHANNEL_ADD = 'serverChannelAdd',
+  SERVER_CHANNEL_UPDATE = 'serverChannelUpdate',
+  SERVER_CHANNEL_DELETE = 'serverChannelDelete',
+  SERVER_CHANNELS_UPDATE = 'serverChannelsUpdate',
   // Member
-  MEMBER_UPDATE = 'memberUpdate',
+  SERVER_MEMBER_ADD = 'serverMemberAdd',
+  SERVER_MEMBER_UPDATE = 'serverMemberUpdate',
+  SERVER_MEMBER_DELETE = 'serverMemberDelete',
+  SERVER_MEMBERS_UPDATE = 'serverMembersUpdate',
   // Member Application
-  MEMBER_APPLICATION_UPDATE = 'memberApplicationUpdate',
-  // Friend
-  FRIEND_UPDATE = 'friendUpdate',
-  // Friend Application
-  FRIEND_APPLICATION_UPDATE = 'friendApplicationUpdate',
+  SERVER_MEMBER_APPLICATION_ADD = 'serverMemberApplicationAdd',
+  SERVER_MEMBER_APPLICATION_UPDATE = 'serverMemberApplicationUpdate',
+  SERVER_MEMBER_APPLICATION_DELETE = 'serverMemberApplicationDelete',
+  SERVER_MEMBER_APPLICATIONS_UPDATE = 'serverMemberApplicationsUpdate',
   // Message
   ON_MESSAGE = 'onMessage',
   ON_DIRECT_MESSAGE = 'onDirectMessage',
+  ON_SHAKE_WINDOW = 'onShakeWindow',
   // RTC
   RTC_OFFER = 'RTCOffer',
   RTC_ANSWER = 'RTCAnswer',
   RTC_ICE_CANDIDATE = 'RTCIceCandidate',
   RTC_JOIN = 'RTCJoin',
   RTC_LEAVE = 'RTCLeave',
-  // Play
+  // Play Sound
   PLAY_SOUND = 'playSound',
   // Echo
   PONG = 'pong',
   // Error
   ERROR = 'error',
+  CONNECT_ERROR = 'connect_error',
+  RECONNECT_ERROR = 'reconnect_error',
   // Popup
   OPEN_POPUP = 'openPopup',
+  // Direct Message Shake
 }
 
 export enum PopupType {

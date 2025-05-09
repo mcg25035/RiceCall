@@ -10,8 +10,11 @@ import { SocketServerEvent, SocketClientEvent } from '@/types';
 import ipcService from '@/services/ipc.service';
 
 type SocketContextType = {
-  send: Record<SocketClientEvent, (data: any) => () => void>;
-  on: Record<SocketServerEvent, (callback: (data: any) => void) => () => void>;
+  send: Record<SocketClientEvent, (...args: any[]) => () => void>;
+  on: Record<
+    SocketServerEvent,
+    (callback: (...args: any[]) => void) => () => void
+  >;
   isConnected: boolean;
 };
 
@@ -32,8 +35,8 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
   // States
   const [on, setOn] = useState<SocketContextType['on']>(
     Object.values(SocketServerEvent).reduce((acc, event) => {
-      acc[event] = (callback: (data: any) => void) => {
-        ipcService.onSocketEvent(event, callback);
+      acc[event] = (callback: (...args: any[]) => void) => {
+        ipcService.onSocketEvent(event, (...args) => callback(...args));
         return () => ipcService.removeListener(event);
       };
       return acc;
@@ -41,8 +44,8 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
   );
   const [send, setSend] = useState<SocketContextType['send']>(
     Object.values(SocketClientEvent).reduce((acc, event) => {
-      acc[event] = (data: any) => {
-        ipcService.sendSocketEvent(event, data);
+      acc[event] = (...args: any[]) => {
+        ipcService.sendSocketEvent(event, ...args);
         return () => {};
       };
       return acc;
@@ -66,19 +69,8 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
     setIsConnected(false);
   };
 
-  const handleConnectError = (error: any) => {
-    console.error('Socket connection error', error);
-    setIsConnected(false);
-  };
-
   const handleReconnect = (attemptNumber: number) => {
     console.info('Socket reconnected', attemptNumber);
-    setIsConnected(true);
-  };
-
-  const handleReconnectError = (error: any) => {
-    console.error('Socket reconnected error', error);
-    setIsConnected(false);
   };
 
   // Effects
@@ -95,16 +87,14 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
 
     cleanupRef.current.push(() => {
       ipcService.removeListener('connect');
-      ipcService.removeListener('connect_error');
       ipcService.removeListener('reconnect');
-      ipcService.removeListener('reconnect_error');
       ipcService.removeListener('disconnect');
     });
 
     setOn(
       Object.values(SocketServerEvent).reduce((acc, event) => {
-        acc[event] = (callback: (data: any) => void) => {
-          ipcService.onSocketEvent(event, callback);
+        acc[event] = (callback: (...args: any[]) => void) => {
+          ipcService.onSocketEvent(event, (...args) => callback(...args));
           return () => ipcService.removeListener(event);
         };
         return acc;
@@ -113,22 +103,16 @@ const SocketProvider = ({ children }: SocketProviderProps) => {
 
     setSend(
       Object.values(SocketClientEvent).reduce((acc, event) => {
-        acc[event] = (data: any) => {
-          ipcService.sendSocketEvent(event, data);
+        acc[event] = (...args: any[]) => {
+          ipcService.sendSocketEvent(event, ...args);
           return () => {};
         };
         return acc;
       }, {} as SocketContextType['send']),
     );
 
-    ipcService.getSocketStatus().then((status) => {
-      setIsConnected(status === 'connected');
-    });
-
     ipcService.onSocketEvent('connect', handleConnect);
-    ipcService.onSocketEvent('connect_error', handleConnectError);
     ipcService.onSocketEvent('reconnect', handleReconnect);
-    ipcService.onSocketEvent('reconnect_error', handleReconnectError);
     ipcService.onSocketEvent('disconnect', handleDisconnect);
 
     return () => {

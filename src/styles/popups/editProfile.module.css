@@ -235,7 +235,7 @@
   padding: 5px;
   height: 25px;
   border: 0;
-  outline: none;
+
   box-shadow: none;
 }
 
@@ -433,6 +433,25 @@
   background-image: url('../../../public/im/avatar_border.png');
   background-repeat: no-repeat;
   background-position: 0 0;
+  z-index: 1;
+}
+
+.userProfile .avatar.editable::before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  width: 15px;
+  height: 15px;
+  background-color: white;
+  background-image: url('../../../public/im/btn-edit.png');
+  background-size: 70% 70%;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 4px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .userProfile .userName {
@@ -598,7 +617,7 @@
 .serverBox {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  overflow: hidden;
   gap: 5px;
 }
 
@@ -606,6 +625,9 @@
   font-size: 1rem;
   line-height: 1rem;
   color: rgb(95, 95, 95);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .serverInfo {

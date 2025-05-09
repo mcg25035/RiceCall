@@ -50,56 +50,38 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
     ];
 
     // States
-    const [userServers, setUserServers] = useState<UserServer[]>([]);
-    const [userLevel, setUserLevel] = useState<User['level']>(
-      createDefault.user().level || 0,
-    );
-    const [serverName, setServerName] = useState<Server['name']>(
-      createDefault.server().name,
-    );
-    const [serverType, setServerType] = useState<Server['type']>(
-      createDefault.server().type,
-    );
-    const [serverAvatar, setServerAvatar] = useState<Server['avatar']>(
-      createDefault.server().avatar,
-    );
-    const [serverAvatarUrl, setServerAvatarUrl] = useState<Server['avatarUrl']>(
-      createDefault.server().avatarUrl,
-    );
-    const [serverSlogan, setServerSlogan] = useState<Server['slogan']>(
-      createDefault.server().slogan,
-    );
+    const [user, setUser] = useState<User>(createDefault.user());
+    const [servers, setServers] = useState<UserServer[]>([]);
+    const [server, setServer] = useState<Server>(createDefault.server());
     const [section, setSection] = useState<number>(0);
 
     // Variables
     const { userId } = initialData;
+    const { level: userLevel } = user;
+    const {
+      name: serverName,
+      type: serverType,
+      avatar: serverAvatar,
+      avatarUrl: serverAvatarUrl,
+      slogan: serverSlogan,
+    } = server;
     const MAX_GROUPS =
       userLevel >= 16 ? 5 : userLevel >= 6 && userLevel < 16 ? 4 : 3;
-    const remainingServers =
-      MAX_GROUPS - userServers.filter((server) => server.owned).length;
+    const remainingServers = MAX_GROUPS - servers.filter((s) => s.owned).length;
     const canCreate = remainingServers > 0;
 
     // Handlers
+
     const handleCreateServer = (server: Partial<Server>) => {
       if (!socket) return;
       socket.send.createServer({ server });
     };
 
-    const handleUserUpdate = (data: User | null) => {
-      if (!data) data = createDefault.user();
-      setUserLevel(data.level);
-    };
-
-    const handleUserServersUpdate = (data: UserServer[] | null) => {
-      if (!data) data = [];
-      setUserServers(data);
-    };
-
     const handleOpenErrorDialog = (message: string) => {
-      ipcService.popup.open(PopupType.DIALOG_ERROR);
-      ipcService.initialData.onRequest(PopupType.DIALOG_ERROR, {
+      ipcService.popup.open(PopupType.DIALOG_ERROR, 'errorDialog');
+      ipcService.initialData.onRequest('errorDialog', {
         title: message,
-        submitTo: PopupType.DIALOG_ERROR,
+        submitTo: 'errorDialog',
       });
     };
 
@@ -119,9 +101,13 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
           refreshService.userServers({
             userId: userId,
           }),
-        ]).then(([user, userServers]) => {
-          handleUserUpdate(user);
-          handleUserServersUpdate(userServers);
+        ]).then(([user, servers]) => {
+          if (user) {
+            setUser(user);
+          }
+          if (servers) {
+            setServers(servers);
+          }
         });
       };
       refresh();
@@ -157,7 +143,10 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
                           : ''
                       }`}
                       onClick={() =>
-                        setServerType(type.value as Server['type'])
+                        setServer((prev) => ({
+                          ...prev,
+                          type: type.value as Server['type'],
+                        }))
                       }
                     >
                       {type.name}
@@ -227,8 +216,11 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
                         formData.append('_file', reader.result as string);
                         const data = await apiService.post('/upload', formData);
                         if (data) {
-                          setServerAvatar(data.avatar);
-                          setServerAvatarUrl(data.avatarUrl);
+                          setServer((prev) => ({
+                            ...prev,
+                            avatar: data.avatar,
+                            avatarUrl: data.avatarUrl,
+                          }));
                         }
                       };
                       reader.readAsDataURL(file);
@@ -261,7 +253,12 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
                       className={popup['input']}
                       type="text"
                       value={serverName}
-                      onChange={(e) => setServerName(e.target.value)}
+                      onChange={(e) =>
+                        setServer((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
                       placeholder={lang.tr.serverNamePlaceholder}
                     />
                   </div>
@@ -271,7 +268,12 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
                     <textarea
                       className={popup['input']}
                       value={serverSlogan}
-                      onChange={(e) => setServerSlogan(e.target.value)}
+                      onChange={(e) =>
+                        setServer((prev) => ({
+                          ...prev,
+                          slogan: e.target.value,
+                        }))
+                      }
                       placeholder={lang.tr.serverSloganPlaceholder}
                     />
                   </div>

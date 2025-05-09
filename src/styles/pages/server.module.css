@@ -28,7 +28,6 @@
   min-height: 0;
   min-width: 0;
   background-color: #f1f2f5;
-  border-right: 1px solid #e2e8f0;
   font-size: 0.875rem;
 }
 
@@ -147,11 +146,11 @@
   min-width: 40px;
   display: flex;
   align-items: center;
-  position: relative;
+  position: absolute;
   justify-content: flex-end;
   margin-left: auto;
-  bottom: -20px;
-  right: -5px;
+  bottom: 5px;
+  right: 5px;
 }
 
 .navItem:first-child:hover::before,
@@ -267,21 +266,25 @@
   flex-direction: column;
 }
 
-.channelList .channelTab {
+.channelTab {
   position: relative;
-  padding: 10px 20px 10px 8px;
   display: flex;
   align-items: center;
   height: 1.8rem;
+  padding: 1px 20px 1px 8px;
   cursor: pointer;
   gap: 5px;
 }
 
-.channelList .channelTab:hover {
+.channelTab:hover {
   background-color: #d1d5da5c;
 }
 
-.channelList .tabIcon {
+.channelList .channelList .channelTab {
+  padding-left: 25px;
+}
+
+.channelTab .tabIcon {
   display: inline-block;
   min-width: 14px;
   min-height: 14px;
@@ -291,59 +294,54 @@
   background-size: auto;
 }
 
-.channelList .tabIcon.public {
+.channelTab .tabIcon.public {
   background-position: 0 0;
 }
 
-.channelList .tabIcon.public.expanded {
+.channelTab .tabIcon.public.expanded {
   background-position: -14px 0;
 }
 
-.channelList .tabIcon.member {
+.channelTab .tabIcon.member {
   background-position: 0 -14px;
 }
 
-.channelList .tabIcon.member.expanded {
+.channelTab .tabIcon.member.expanded {
   background-position: -14px -14px;
 }
 
-.channelList .tabIcon.private {
+.channelTab .tabIcon.private {
   background-position: -28px 0;
 }
 
-.channelList .tabIcon.private.expanded {
+.channelTab .tabIcon.private.expanded {
   background-position: -28px -14px;
 }
 
-.channelList .tabIcon.readonly {
+.channelTab .tabIcon.readonly {
   background-position: -42px 0;
 }
 
-.channelList .tabIcon.readonly.expanded {
+.channelTab .tabIcon.readonly.expanded {
   background-position: -42px -14px;
 }
 
-.channelList .tabIcon.lobby {
+.channelTab .tabIcon.lobby {
   background-position: -56px 0;
 }
 
-.channelList .tabIcon.lobby.expanded {
+.channelTab .tabIcon.lobby.expanded {
   background-position: -56px -14px;
 }
 
-.channelList .channelTab .channelTabLable {
+.channelTab .channelTabLable {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.channelList .channelTab .channelTabCount {
+.channelTab .channelTabCount {
   color: #555;
-}
-
-.channelList .channelList:not(.lobby) .channelTab,
-.channelList .channelList:not(.lobby) .userTab {
-  padding-left: 25px;
 }
 
 .lobby,
@@ -361,7 +359,7 @@
   flex-direction: column;
 }
 
-.userList .userTab {
+.userTab {
   position: relative;
   display: flex;
   align-items: center;
@@ -371,22 +369,26 @@
   gap: 5px;
 }
 
-.userList .userTab:hover {
+.channelList .channelList .userList .userTab {
+  padding-left: 25px;
+}
+
+.userTab:hover {
   background-color: #d1d5da5c;
 }
 
-.userList .userTab .userTabName {
+.userTab .userTabName {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: #777;
 }
 
-.userList .userTab .userTabName.member {
+.userTab .userTabName.member {
   color: #6e849b;
 }
 
-.userList .userTab .userState {
+.userState {
   min-height: 12px;
   min-width: 12px;
   background-image: url('../../../public/channel/audioState.png');
@@ -396,15 +398,15 @@
   left: 0;
 }
 
-.userList .userTab .userState.play {
+.userTab .userState.play {
   background-position: -24px 0;
 }
 
-.userList .userTab .userState.muted {
+.userTab .userState.muted {
   background-position: -12px 0;
 }
 
-.userList .userTab .userState.notext {
+.userTab .userState.notext {
   background-position: 0 0;
 }
 
@@ -431,10 +433,8 @@
 
 .announcementArea {
   overflow-y: auto;
-  border-bottom: 1px solid #e2e8f0;
   padding: 0.75rem;
   margin-bottom: 0.25rem;
-  resize: vertical;
   height: 150px;
   max-height: 500px;
 }
@@ -762,7 +762,7 @@
   height: 4px;
   background: #bbb;
   border-radius: 2px;
-  outline: none;
+
   transform: rotate(-90deg);
   position: absolute;
 }

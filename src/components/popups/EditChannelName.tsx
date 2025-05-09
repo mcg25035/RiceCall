@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
+// Types
+import { Channel, Server } from '@/types';
 
 // Providers
 import { useSocket } from '@/providers/Socket';
@@ -10,12 +13,15 @@ import setting from '@/styles/popups/setting.module.css';
 
 // Services
 import ipcService from '@/services/ipc.service';
-import { Channel, Server } from '@/types';
+import refreshService from '@/services/refresh.service';
+
+// Utils
+import { createDefault } from '@/utils/createDefault';
 
 interface editChannelNamePopupProps {
-  channelId: string;
-  serverId: string;
-  name: string;
+  channelId: Channel['channelId'];
+  serverId: Server['serverId'];
+  name: Channel['name'];
 }
 
 const editChannelNamePopup: React.FC<editChannelNamePopupProps> = React.memo(
@@ -24,13 +30,15 @@ const editChannelNamePopup: React.FC<editChannelNamePopupProps> = React.memo(
     const socket = useSocket();
     const lang = useLanguage();
 
+    // Refs
+    const refreshRef = useRef(false);
+
     // States
-    const [newChannelName, setNewChannelName] = useState<string>(
-      initialData.name,
-    );
+    const [channel, setChannel] = useState<Channel>(createDefault.channel());
 
     // Variables
     const { channelId, serverId } = initialData;
+    const { name: newChannelName } = channel;
 
     // Handlers
     const handleUpdateChannel = (
@@ -46,6 +54,24 @@ const editChannelNamePopup: React.FC<editChannelNamePopupProps> = React.memo(
       ipcService.window.close();
     };
 
+    // Effects
+    useEffect(() => {
+      if (!channelId || refreshRef.current) return;
+      const refresh = async () => {
+        refreshRef.current = true;
+        Promise.all([
+          refreshService.channel({
+            channelId: channelId,
+          }),
+        ]).then(([channel]) => {
+          if (channel) {
+            setChannel(channel);
+          }
+        });
+      };
+      refresh();
+    }, [channelId]);
+
     return (
       <form className={popup['popupContainer']}>
         <div className={popup['popupBody']}>
@@ -57,7 +83,12 @@ const editChannelNamePopup: React.FC<editChannelNamePopupProps> = React.memo(
                   className={popup['input']}
                   type="text"
                   value={newChannelName}
-                  onChange={(e) => setNewChannelName(e.target.value)}
+                  onChange={(e) =>
+                    setChannel((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                   required
                 />
               </div>

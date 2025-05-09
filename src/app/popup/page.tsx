@@ -47,8 +47,11 @@ const Header: React.FC<HeaderProps> = React.memo(({ title, buttons }) => {
 
   // Handlers
   const handleFullscreen = () => {
-    ipcService.window.maximize();
-    setIsFullscreen(!isFullscreen);
+    if (isFullscreen) {
+      ipcService.window.unmaximize();
+    } else {
+      ipcService.window.maximize();
+    }
   };
 
   const handleMinimize = () => {
@@ -58,6 +61,17 @@ const Header: React.FC<HeaderProps> = React.memo(({ title, buttons }) => {
   const handleClose = () => {
     ipcService.window.close();
   };
+
+  // Effects
+  useEffect(() => {
+    ipcService.window.onMaximize(() => {
+      setIsFullscreen(true);
+    });
+
+    ipcService.window.onUnmaximize(() => {
+      setIsFullscreen(false);
+    });
+  }, []);
 
   return (
     <div className={header['header']}>
@@ -95,6 +109,7 @@ const Popup = React.memo(() => {
   const windowRef = useRef<HTMLDivElement>(null);
 
   // States
+  const [id, setId] = useState<string | null>(null);
   const [type, setType] = useState<PopupType | null>(null);
   const [headerTitle, setHeaderTitle] = useState<string>('');
   const [headerButtons, setHeaderButtons] = useState<
@@ -108,16 +123,18 @@ const Popup = React.memo(() => {
     if (window.location.search) {
       const params = new URLSearchParams(window.location.search);
       const type = params.get('type') as PopupType;
+      const id = params.get('id') as string;
       setType(type || null);
+      setId(id || null);
     }
   }, []);
 
   useEffect(() => {
-    if (!type) return;
-    ipcService.initialData.request(type, (data) => {
+    if (!id) return;
+    ipcService.initialData.request(id, (data) => {
       setInitialData(data);
     });
-  }, [type]);
+  }, [id]);
 
   useEffect(() => {
     if (!initialData || !type) return;
@@ -129,7 +146,7 @@ const Popup = React.memo(() => {
         setContent(<ChannelPassword {...initialData} />);
         break;
       case PopupType.USER_INFO:
-        setHeaderTitle('個人檔案');
+        setHeaderTitle(lang.tr.userInfo);
         setHeaderButtons(['close']);
         setContent(<UserSetting {...initialData} />);
         break;
@@ -257,7 +274,7 @@ const Popup = React.memo(() => {
   return (
     <div className="wrapper" ref={windowRef}>
       {/* Top Nevigation */}
-      {headerTitle !== '個人檔案' && (
+      {headerTitle !== lang.tr.userInfo && (
         <Header title={headerTitle} buttons={headerButtons} />
       )}
       {/* Main Content */}
