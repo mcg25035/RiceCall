@@ -101,123 +101,77 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
     const [isCopied, setIsCopied] = useState(false);
 
     const components: Components = {
-      h1: ({ node, ...props }: any) => (
-        <h1 className={markdown.heading1} {...props} />
-      ),
-      h2: ({ node, ...props }: any) => (
-        <h2 className={markdown.heading2} {...props} />
-      ),
-      h3: ({ node, ...props }: any) => (
-        <h3 className={markdown.heading3} {...props} />
-      ),
-      p: ({ node, children, ...props }: any) => {
-        if (React.isValidElement(children) && children.type === 'blockquote') {
-          return children;
-        }
+      h1: ({ node, ...props }: any) => <h1 {...props} />,
+      h2: ({ node, ...props }: any) => <h2 {...props} />,
+      h3: ({ node, ...props }: any) => <h3 {...props} />,
+      p: ({ node, ...props }: any) => {
+        // const text = String(children);
 
-        const text = String(children);
-        if (text.startsWith('> ')) {
-          const quoteContent = text.replace(/^>\s*/, '');
-          return (
-            <blockquote className={markdown.blockquote}>
-              <p>{quoteContent}</p>
-            </blockquote>
-          );
-        }
-        return (
-          <p className={markdown.paragraph} {...props}>
-            {children}
-          </p>
-        );
+        // if (text.startsWith('> ')) {
+        //   const quoteContent = text.replace(/^>\s*/, '');
+        //   return (
+        //     <blockquote className={markdown.blockquote}>
+        //       <p>{quoteContent}</p>
+        //     </blockquote>
+        //   );
+        // }
+
+        return <p {...props} />;
+
+        // if (React.isValidElement(children) && children.type === 'blockquote') {
+        //   return children;
+        // }
+
+        // return (
+        //   <p className={markdown.paragraph} {...props}>
+        //     {children}
+        //   </p>
+        // );
       },
-      ul: ({ node, ...props }: any) => (
-        <ul className={markdown.unorderedList} {...props} />
-      ),
-      ol: ({ node, ...props }: any) => (
-        <ol className={markdown.orderedList} {...props} />
-      ),
-      li: ({ node, ...props }: any) => (
-        <li className={markdown.listItem} {...props} />
-      ),
-      blockquote: ({ node, children, ...props }: any) => {
-        return (
-          <blockquote className={markdown.blockquote}>{children}</blockquote>
-        );
-      },
+      ul: ({ node, ...props }: any) => <ul {...props} />,
+      ol: ({ node, ...props }: any) => <ol {...props} />,
+      li: ({ node, ...props }: any) => <li {...props} />,
+      blockquote: ({ node, ...props }: any) => <blockquote {...props} />,
       a: ({ node, href, ...props }: any) => {
-        if (isGuest && forbidGuestUrl) {
-          return <span className={markdown.disabledLink} {...props} />;
-        }
-        return (
-          <a target="_blank" href={href} className={markdown.link} {...props} />
-        );
+        if (isGuest && forbidGuestUrl) return <span {...props} />;
+        return <a target="_blank" href={href} {...props} />;
       },
       table: ({ node, ...props }: any) => (
         <div className={markdown.tableWrapper}>
-          <table className={markdown.table} {...props} />
+          <table {...props} />
         </div>
       ),
-      th: ({ node, ...props }: any) => (
-        <th className={markdown.tableHeader} {...props} />
-      ),
-      td: ({ node, ...props }: any) => (
-        <td className={markdown.tableCell} {...props} />
-      ),
-      hr: ({ node, ...props }: any) => (
-        <hr className={markdown.horizontalRule} {...props} />
-      ),
+      th: ({ node, ...props }: any) => <th {...props} />,
+      td: ({ node, ...props }: any) => <td {...props} />,
+      hr: ({ node, ...props }: any) => <hr {...props} />,
       img: ({ node, src, alt, ...props }: any) => {
-        if (isGuest && forbidGuestUrl) {
-          return <span className={markdown.disabledImage} {...props} />;
-        }
-        return (
-          <img className={markdown.image} src={src} alt={alt} {...props} />
-        );
+        if (isGuest && forbidGuestUrl) return <span {...props} />;
+        return <img src={src} alt={alt} {...props} />;
       },
-      code: ({ node, inline, className, children, ...props }: any) => {
-        const match = /language-(\w+)/.exec(className || '');
-        const language = match ? match[1] : 'text';
+      code: ({ node, ...props }: any) => <code {...props} />,
+      pre: ({ node, children, ...props }: any) => {
+        const text = String(children);
+        const codeString = text.replace(/\n$/, '');
 
-        if (!inline) {
-          const codeString = String(children).replace(/\n$/, '');
-
-          const handleCopy = () => {
-            navigator.clipboard.writeText(codeString);
-            setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
-          };
-
-          return (
-            <div className={markdown.codeWrapper}>
-              <button
-                className={markdown.copyButton}
-                onClick={handleCopy}
-                aria-label="複製程式碼"
-              >
-                {isCopied ? '已複製！' : '複製'}
-              </button>
-              <SyntaxHighlighter
-                language={language}
-                style={{ ...vscDarkPlus, ...customStyle }}
-                PreTag="div"
-                className={markdown.codeBlock}
-                {...props}
-              >
-                {codeString}
-              </SyntaxHighlighter>
-            </div>
-          );
-        }
+        const handleCopy = () => {
+          navigator.clipboard.writeText(codeString);
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
+        };
 
         return (
-          <code className={markdown.inlineCode} {...props}>
+          <pre className={markdown.preBlock} {...props}>
+            <button
+              className={markdown.copyButton}
+              onClick={handleCopy}
+              aria-label="複製程式碼"
+            >
+              {isCopied ? '已複製！' : '複製'}
+            </button>
             {children}
-          </code>
+          </pre>
         );
       },
-      pre: ({ node, ...props }: any) => (
-        <pre className={markdown.preBlock} {...props} />
-      ),
     };
     return (
       <div className={markdown.markdownContent}>

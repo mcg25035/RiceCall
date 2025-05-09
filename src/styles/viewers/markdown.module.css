@@ -1,8 +1,6 @@
 .markdownContent {
   color: #222;
-  line-height: 1.85;
   word-break: break-word;
-  font-size: 15px;
 }
 
 .markdownContent:has(img[alt^='[emoji']) {
@@ -10,31 +8,39 @@
 }
 
 .markdownContent h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0;
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin-block: 0.75rem;
+  margin-inline: 0;
 }
 
 .markdownContent h2 {
   font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
+  font-weight: bold;
+  margin-block: 0.625rem;
+  margin-inline: 0;
 }
 
 .markdownContent h3 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin: 0;
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-block: 0.5rem;
+  margin-inline: 0;
 }
 
 .markdownContent p {
-  margin: 0;
+  margin-block: 0.125rem;
+  margin-inline: 0;
+  display: inline-block;
+  align-self: baseline;
 }
 
 .markdownContent a {
   color: #2563eb;
   font-weight: 500;
   text-decoration: underline;
+  text-underline-offset: 0.125rem;
+  white-space: nowrap;
 }
 
 .markdownContent a:hover {
@@ -43,109 +49,98 @@
 
 .markdownContent ul,
 .markdownContent ol {
-  margin: 0.5em 0;
+  margin-block: 0.5em;
+  margin-inline: 0;
   padding-inline-start: 20px;
   list-style-position: outside;
 }
 
 .markdownContent li {
-  margin: 0.35em 0;
-  padding-left: 0.25em;
+  margin-block: 0.5em;
 }
 
 .markdownContent blockquote {
-  margin: 0.25em 0;
-  padding: 0.5rem 1rem;
-  position: relative;
+  margin-block: 0;
+  margin-inline: 0;
+  padding: 0.25rem;
   color: #4f545c;
   border-left: 4px solid #c7ccd1;
-  background: rgba(79, 84, 92, 0.05);
   border-radius: 0 4px 4px 0;
+  background: rgba(79, 84, 92, 0.05);
 }
 
-.markdownContent blockquote p {
-  margin: 0;
-  white-space: normal;
-}
-
+/* inline code */
 .markdownContent code {
-  padding: 0.2em 0.4em;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.markdownContent p code {
+  margin-block: 0;
+  margin-inline: 0;
+  padding: 0.25rem;
   border-radius: 4px;
-  font-family: Menlo, monospace;
-  color: #c026d3;
-}
-
-.markdownContent pre {
-  background: #0f172a;
   color: #f1f5f9;
-  border-radius: 6px;
-  overflow-x: auto;
-  font-size: 0.85em;
-  margin: 0;
+  background: #222;
 }
 
-.markdownContent pre code {
-  background: transparent;
-  padding: 0;
-  color: inherit;
+/* block code */
+.markdownContent pre {
+  position: relative;
+  margin-block: 0.5rem;
+  margin-inline: 0;
+  padding: 0.5rem;
+  border-radius: 4px;
+  color: #f1f5f9;
+  background: #222;
 }
 
 .markdownContent hr {
   border: none;
   border-top: 1px dashed #d1d5db;
-  margin: 0.3em 0;
+  margin-block: 0.5rem;
+  margin-inline: 0;
 }
 
 .markdownContent table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1em 0;
-  background-color: #ffffff;
+  margin-block: 0;
+  margin-inline: 0;
+  background-color: #00000005;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  text-align: left;
 }
 
 .markdownContent thead {
-  background-color: #f8fafc;
-  border-bottom: 2px solid #e5e7eb;
+  background-color: #00000015;
+}
+
+.markdownContent tbody {
+  background-color: #00000005;
 }
 
 .markdownContent th {
-  font-weight: 600;
-  color: #1f2937;
-  text-align: left;
   padding: 12px 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #00000010;
   white-space: nowrap;
 }
 
 .markdownContent td {
   padding: 12px 16px;
-  border: 1px solid #e5e7eb;
-  color: #4b5563;
+  border: 1px solid #00000010;
+  white-space: nowrap;
 }
 
-.markdownContent tr:nth-child(even) {
-  background-color: #f9fafb;
-}
-
-.markdownContent tr:hover {
-  background-color: #f3f4f6;
+.markdownContent td:hover {
+  background-color: #00000010;
 }
 
 .markdownContent img {
   max-width: 100%;
+  margin-block: 0;
+  margin-inline: 0;
   border-radius: 8px;
-  margin: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-.inlineCode {
-  background: #f1f5f9;
-  padding: 0.2em 0.4em;
-  border-radius: 4px;
-  font-family: Menlo, monospace;
-  color: #c026d3;
 }
 
 .container {
@@ -154,15 +149,14 @@
 }
 
 .tableWrapper {
+  background: transparent;
   max-width: 100%;
   overflow-x: auto;
-  margin: 1em 0;
   border-radius: 8px;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 #f1f5f9;
 }
 
-/* Webkit 瀏覽器的捲動條樣式 */
 .tableWrapper::-webkit-scrollbar {
   height: 8px;
 }
@@ -191,39 +185,26 @@
   overflow: scroll;
 }
 
-.blockquote {
-  margin: 0.25em 0;
-  padding: 0.5rem 1rem;
-  position: relative;
-  color: #4f545c;
-  border-left: 4px solid #c7ccd1;
-  background: rgba(79, 84, 92, 0.05);
-  border-radius: 0 4px 4px 0;
-}
-
-.codeWrapper {
-  position: relative;
-}
-
 .copyButton {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 4px 8px;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.125rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
   color: #fff;
-  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
+  font-family: monospace;
+  font-size: 0.75rem;
   opacity: 0;
-}
-
-.codeWrapper:hover .copyButton {
-  opacity: 1;
 }
 
 .copyButton:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.markdownContent pre:hover .copyButton {
+  opacity: 1;
 }
