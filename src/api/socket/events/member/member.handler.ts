@@ -240,8 +240,8 @@ export class UpdateMemberHandler extends SocketHandler {
       const targetSocket =
         operatorId === userId ? this.socket : SocketServer.getSocket(userId);
 
-      if (targetSocket && targetSocket.rooms.has(`server_${serverId}`)) {
-        targetSocket.emit('serverUpdate', update);
+      if (targetSocket) {
+        targetSocket.emit('serverUpdate', serverId, update);
       }
 
       this.io
@@ -327,8 +327,8 @@ export class DeleteMemberHandler extends SocketHandler {
         .to(`server_${serverId}`)
         .emit('serverMemberDelete', userId, serverId);
 
-      if (targetSocket && targetSocket.rooms.has(`server_${serverId}`)) {
-        targetSocket.emit('serverUpdate', {}); // TODO: Need to kick user from server
+      if (targetSocket) {
+        targetSocket.emit('serverDelete', serverId); // TODO: Need to kick user from server
       }
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
