@@ -60,7 +60,7 @@
 
 .searchInput {
   flex: 1;
-  padding: 5 10;
+  padding: 5px 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
 
@@ -366,7 +366,7 @@
   right: 0;
   background: #fff;
   border-radius: 4px;
-  box-shadow: 0 1 6 rgb(71, 71, 71);
+  box-shadow: 0 1px 6px rgb(71, 71, 71);
   margin-top: 4px;
   z-index: 1000;
   width: 220px;
@@ -379,7 +379,7 @@
 }
 
 .dropdownHeader {
-  padding: 6 9;
+  padding: 6px 9px;
   color: #000;
   border-top: 1px solid #eee;
 }
