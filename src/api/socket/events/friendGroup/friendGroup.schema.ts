@@ -5,7 +5,6 @@ export const FriendGroupSchema = z.object({
   name: z.string().min(1).max(32),
   order: z.number().min(0).max(9999),
   userId: z.string().length(36),
-  createdAt: z.bigint(),
 });
 
 export const CreateFriendGroupSchema = z
