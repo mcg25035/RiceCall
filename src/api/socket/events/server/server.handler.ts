@@ -104,12 +104,22 @@ export class ConnectServerHandler extends SocketHandler {
           });
           return;
         }
-        if (userMember && userMember.isBlocked) {
+        if (
+          userMember &&
+          (userMember.isBlocked > Date.now() || userMember.isBlocked === -1)
+        ) {
           this.socket.emit('openPopup', {
             type: 'dialogError',
             id: 'errorDialog',
             initialData: {
-              title: '你已被加入黑名單，無法加入群組',
+              title:
+                userMember.isBlocked === -1
+                  ? '你已被加入黑名單，無法加入群組'
+                  : '你已被加入黑名單，無法加入群組，剩餘時間：' +
+                    Math.floor((userMember.isBlocked - Date.now()) / 1000)
+                      .toString()
+                      .padStart(2, '0') +
+                    '秒',
             },
           });
           return;
