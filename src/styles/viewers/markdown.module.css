@@ -73,9 +73,6 @@
 .markdownContent code {
   font-family: monospace;
   font-size: 0.875rem;
-}
-
-.markdownContent p code {
   margin-block: 0;
   margin-inline: 0;
   padding: 0.125rem 0.25rem;

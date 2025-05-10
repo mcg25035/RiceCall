@@ -94,15 +94,7 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
       h1: ({ node, ...props }: any) => <h1 {...props} />,
       h2: ({ node, ...props }: any) => <h2 {...props} />,
       h3: ({ node, ...props }: any) => <h3 {...props} />,
-      p: ({ node, ...props }: any) => {
-        node.children.forEach((child: any) => {
-          if (child.tagName === 'code') {
-            child.inline = true;
-          }
-          console.log(child);
-        });
-        return <p {...props} />;
-      },
+      p: ({ node, ...props }: any) => <p {...props} />,
       ul: ({ node, ...props }: any) => <ul {...props} />,
       ol: ({ node, ...props }: any) => <ol {...props} />,
       li: ({ node, ...props }: any) => <li {...props} />,
@@ -133,7 +125,7 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
           setTimeout(() => setIsCopied(false), 2000);
         };
 
-        if (node.inline) {
+        if (!node.block) {
           return (
             <code className={className} {...props}>
               {children}
@@ -171,7 +163,14 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
           </>
         );
       },
-      pre: ({ node, ...props }: any) => <pre {...props} />,
+      pre: ({ node, ...props }: any) => {
+        node.children.forEach((child: any) => {
+          if (child.tagName === 'code') {
+            child.block = true;
+          }
+        });
+        return <pre {...props} />;
+      },
     };
     return (
       <>
