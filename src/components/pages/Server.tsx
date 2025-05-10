@@ -86,6 +86,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     } = currentServer;
     const {
       channelId,
+      announcement: channelAnnouncement,
       bitrate: channelBitrate,
       voiceMode: channelVoiceMode,
       forbidText: channelForbidText,
@@ -97,6 +98,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     const activeServerMembers = serverMembers.filter(
       (mb) => mb.currentServerId === serverId,
     );
+    const announcement = channelAnnouncement || serverAnnouncement;
     const leftGapTime =
       channelGuestTextGapTime -
       Math.floor((currentTime - userLastJoinChannelTime) / 1000);
@@ -282,7 +284,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
               className={styles['announcementArea']}
               style={{ height: `${announcementAreaHeight}px` }}
             >
-              <MarkdownViewer markdownText={serverAnnouncement} />
+              <MarkdownViewer markdownText={announcement} />
             </div>
             {/* Resize Handle */}
             <div

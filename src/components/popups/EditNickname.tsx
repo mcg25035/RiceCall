@@ -94,9 +94,10 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
                   {lang.tr.pleaseEnterTheMemberNickname}
                 </div>
                 <input
-                  className={popup['input']}
+                  name="nickname"
                   type="text"
                   value={memberNickname || ''}
+                  maxLength={32}
                   onChange={(e) => {
                     setMember((prev) => ({
                       ...prev,
@@ -110,7 +111,7 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
         </div>
         <div className={popup['popupFooter']}>
           <button
-            className={`${popup['button']}`}
+            className={popup['button']}
             onClick={() => {
               handleUpdateMember(
                 { nickname: memberNickname },

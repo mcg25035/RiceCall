@@ -420,8 +420,10 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       <div className={`${popup['inputBox']} ${popup['col']}`}>
                         <div className={popup['label']}>{lang.tr.name}</div>
                         <input
+                          name="name"
                           type="text"
                           value={serverName}
+                          maxLength={32}
                           onChange={(e) => {
                             setServer((prev) => ({
                               ...prev,
@@ -432,14 +434,21 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       </div>
                       <div className={`${popup['inputBox']} ${popup['col']}`}>
                         <div className={popup['label']}>{lang.tr.id}</div>
-                        <input type="text" value={serverDisplayId} disabled />
+                        <input
+                          name="displayId"
+                          type="text"
+                          value={serverDisplayId}
+                          disabled
+                        />
                       </div>
                     </div>
                     <div className={`${popup['inputBox']} ${popup['col']}`}>
                       <div className={popup['label']}>{lang.tr.slogan}</div>
                       <input
+                        name="slogan"
                         type="text"
                         value={serverSlogan}
+                        maxLength={100}
                         onChange={(e) => {
                           setServer((prev) => ({
                             ...prev,
@@ -452,6 +461,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       <div className={popup['label']}>{lang.tr.type}</div>
                       <div className={popup['selectBox']}>
                         <select
+                          name="type"
                           value={serverType}
                           onChange={(e) => {
                             setServer((prev) => ({
@@ -477,6 +487,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       }}
                     />
                     <input
+                      name="avatar"
                       type="file"
                       id="avatar-upload"
                       style={{ display: 'none' }}
@@ -526,13 +537,19 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                   <div className={popup['row']}>
                     <div className={`${popup['inputBox']} ${popup['col']}`}>
                       <div className={popup['label']}>{lang.tr.level}</div>
-                      <input type="text" value={serverLevel} disabled />
+                      <input
+                        name="level"
+                        type="text"
+                        value={serverLevel}
+                        disabled
+                      />
                     </div>
                     <div className={`${popup['inputBox']} ${popup['col']}`}>
                       <div className={popup['label']}>
                         {lang.tr.creationTime}
                       </div>
                       <input
+                        name="createdAt"
                         type="text"
                         value={new Date(serverCreatedAt).toLocaleString()}
                         disabled
@@ -544,12 +561,27 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       >
                         {lang.tr.wealth}
                       </div>
-                      <input type="text" value={serverWealth} disabled />
+                      <input
+                        name="wealth"
+                        type="text"
+                        value={serverWealth}
+                        disabled
+                      />
                     </div>
+                  </div>
+                  <div className={`${popup['inputBox']} ${popup['col']}`}>
+                    <div className={popup['label']}>{'語音群連結'}</div>
+                    <input
+                      name="link"
+                      type="text"
+                      value={`https://ricecall.com.tw/join?sid=${serverDisplayId}`}
+                      disabled
+                    />
                   </div>
                   <div className={`${popup['inputBox']} ${popup['col']}`}>
                     <div className={popup['label']}>{lang.tr.description}</div>
                     <textarea
+                      name="description"
                       value={serverDescription}
                       onChange={(e) =>
                         setServer((prev) => ({
@@ -590,8 +622,10 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                     </div>
                   ) : (
                     <textarea
+                      name="announcement"
                       style={{ minHeight: '330px' }}
                       value={serverAnnouncement}
+                      maxLength={1000}
                       onChange={(e) =>
                         setServer((prev) => ({
                           ...prev,
@@ -617,8 +651,9 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                     <div className={setting['searchBorder']}>
                       <div className={setting['searchIcon']}></div>
                       <input
-                        className={setting['searchInput']}
+                        name="query"
                         type="search"
+                        className={setting['searchInput']}
                         placeholder={lang.tr.searchMemberPlaceholder}
                         value={searchText}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -859,11 +894,9 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                 <div className={popup['inputGroup']}>
                   <div className={`${popup['inputBox']} ${popup['row']}`}>
                     <input
+                      name="visibility"
                       type="radio"
-                      id="public"
-                      name="permission"
                       value="public"
-                      className="mr-3"
                       checked={serverVisibility === 'public'}
                       onChange={(e) => {
                         if (e.target.checked)
@@ -878,11 +911,9 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
 
                   <div className={`${popup['inputBox']} ${popup['row']}`}>
                     <input
+                      name="visibility"
                       type="radio"
-                      id="members"
-                      name="permission"
-                      value="members"
-                      className="mr-3"
+                      value="private"
                       checked={serverVisibility === 'private'}
                       onChange={(e) => {
                         if (e.target.checked)
@@ -904,11 +935,9 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
 
                   <div className={`${popup['inputBox']} ${popup['row']}`}>
                     <input
+                      name="visibility"
                       type="radio"
-                      id="private"
-                      name="permission"
-                      value="private"
-                      className="mr-3"
+                      value="invisible"
                       checked={serverVisibility === 'invisible'}
                       onChange={(e) => {
                         if (e.target.checked)
@@ -946,8 +975,9 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                     <div className={setting['searchBorder']}>
                       <div className={setting['searchIcon']}></div>
                       <input
-                        className={setting['searchInput']}
+                        name="query"
                         type="search"
+                        className={setting['searchInput']}
                         placeholder={lang.tr.searchMemberPlaceholder}
                         value={searchText}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -1074,8 +1104,9 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                     <div className={setting['searchBorder']}>
                       <div className={setting['searchIcon']}></div>
                       <input
-                        className={setting['searchInput']}
+                        name="query"
                         type="search"
+                        className={setting['searchInput']}
                         placeholder={lang.tr.searchMemberPlaceholder}
                         value={searchText}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>

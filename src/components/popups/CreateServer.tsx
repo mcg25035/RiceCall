@@ -193,6 +193,7 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
                     style={{ backgroundImage: `url(${serverAvatarUrl})` }}
                   />
                   <input
+                    name="avatar"
                     type="file"
                     id="avatar-upload"
                     style={{ display: 'none' }}
@@ -238,7 +239,7 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
                   <div className={popup['inputBox']}>
                     <div className={popup['label']}>{lang.tr.serverType}</div>
                     <input
-                      className={popup['input']}
+                      name="type"
                       type="text"
                       disabled
                       value={lang.tr[serverType as keyof typeof lang.tr]}
@@ -250,9 +251,10 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
                       {lang.tr.serverName}
                     </div>
                     <input
-                      className={popup['input']}
+                      name="name"
                       type="text"
                       value={serverName}
+                      maxLength={32}
                       onChange={(e) =>
                         setServer((prev) => ({
                           ...prev,
@@ -266,8 +268,9 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
                   <div className={popup['inputBox']}>
                     <div className={popup['label']}>{lang.tr.serverSlogan}</div>
                     <textarea
-                      className={popup['input']}
+                      name="slogan"
                       value={serverSlogan}
+                      maxLength={100}
                       onChange={(e) =>
                         setServer((prev) => ({
                           ...prev,
@@ -286,9 +289,7 @@ const CreateServerPopup: React.FC<CreateServerPopupProps> = React.memo(
                 {lang.tr.previous}
               </button>
               <button
-                className={`${popup['button']} ${
-                  !serverName.trim() || !canCreate ? popup['disabled'] : ''
-                }`}
+                className={popup['button']}
                 disabled={!serverName.trim() || !canCreate}
                 onClick={() => {
                   handleCreateServer({

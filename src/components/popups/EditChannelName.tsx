@@ -38,7 +38,7 @@ const editChannelNamePopup: React.FC<editChannelNamePopupProps> = React.memo(
 
     // Variables
     const { channelId, serverId } = initialData;
-    const { name: newChannelName } = channel;
+    const { name: channelName } = channel;
 
     // Handlers
     const handleUpdateChannel = (
@@ -80,16 +80,16 @@ const editChannelNamePopup: React.FC<editChannelNamePopupProps> = React.memo(
               <div className={`${popup['inputBox']} ${popup['col']}`}>
                 <div className={popup['label']}>{lang.tr.channelNameLabel}</div>
                 <input
-                  className={popup['input']}
+                  name="name"
                   type="text"
-                  value={newChannelName}
+                  value={channelName}
+                  maxLength={32}
                   onChange={(e) =>
                     setChannel((prev) => ({
                       ...prev,
                       name: e.target.value,
                     }))
                   }
-                  required
                 />
               </div>
             </div>
@@ -98,17 +98,10 @@ const editChannelNamePopup: React.FC<editChannelNamePopupProps> = React.memo(
 
         <div className={popup['popupFooter']}>
           <button
-            className={`${popup['button']} ${
-              !newChannelName.trim() ? popup['disabled'] : ''
-            }`}
+            className={popup['button']}
+            disabled={!channelName.trim()}
             onClick={() => {
-              handleUpdateChannel(
-                {
-                  name: newChannelName,
-                },
-                channelId,
-                serverId,
-              );
+              handleUpdateChannel({ name: channelName }, channelId, serverId);
               handleClose();
             }}
           >

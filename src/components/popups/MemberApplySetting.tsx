@@ -80,6 +80,7 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
                   {lang.tr.isReceiveApply}
                 </label>
                 <input
+                  name="receiveApply"
                   type="checkbox"
                   checked={serverReceiveApply}
                   onChange={() => {
@@ -92,9 +93,10 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
               </div>
               <div className={`${popup['inputBox']} ${popup['col']}`}>
                 <div className={popup['label']}>{lang.tr.setApplyNotice}</div>
-                <input
-                  type="text"
+                <textarea
+                  name="applyNotice"
                   value={serverApplyNotice}
+                  maxLength={100}
                   onChange={(e) => {
                     setServer((prev) => ({
                       ...prev,
@@ -108,11 +110,11 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
         </div>
         <div className={popup['popupFooter']}>
           <button
-            className={`${popup['button']}`}
+            className={popup['button']}
             onClick={() => {
               handleUpdateServer(
                 {
-                  receiveApply: serverReceiveApply,
+                  receiveApply: !!serverReceiveApply,
                   applyNotice: serverApplyNotice,
                 },
                 serverId,

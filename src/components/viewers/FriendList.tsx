@@ -391,9 +391,11 @@ const FriendListViewer: React.FC<FriendListViewerProps> = React.memo(
         <div className={styles['searchBar']}>
           <div className={styles['searchIcon']} />
           <input
+            name="query"
             type="text"
-            placeholder={lang.tr.searchFriend}
             className={styles['searchInput']}
+            placeholder={lang.tr.searchFriend}
+            value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <div className={styles['prevIcon']} />

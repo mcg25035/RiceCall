@@ -123,6 +123,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
               <div className={popup['inputGroup']}>
                 <div className={`${popup['inputBox']} ${popup['row']}`}>
                   <input
+                    name="autoLaunch"
                     type="checkbox"
                     checked={autoLaunch}
                     onChange={(e) => setAutoLaunch(e.target.checked)}
@@ -139,6 +140,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
                   className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
                 >
                   <input
+                    name="minimizeToTray"
                     type="checkbox"
                     checked={minimizeToTray}
                     onChange={(e) => setMinimizeToTray(e.target.checked)}
@@ -156,6 +158,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
                   className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
                 >
                   <input
+                    name="startMinimized"
                     type="checkbox"
                     checked={startMinimized}
                     onChange={(e) => setStartMinimized(e.target.checked)}
@@ -174,6 +177,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
                   className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
                 >
                   <input
+                    name="notificationSound"
                     type="checkbox"
                     checked={notificationSound}
                     onChange={(e) => setNotificationSound(e.target.checked)}

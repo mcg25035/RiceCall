@@ -457,9 +457,9 @@ export type Badge = {
 
 export type FriendGroup = {
   friendGroupId: string;
-  userId: string;
   name: string;
   order: number;
+  userId: string;
   createdAt: number;
 };
 
@@ -492,7 +492,7 @@ export type Server = {
   level: number;
   wealth: number;
   receiveApply: boolean;
-  allowDirectMessage: boolean;
+  // allowDirectMessage: boolean; (Not used but still in database column)
   type: 'game' | 'entertainment' | 'other';
   visibility: 'public' | 'private' | 'invisible';
   lobbyId: string;
@@ -503,6 +503,8 @@ export type Server = {
 export type BaseChannel = {
   channelId: string;
   name: string;
+  announcement: string; // new
+  password: string;
   order: number;
   bitrate: number;
   userLimit: number;
@@ -511,14 +513,13 @@ export type BaseChannel = {
   guestTextMaxLength: number;
   // isRoot: boolean; (Not used but still in database column)
   isLobby: boolean;
-  slowmode: boolean;
+  // slowmode: boolean; (Not used but still in database column)
   forbidText: boolean;
   forbidGuestText: boolean;
   forbidGuestUrl: boolean;
   type: 'category' | 'channel';
   visibility: 'public' | 'member' | 'private' | 'readonly';
   voiceMode: 'free' | 'queue' | 'forbidden';
-  password: string | null;
   categoryId: string | null;
   serverId: string;
   createdAt: number;
@@ -563,7 +564,7 @@ export type Message = {
 export type ChannelMessage = Message &
   ServerMember & {
     senderId: string;
-    receiverId: string;
+    serverId: string;
     channelId: string;
     type: 'general';
   };

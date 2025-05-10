@@ -73,7 +73,7 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
     }, [channelId]);
 
     return (
-      <form className={popup['popupContainer']}>
+      <div className={popup['popupContainer']}>
         <div className={popup['popupBody']}>
           <div className={setting['body']}>
             <div className={popup['inputGroup']}>
@@ -84,9 +84,10 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
               <div className={popup['inputBox']}>
                 <div className={popup['label']}>{lang.tr.channelName}</div>
                 <input
-                  className={popup['input']}
+                  name="name"
                   type="text"
                   value={channelName}
+                  maxLength={32}
                   onChange={(e) =>
                     setChannel((prev) => ({
                       ...prev,
@@ -102,9 +103,7 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
 
         <div className={popup['popupFooter']}>
           <button
-            className={`${popup['button']} ${
-              !channelName.trim() ? popup['disabled'] : ''
-            }`}
+            className={popup['button']}
             disabled={!channelName.trim()}
             onClick={() => {
               handleCreateChannel(
@@ -120,7 +119,7 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
             {lang.tr.cancel}
           </button>
         </div>
-      </form>
+      </div>
     );
   },
 );

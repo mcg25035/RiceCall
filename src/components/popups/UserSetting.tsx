@@ -510,11 +510,10 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                         {lang.tr.nickname}
                       </label>
                       <input
+                        name="name"
                         type="text"
-                        id="profile-form-nickname"
                         value={userName}
                         maxLength={32}
-                        minLength={2}
                         onChange={(e) =>
                           setUser((prev) => ({ ...prev, name: e.target.value }))
                         }
@@ -709,10 +708,10 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                       {lang.tr.signature}
                     </label>
                     <input
+                      name="signature"
                       type="text"
-                      id="profile-form-signature"
                       value={userSignature}
-                      maxLength={200}
+                      maxLength={100}
                       onChange={(e) =>
                         setUser((prev) => ({
                           ...prev,
@@ -731,7 +730,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                     >
                       {lang.tr.about}
                     </label>
-                    <textarea id="profile-form-about" />
+                    <textarea name="about" />
                   </div>
                 </div>
               </div>

@@ -78,56 +78,22 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
         <div className={popup['popupBody']}>
           <div className={setting['body']}>
             <div className={popup['inputGroup']}>
-              <div className={`${popup['row']}`}>
-                <div
-                  className={`${popup['inputBox']} ${popup['col']}`}
-                  style={{
-                    flex: '3',
-                  }}
-                >
-                  <div className={popup['label']}>
-                    {lang.tr.pleaseInputFriendGroupName}
-                  </div>
-                  <input
-                    className={popup['input']}
-                    type="text"
-                    placeholder={groupName}
-                    value={groupName}
-                    maxLength={20}
-                    onChange={(e) =>
-                      setFriendGroup((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                    required
-                  />
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                <div className={popup['label']}>
+                  {lang.tr.pleaseInputFriendGroupName}
                 </div>
-                <div
-                  className={`${popup['inputBox']} ${popup['col']}`}
-                  style={{
-                    flex: '1',
-                  }}
-                >
-                  <div className={popup['label']}>
-                    {lang.tr.friendGroupOrder}
-                  </div>
-                  <input
-                    className={popup['input']}
-                    type="number"
-                    placeholder={groupOrder.toString()}
-                    value={groupOrder}
-                    max={999}
-                    min={-999}
-                    onChange={(e) =>
-                      setFriendGroup((prev) => ({
-                        ...prev,
-                        order: parseInt(e.target.value) || 0,
-                      }))
-                    }
-                    required
-                  />
-                </div>
+                <input
+                  name="name"
+                  type="text"
+                  value={groupName}
+                  maxLength={32}
+                  onChange={(e) =>
+                    setFriendGroup((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                />
               </div>
             </div>
           </div>
@@ -135,9 +101,7 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
 
         <div className={popup['popupFooter']}>
           <button
-            className={`${popup['button']} ${
-              !groupName.trim() ? popup['disabled'] : ''
-            }`}
+            className={popup['button']}
             disabled={!groupName.trim()}
             onClick={() => {
               handleUpdateFriendGroup(
