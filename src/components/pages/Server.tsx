@@ -112,7 +112,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     const isForbidByGuestTextWait =
       channelGuestTextWaitTime && leftWaitTime > 0 && userPermission === 1;
     const textMaxLength =
-      userPermission === 1 ? channelGuestTextMaxLength : 2000;
+      userPermission === 1 ? channelGuestTextMaxLength : 9999;
     const canChangeToFreeSpeech =
       userPermission > 4 && channelVoiceMode !== 'free';
     const canChangeToForbiddenSpeech =
