@@ -115,11 +115,8 @@ export class ConnectServerHandler extends SocketHandler {
               title:
                 userMember.isBlocked === -1
                   ? '你已被加入黑名單，無法加入群組'
-                  : '你已被加入黑名單，無法加入群組，剩餘時間：' +
-                    Math.floor((userMember.isBlocked - Date.now()) / 1000)
-                      .toString()
-                      .padStart(2, '0') +
-                    '秒',
+                  : '你已被加入黑名單，無法加入群組，直到：' +
+                    new Date(userMember.isBlocked).toLocaleDateString(),
             },
           });
           return;
