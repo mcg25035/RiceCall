@@ -94,7 +94,15 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
       h1: ({ node, ...props }: any) => <h1 {...props} />,
       h2: ({ node, ...props }: any) => <h2 {...props} />,
       h3: ({ node, ...props }: any) => <h3 {...props} />,
-      p: ({ node, ...props }: any) => <p {...props} />,
+      p: ({ node, ...props }: any) => {
+        node.children.forEach((child: any) => {
+          if (child.tagName === 'code') {
+            child.inline = true;
+          }
+          console.log(child);
+        });
+        return <p {...props} />;
+      },
       ul: ({ node, ...props }: any) => <ul {...props} />,
       ol: ({ node, ...props }: any) => <ol {...props} />,
       li: ({ node, ...props }: any) => <li {...props} />,
@@ -115,9 +123,8 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
         if (isGuest && forbidGuestUrl) return <span {...props} />;
         return <img src={src} alt={alt} {...props} />;
       },
-      code: ({ node, className, children, inline, ...props }: any) => {
+      code: ({ node, className, children, ...props }: any) => {
         const language = className?.replace('language-', '') ?? '';
-        console.log(className);
         const code = String(children).trim();
 
         const handleCopy = () => {
@@ -126,24 +133,25 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
           setTimeout(() => setIsCopied(false), 2000);
         };
 
-        if (!inline && language && hljs.getLanguage(language)) {
-          const highlighted = hljs.highlight(code, { language }).value;
+        if (node.inline) {
           return (
-            <>
-              <button
-                className={markdown.copyButton}
-                onClick={handleCopy}
-                aria-label="複製程式碼"
-              >
-                {isCopied ? '已複製！' : '複製'}
-              </button>
-              <code
-                dangerouslySetInnerHTML={{ __html: highlighted }}
-                className={`hljs language-${language} ${markdown.codeWrapper} `}
-                {...props}
-              />
-            </>
+            <code className={className} {...props}>
+              {children}
+            </code>
           );
+        }
+
+        let highlightedHTML = '';
+        let langClass = '';
+
+        if (language && hljs.getLanguage(language)) {
+          const result = hljs.highlight(code, { language });
+          highlightedHTML = result.value;
+          langClass = `language-${language}`;
+        } else {
+          const result = hljs.highlightAuto(code);
+          highlightedHTML = result.value;
+          langClass = `language-${result.language}`;
         }
 
         return (
@@ -155,16 +163,18 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
             >
               {isCopied ? '已複製！' : '複製'}
             </button>
-            <code className={className} {...props}>
-              {children}
-            </code>
+            <code
+              className={`hljs ${langClass} ${markdown.codeWrapper}`}
+              dangerouslySetInnerHTML={{ __html: highlightedHTML }}
+              {...props}
+            />
           </>
         );
       },
       pre: ({ node, ...props }: any) => <pre {...props} />,
     };
     return (
-      <div className={markdown.markdownContent}>
+      <>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeRaw]}
@@ -174,7 +184,7 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
         >
           {sanitized}
         </ReactMarkdown>
-      </div>
+      </>
     );
   },
 );

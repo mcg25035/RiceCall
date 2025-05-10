@@ -191,9 +191,9 @@
 
 .copyButton {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  padding: 0.125rem;
+  top: 0.3rem;
+  right: 0.3rem;
+  padding: 0.15rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
@@ -201,7 +201,7 @@
   cursor: pointer;
   transition: all 0.2s;
   font-family: monospace;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   opacity: 0;
 }
 
