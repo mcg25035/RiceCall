@@ -421,6 +421,16 @@ export class UpdateChannelHandler extends SocketHandler {
         });
       }
 
+      if (channel.isLobby && update.userLimit) {
+        throw new StandardizedError({
+          name: 'ValidationError',
+          message: '大廳頻道不能設置人數限制',
+          part: 'CHANNEL',
+          tag: 'USER_LIMIT_INVALID',
+          statusCode: 401,
+        });
+      }
+
       if (
         update.voiceMode !== undefined &&
         update.voiceMode !== channel.voiceMode
