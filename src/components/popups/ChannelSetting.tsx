@@ -182,7 +182,9 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                         <option value="forbidden">
                           {lang.tr.forbiddenSpeech}
                         </option>
-                        <option value="queue">{lang.tr.queueSpeech}</option>
+                        <option value="queue" disabled>
+                          {lang.tr.queueSpeech}
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -399,7 +401,7 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
               </div>
             ) : activeTabIndex === 3 ? (
               <div className={popup['col']}>
-                <label>{lang.tr.speakingPermissions}</label>
+                <label>{lang.tr.speakingPermissions + ' (暫未開放)'}</label>
                 <div className={popup['inputGroup']}>
                   <div className={`${popup['inputBox']} ${popup['disabled']}`}>
                     <input
