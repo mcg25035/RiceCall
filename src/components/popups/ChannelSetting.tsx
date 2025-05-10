@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 // CSS
 import popup from '@/styles/popup.module.css';
 import setting from '@/styles/popups/setting.module.css';
+import markdown from '@/styles/viewers/markdown.module.css';
 
 // Types
 import { Channel, Server } from '@/types';
@@ -17,6 +18,9 @@ import refreshService from '@/services/refresh.service';
 
 // Utils
 import { createDefault } from '@/utils/createDefault';
+
+// Components
+import MarkdownViewer from '@/components/viewers/Markdown';
 
 interface ChannelSettingPopupProps {
   serverId: Server['serverId'];
@@ -34,12 +38,14 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
 
     // States
     const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
+    const [showPreview, setShowPreview] = useState<boolean>(false);
     const [channel, setChannel] = useState<Channel>(createDefault.channel());
 
     // Variables
     const { channelId, serverId } = initialData;
     const {
       name: channelName,
+      announcement: channelAnnouncement,
       visibility: channelVisibility,
       password: channelPassword,
       userLimit: channelUserLimit,
@@ -235,20 +241,45 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
               </>
             ) : activeTabIndex === 1 ? (
               <div className={popup['col']}>
-                <div className={popup['label']}>
-                  {lang.tr.inputAnnouncement}
+                <div className={setting['headerTextBox']}>
+                  <div className={popup['label']}>
+                    {lang.tr.inputAnnouncement}
+                  </div>
+                  <div
+                    className={popup['button']}
+                    onClick={async () => {
+                      if (showPreview) {
+                        setShowPreview(false);
+                      } else {
+                        setShowPreview(true);
+                      }
+                    }}
+                  >
+                    {showPreview ? lang.tr.edit : lang.tr.preview}
+                  </div>
                 </div>
-                <div
-                  className={`${popup['inputBox']} ${popup['col']} ${popup['disabled']}`}
-                >
-                  <textarea
-                    style={{ minHeight: '200px' }}
-                    // value={channelAnnouncement}
-                    placeholder={'目前不可用'}
-                    value={''}
-                    // onChange={(e) => setChannelAnnouncement(e.target.value)}
-                    onChange={() => {}}
-                  />
+                <div className={`${popup['inputBox']} ${popup['col']}`}>
+                  {showPreview ? (
+                    <div
+                      className={markdown['settingMarkdownContainer']}
+                      style={{ minHeight: '330px' }}
+                    >
+                      <MarkdownViewer markdownText={channelAnnouncement} />
+                    </div>
+                  ) : (
+                    <textarea
+                      name="announcement"
+                      style={{ minHeight: '330px' }}
+                      value={channelAnnouncement}
+                      maxLength={1000}
+                      onChange={(e) =>
+                        setChannel((prev) => ({
+                          ...prev,
+                          announcement: e.target.value,
+                        }))
+                      }
+                    />
+                  )}
                   <div className={popup['label']}>
                     {lang.tr.markdownSupport}
                   </div>
@@ -538,6 +569,7 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
               handleUpdateChannel(
                 {
                   name: channelName,
+                  announcement: channelAnnouncement,
                   password: channelPassword,
                   order: channelOrder,
                   userLimit: channelUserLimit,
