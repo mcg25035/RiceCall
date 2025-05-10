@@ -960,7 +960,10 @@ const UserTab: React.FC<UserTabProps> = React.memo(
                 show: canKick,
                 onClick: () => {
                   handleUpdateMember(
-                    { permissionLevel: 1, isBlocked: true },
+                    {
+                      permissionLevel: 1,
+                      isBlocked: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days TODO: user can set the time
+                    },
                     memberUserId,
                     serverId,
                   );

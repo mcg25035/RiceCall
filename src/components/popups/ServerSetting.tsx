@@ -84,6 +84,10 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
         name: lang.tr.name,
         field: 'name',
       },
+      {
+        name: '解除日期',
+        field: 'isBlocked',
+      },
     ];
 
     // Refs
@@ -130,7 +134,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     const filteredBlockMembers = serverMembers.filter((member) => {
       const searchLower = searchText.toLowerCase();
       return (
-        member.isBlocked &&
+        (member.isBlocked === -1 || member.isBlocked > Date.now()) &&
         (member.nickname?.toLowerCase().includes(searchLower) ||
           member.name.toLowerCase().includes(searchLower))
       );
@@ -1141,12 +1145,13 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                       </tr>
                     </thead>
                     <tbody className={setting['tableContainer']}>
-                      {filteredBlockMembers.map((blockMember) => {
+                      {filteredBlockMembers.map((member) => {
                         const {
                           userId: memberUserId,
-                          nickname: blockMemberNickname,
-                          name: blockMemberName,
-                        } = blockMember;
+                          nickname: memberNickname,
+                          name: memberName,
+                          isBlocked: memberIsBlocked,
+                        } = member;
                         return (
                           <tr
                             key={memberUserId}
@@ -1161,7 +1166,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                                     show: true,
                                     onClick: () => {
                                       handleUpdateMember(
-                                        { isBlocked: false },
+                                        { isBlocked: 0 },
                                         memberUserId,
                                         serverId,
                                       );
@@ -1171,7 +1176,14 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                               );
                             }}
                           >
-                            <td>{blockMemberNickname || blockMemberName}</td>
+                            <td>{memberNickname || memberName}</td>
+                            <td>
+                              {memberIsBlocked === -1
+                                ? '永久'
+                                : new Date(memberIsBlocked)
+                                    .toISOString()
+                                    .slice(0, 10)}
+                            </td>
                           </tr>
                         );
                       })}

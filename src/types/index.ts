@@ -503,7 +503,7 @@ export type Server = {
 export type BaseChannel = {
   channelId: string;
   name: string;
-  announcement: string; // new
+  announcement: string; // New:
   password: string;
   order: number;
   bitrate: number;
@@ -540,7 +540,7 @@ export type Member = {
   contribution: number;
   lastMessageTime: number;
   lastJoinChannelTime: number;
-  isBlocked: boolean;
+  isBlocked: number; // New: Change to number
   permissionLevel: Permission;
   createdAt: number;
 };
