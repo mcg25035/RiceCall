@@ -20,6 +20,8 @@ import DataValidator from '@/middleware/data.validator';
 import { database } from '@/index';
 import { ConnectServerHandler } from '@/api/socket/events/server/server.handler';
 import { DisconnectServerHandler } from '@/api/socket/events/server/server.handler';
+import { ConnectChannelHandler } from '@/api/socket/events/channel/channel.handler';
+import { DisconnectChannelHandler } from '@/api/socket/events/channel/channel.handler';
 
 export class SearchUserHandler extends SocketHandler {
   async handle(data: any) {
@@ -60,8 +62,24 @@ export class ConnectUserHandler extends SocketHandler {
 
       // Reconnect user to server
       if (user.currentServerId) {
+        await new DisconnectServerHandler(this.io, this.socket).handle({
+          userId: user.userId,
+          serverId: user.currentServerId,
+        });
         await new ConnectServerHandler(this.io, this.socket).handle({
           userId: user.userId,
+          serverId: user.currentServerId,
+        });
+      }
+      if (user.currentChannelId) {
+        await new DisconnectChannelHandler(this.io, this.socket).handle({
+          userId: user.userId,
+          channelId: user.currentChannelId,
+          serverId: user.currentServerId,
+        });
+        await new ConnectChannelHandler(this.io, this.socket).handle({
+          userId: user.userId,
+          channelId: user.currentChannelId,
           serverId: user.currentServerId,
         });
       }
@@ -71,7 +89,7 @@ export class ConnectUserHandler extends SocketHandler {
         lastActiveAt: Date.now(),
       });
 
-      this.socket.emit('userUpdate', user);
+      this.socket.emit('userUpdate', await database.get.user(operatorId));
     } catch (error: any) {
       if (!(error instanceof StandardizedError)) {
         error = new StandardizedError({
@@ -100,6 +118,12 @@ export class DisconnectUserHandler extends SocketHandler {
       if (user.currentServerId) {
         await new DisconnectServerHandler(this.io, this.socket).handle({
           userId: user.userId,
+          serverId: user.currentServerId,
+        });
+      } else if (user.currentChannelId) {
+        await new DisconnectChannelHandler(this.io, this.socket).handle({
+          userId: user.userId,
+          channelId: user.currentChannelId,
           serverId: user.currentServerId,
         });
       }
