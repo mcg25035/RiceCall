@@ -421,14 +421,26 @@ export class UpdateChannelHandler extends SocketHandler {
         });
       }
 
-      if (channel.isLobby && update.userLimit) {
-        throw new StandardizedError({
-          name: 'ValidationError',
-          message: '大廳頻道不能設置人數限制',
-          part: 'CHANNEL',
-          tag: 'USER_LIMIT_INVALID',
-          statusCode: 401,
-        });
+      if (channel.isLobby) {
+        if (update.userLimit && update.userLimit !== 0) {
+          throw new StandardizedError({
+            name: 'ValidationError',
+            message: '大廳頻道不能設置人數限制',
+            part: 'CHANNEL',
+            tag: 'USER_LIMIT_INVALID',
+            statusCode: 401,
+          });
+        }
+
+        if (update.visibility && update.visibility !== 'public') {
+          throw new StandardizedError({
+            name: 'ValidationError',
+            message: '大廳頻道只能設置為公開',
+            part: 'CHANNEL',
+            tag: 'VISIBILITY_INVALID',
+            statusCode: 401,
+          });
+        }
       }
 
       if (
@@ -451,7 +463,7 @@ export class UpdateChannelHandler extends SocketHandler {
 
       if (
         update.forbidText !== undefined &&
-        update.forbidText !== channel.forbidText
+        update.forbidText !== !!channel.forbidText
       ) {
         messages.push({
           serverId: serverId,
@@ -466,7 +478,7 @@ export class UpdateChannelHandler extends SocketHandler {
 
       if (
         update.forbidGuestText !== undefined &&
-        update.forbidGuestText !== channel.forbidGuestText
+        update.forbidGuestText !== !!channel.forbidGuestText
       ) {
         messages.push({
           serverId: serverId,
@@ -481,7 +493,7 @@ export class UpdateChannelHandler extends SocketHandler {
 
       if (
         update.forbidGuestUrl !== undefined &&
-        update.forbidGuestUrl !== channel.forbidGuestUrl
+        update.forbidGuestUrl !== !!channel.forbidGuestUrl
       ) {
         messages.push({
           serverId: serverId,
@@ -639,7 +651,7 @@ export class DeleteChannelHandler extends SocketHandler {
 
       if (channelChildren) {
         await Promise.all(
-          channelChildren.map(async (child, index) => {
+          channelChildren.map(async (child) => {
             await new DeleteChannelHandler(this.io, this.socket).handle({
               serverId: serverId,
               channelId: child.channelId,
@@ -650,7 +662,7 @@ export class DeleteChannelHandler extends SocketHandler {
 
       if (channelUsers) {
         await Promise.all(
-          channelUsers.map(async (user: any) => {
+          channelUsers.map(async (user) => {
             await new ConnectChannelHandler(this.io, this.socket).handle({
               channelId: server.lobbyId,
               serverId: serverId,
