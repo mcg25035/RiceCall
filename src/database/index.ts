@@ -117,7 +117,6 @@ export default class Database {
           'vip',
           'xp',
           'required_xp',
-          'progress',
           'birth_year',
           'birth_month',
           'birth_day',
@@ -324,7 +323,6 @@ export default class Database {
           'level',
           'wealth',
           'receive_apply',
-          'allow_direct_message',
           'type',
           'visibility',
           'lobby_id',
@@ -376,6 +374,7 @@ export default class Database {
         if (!channelId || !data) return false;
         const ALLOWED_FIELDS = [
           'name',
+          'announcement',
           'order',
           'bitrate',
           'password',
@@ -383,9 +382,7 @@ export default class Database {
           'guest_text_gap_time',
           'guest_text_wait_time',
           'guest_text_max_length',
-          'is_root',
           'is_lobby',
-          'slowmode',
           'forbid_text',
           'forbid_guest_text',
           'forbid_guest_url',
@@ -580,10 +577,10 @@ export default class Database {
         const ALLOWED_FIELDS = [
           'nickname',
           'contribution',
-          'last_message_time',
-          'last_join_channel_time',
           'is_blocked',
           'permission_level',
+          'last_message_time',
+          'last_join_channel_time',
           'created_at',
         ];
         const { keys, values } = validateData(data, ALLOWED_FIELDS);

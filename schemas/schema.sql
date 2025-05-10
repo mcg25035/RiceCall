@@ -54,6 +54,7 @@ CREATE TABLE `badges` (
 CREATE TABLE `channels` (
   `channel_id` char(36) NOT NULL,
   `name` varchar(255) NOT NULL DEFAULT '',
+  `announcement` text DEFAULT NULL,
   `password` varchar(255) NOT NULL DEFAULT '',
   `order` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `bitrate` int(10) UNSIGNED NOT NULL DEFAULT 64000,
@@ -62,7 +63,6 @@ CREATE TABLE `channels` (
   `guest_text_wait_time` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `guest_text_max_length` int(10) UNSIGNED NOT NULL DEFAULT 2000,
   `is_lobby` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
-  `slowmode` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `forbid_text` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `forbid_guest_text` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `forbid_guest_url` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
@@ -129,7 +129,7 @@ CREATE TABLE `members` (
   `last_message_time` bigint(20) NOT NULL DEFAULT 0,
   `last_join_channel_time` bigint(20) NOT NULL DEFAULT 0,
   `permission_level` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `is_blocked` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `is_blocked` bigint(20) NOT NULL DEFAULT 0,
   `created_at` bigint(20) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -165,7 +165,6 @@ CREATE TABLE `servers` (
   `level` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `wealth` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `receive_apply` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
-  `allow_direct_message` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `type` varchar(255) NOT NULL DEFAULT 'game',
   `visibility` varchar(255) NOT NULL DEFAULT 'public',
   `lobby_id` char(36) DEFAULT NULL,
