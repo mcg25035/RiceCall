@@ -32,7 +32,16 @@
   "linux": {
     "icon": "./resources/icon.png",
     "category": "Network",
-    "target": ["AppImage", "deb", "rpm", "zip"]
+    "target": ["AppImage", "rpm", "zip"]
+  },
+  "deb": {
+    "desktop": {
+      "Path": "/opt/RiceCall",
+      "Name": "RiceCall",
+      "Keywords": ["ricecall", "rc"],
+      "Comment": "Ricecall is a voice app that allows you to chat with your friends."
+    },
+    "fpm": ["--after-install=build_deb/after-install.sh"]
   },
   "publish": [
     {
