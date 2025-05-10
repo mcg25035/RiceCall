@@ -6,7 +6,7 @@ export const ServerSchema = z.object({
   avatar: z.string().min(0).max(255),
   avatarUrl: z.string().min(0).max(255),
   announcement: z.string().min(0).max(1000),
-  applyNote: z.string().min(0).max(200),
+  applyNotice: z.string().min(0).max(200),
   description: z.string().min(0).max(200),
   slogan: z.string().min(0).max(100),
   receiveApply: z.boolean(),
