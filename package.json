@@ -3,7 +3,11 @@
   "version": "0.1.7",
   "private": false,
   "description": "Ricecall",
-  "author": "null",
+  "author": {
+    "name": "RiceCall Group",
+    "email": "support@ricecall.com.tw",
+    "url": "https://ricecall.com.tw"
+  },
   "main": "./build/main.js",
   "engines": {
     "node": ">=20"
@@ -15,7 +19,8 @@
     "export": "next export",
     "lint": "next lint",
     "electron-dev": "concurrently \"npm run dev\" \"electron -r tsx -r dotenv/config main.ts --dev\"",
-    "electron-build": "npm run build && tsc -p tsconfig.electron.json && electron-builder"
+    "electron-build": "npm run build && tsc -p tsconfig.electron.json && electron-builder",
+    "electron-build-deb": "npm run build && tsc -p tsconfig.electron.json && electron-builder --linux deb"
   },
   "dependencies": {
     "discord-rpc": "^4.0.1",
@@ -28,7 +33,7 @@
     "net": "^1.0.2",
     "next": "^15.3.2",
     "path": "^0.12.7",
-    "react": "^19.1.0",
+    "react": "^19.0.0",
     "react-dom": "^19",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^15.6.1",
