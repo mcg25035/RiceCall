@@ -95,7 +95,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
   return (
     <div className={popup['popupContainer']}>
       <div className={popup['popupBody']}>
-        {/* Left Sidebar */}
+        {/* Sidebar */}
         <div className={setting['left']}>
           <div className={setting['tabs']}>
             {[
@@ -115,216 +115,227 @@ const SystemSettingPopup: React.FC = React.memo(() => {
             ))}
           </div>
         </div>
-        {/* Right Content */}
-        <div className={setting['right']}>
-          {activeTabIndex === 0 ? (
-            <div className={popup['col']}>
-              <div className={popup['label']}>{lang.tr.generalSettings}</div>
-              <div className={popup['inputGroup']}>
-                <div className={`${popup['inputBox']} ${popup['row']}`}>
-                  <input
-                    name="autoLaunch"
-                    type="checkbox"
-                    checked={autoLaunch}
-                    onChange={(e) => setAutoLaunch(e.target.checked)}
-                  />
-                  <div>
-                    <div className={popup['label']}>{lang.tr.autoStartup}</div>
-                    <div className={popup['hint']}>
-                      {lang.tr.autoStartupDescription}
-                    </div>
-                  </div>
-                </div>
 
-                <div
-                  className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
-                >
-                  <input
-                    name="minimizeToTray"
-                    type="checkbox"
-                    checked={minimizeToTray}
-                    onChange={(e) => setMinimizeToTray(e.target.checked)}
-                  />
-                  <div>
-                    <div className={popup['label']}>
-                      {lang.tr.minimizeToTray} (Not implemented)
-                    </div>
-                    <div className={popup['hint']}>
-                      {lang.tr.minimizeToTrayDescription}
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
-                >
-                  <input
-                    name="startMinimized"
-                    type="checkbox"
-                    checked={startMinimized}
-                    onChange={(e) => setStartMinimized(e.target.checked)}
-                  />
-                  <div>
-                    <div className={popup['label']}>
-                      {lang.tr.startMinimized} (Not implemented)
-                    </div>
-                    <div className={popup['hint']}>
-                      {lang.tr.startMinimizedDescription}
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
-                >
-                  <input
-                    name="notificationSound"
-                    type="checkbox"
-                    checked={notificationSound}
-                    onChange={(e) => setNotificationSound(e.target.checked)}
-                  />
-                  <div>
-                    <div className={popup['label']}>
-                      {lang.tr.notificationSound} (Not implemented)
-                    </div>
-                    <div className={popup['hint']}>
-                      {lang.tr.notificationSoundDescription}
-                    </div>
+        {/* System Settings */}
+        <div
+          className={setting['right']}
+          style={activeTabIndex === 0 ? {} : { display: 'none' }}
+        >
+          <div className={popup['col']}>
+            <div className={popup['label']}>{lang.tr.generalSettings}</div>
+            <div className={popup['inputGroup']}>
+              <div className={`${popup['inputBox']} ${popup['row']}`}>
+                <input
+                  name="autoLaunch"
+                  type="checkbox"
+                  checked={autoLaunch}
+                  onChange={(e) => setAutoLaunch(e.target.checked)}
+                />
+                <div>
+                  <div className={popup['label']}>{lang.tr.autoStartup}</div>
+                  <div className={popup['hint']}>
+                    {lang.tr.autoStartupDescription}
                   </div>
                 </div>
               </div>
-            </div>
-          ) : activeTabIndex === 1 ? (
-            <div className={popup['col']}>
-              <div className={popup['label']}>{lang.tr.voiceSettings}</div>
-              <div className={popup['inputGroup']}>
-                <div className={`${popup['inputBox']} ${popup['col']}`}>
-                  <div className={popup['label']}>{lang.tr.inputDevice}</div>
-                  <div className={popup['selectBox']}>
-                    <select
-                      value={selectedInput}
-                      onChange={(e) => setSelectedInput(e.target.value)}
-                      style={{
-                        maxWidth: '250px',
-                      }}
-                    >
-                      <option value="">
-                        {lang.tr.defaultMicrophone} (
-                        {inputDevices[0]?.label || lang.tr.unknownDevice})
-                      </option>
-                      {inputDevices.map((device) => (
-                        <option key={device.deviceId} value={device.deviceId}>
-                          {device.label ||
-                            `${lang.tr.microphone} ${
-                              inputDevices.indexOf(device) + 1
-                            }`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className={`${popup['inputBox']} ${popup['col']}`}>
-                  <div className={popup['label']}>{lang.tr.outputDevice}</div>
-                  <div className={popup['selectBox']}>
-                    <select
-                      value={selectedOutput}
-                      onChange={(e) => setSelectedOutput(e.target.value)}
-                      style={{
-                        maxWidth: '250px',
-                      }}
-                    >
-                      <option value="">
-                        {lang.tr.defaultSpeaker} (
-                        {outputDevices[0]?.label || lang.tr.unknownDevice})
-                      </option>
-                      {outputDevices.map((device) => (
-                        <option key={device.deviceId} value={device.deviceId}>
-                          {device.label ||
-                            `${lang.tr.speaker} ${
-                              outputDevices.indexOf(device) + 1
-                            }`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : activeTabIndex === 2 ? (
-            <div className={popup['col']}>
-              <div className={popup['label']}>{lang.tr.aboutUs}</div>
-              <div className={popup['inputGroup']}>
-                <div className={popup['row']}>
-                  <div className={`${popup['inputBox']} ${popup['col']}`}>
-                    <div className={popup['label']}>{lang.tr.version}</div>
-                    <div className={popup['value']}>v{version}</div>
-                  </div>
-                  <div className={`${popup['inputBox']} ${popup['col']}`}>
-                    <div className={popup['label']}>{lang.tr.getHelp}</div>
-                    <div className={popup['value']}>
-                      <div
-                        onClick={() =>
-                          ipcService.window.openExternal(
-                            'https://discord.gg/adCWzv6wwS',
-                          )
-                        }
-                        className={setting['linkText']}
-                      >
-                        {lang.tr.discord}
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
-                <div className={`${popup['inputBox']} ${popup['col']}`}>
+              <div
+                className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
+              >
+                <input
+                  name="minimizeToTray"
+                  type="checkbox"
+                  checked={minimizeToTray}
+                  onChange={(e) => setMinimizeToTray(e.target.checked)}
+                />
+                <div>
                   <div className={popup['label']}>
-                    {lang.tr.projectRepo} {lang.tr.projectRepoDescription}
+                    {lang.tr.minimizeToTray} (Not implemented)
                   </div>
+                  <div className={popup['hint']}>
+                    {lang.tr.minimizeToTrayDescription}
+                  </div>
+                </div>
+              </div>
+              <div
+                className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
+              >
+                <input
+                  name="startMinimized"
+                  type="checkbox"
+                  checked={startMinimized}
+                  onChange={(e) => setStartMinimized(e.target.checked)}
+                />
+                <div>
+                  <div className={popup['label']}>
+                    {lang.tr.startMinimized} (Not implemented)
+                  </div>
+                  <div className={popup['hint']}>
+                    {lang.tr.startMinimizedDescription}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
+              >
+                <input
+                  name="notificationSound"
+                  type="checkbox"
+                  checked={notificationSound}
+                  onChange={(e) => setNotificationSound(e.target.checked)}
+                />
+                <div>
+                  <div className={popup['label']}>
+                    {lang.tr.notificationSound} (Not implemented)
+                  </div>
+                  <div className={popup['hint']}>
+                    {lang.tr.notificationSoundDescription}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Voice Settings */}
+        <div
+          className={setting['right']}
+          style={activeTabIndex === 1 ? {} : { display: 'none' }}
+        >
+          <div className={popup['col']}>
+            <div className={popup['label']}>{lang.tr.voiceSettings}</div>
+            <div className={popup['inputGroup']}>
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                <div className={popup['label']}>{lang.tr.inputDevice}</div>
+                <div className={popup['selectBox']}>
+                  <select
+                    value={selectedInput}
+                    onChange={(e) => setSelectedInput(e.target.value)}
+                    style={{
+                      maxWidth: '250px',
+                    }}
+                  >
+                    <option value="">
+                      {lang.tr.defaultMicrophone} (
+                      {inputDevices[0]?.label || lang.tr.unknownDevice})
+                    </option>
+                    {inputDevices.map((device) => (
+                      <option key={device.deviceId} value={device.deviceId}>
+                        {device.label ||
+                          `${lang.tr.microphone} ${
+                            inputDevices.indexOf(device) + 1
+                          }`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                <div className={popup['label']}>{lang.tr.outputDevice}</div>
+                <div className={popup['selectBox']}>
+                  <select
+                    value={selectedOutput}
+                    onChange={(e) => setSelectedOutput(e.target.value)}
+                    style={{
+                      maxWidth: '250px',
+                    }}
+                  >
+                    <option value="">
+                      {lang.tr.defaultSpeaker} (
+                      {outputDevices[0]?.label || lang.tr.unknownDevice})
+                    </option>
+                    {outputDevices.map((device) => (
+                      <option key={device.deviceId} value={device.deviceId}>
+                        {device.label ||
+                          `${lang.tr.speaker} ${
+                            outputDevices.indexOf(device) + 1
+                          }`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* About Us */}
+        <div
+          className={setting['right']}
+          style={activeTabIndex === 2 ? {} : { display: 'none' }}
+        >
+          <div className={popup['col']}>
+            <div className={popup['label']}>{lang.tr.aboutUs}</div>
+            <div className={popup['inputGroup']}>
+              <div className={popup['row']}>
+                <div className={`${popup['inputBox']} ${popup['col']}`}>
+                  <div className={popup['label']}>{lang.tr.version}</div>
+                  <div className={popup['value']}>v{version}</div>
+                </div>
+                <div className={`${popup['inputBox']} ${popup['col']}`}>
+                  <div className={popup['label']}>{lang.tr.getHelp}</div>
                   <div className={popup['value']}>
                     <div
                       onClick={() =>
                         ipcService.window.openExternal(
-                          'https://github.com/NerdyHomeReOpen/RiceCall',
+                          'https://discord.gg/adCWzv6wwS',
                         )
                       }
                       className={setting['linkText']}
                     >
-                      RiceCall
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`${popup['inputBox']} ${popup['col']}`}>
-                  <div className={`${popup['label']}`}>
-                    {lang.tr.developmentTeam}
-                  </div>
-                  <div className={`${popup['row']}`}>
-                    <div className={setting['developerCardGrid']}>
-                      {DEVELOPERS_INFO.map((dev) => (
-                        <div
-                          key={dev.name}
-                          className={setting['developerCard']}
-                        >
-                          <div
-                            onClick={() =>
-                              ipcService.window.openExternal(dev.github)
-                            }
-                            className={setting['nameText']}
-                          >
-                            {dev.name}
-                          </div>
-                          <div className={setting['roleText']}>{dev.role}</div>
-                        </div>
-                      ))}
+                      {lang.tr.discord}
                     </div>
                   </div>
                 </div>
               </div>
-              <div className={popup['hint']}>
-                {lang.tr.copyright} © {new Date().getFullYear()} NerdyHomeReOpen
-                Team. All rights reserved.
+
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                <div className={popup['label']}>
+                  {lang.tr.projectRepo} {lang.tr.projectRepoDescription}
+                </div>
+                <div className={popup['value']}>
+                  <div
+                    onClick={() =>
+                      ipcService.window.openExternal(
+                        'https://github.com/NerdyHomeReOpen/RiceCall',
+                      )
+                    }
+                    className={setting['linkText']}
+                  >
+                    RiceCall
+                  </div>
+                </div>
+              </div>
+
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                <div className={`${popup['label']}`}>
+                  {lang.tr.developmentTeam}
+                </div>
+                <div className={`${popup['row']}`}>
+                  <div className={setting['developerCardGrid']}>
+                    {DEVELOPERS_INFO.map((dev) => (
+                      <div key={dev.name} className={setting['developerCard']}>
+                        <div
+                          onClick={() =>
+                            ipcService.window.openExternal(dev.github)
+                          }
+                          className={setting['nameText']}
+                        >
+                          {dev.name}
+                        </div>
+                        <div className={setting['roleText']}>{dev.role}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-          ) : null}
+            <div className={popup['hint']}>
+              {lang.tr.copyright} © {new Date().getFullYear()} NerdyHomeReOpen
+              Team. All rights reserved.
+            </div>
+          </div>
         </div>
       </div>
 
