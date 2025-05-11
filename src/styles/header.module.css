@@ -3,8 +3,12 @@
   background-color: #0073c6;
   -webkit-app-region: drag;
   justify-content: space-between;
-  min-height: 30px;
   border: none;
+  min-height: 30px;
+}
+
+.header .big {
+  min-height: 40px;
 }
 
 .appIcon {
@@ -20,37 +24,9 @@
   left: 2.5rem;
 }
 
-.titleBox {
-  height: 30px;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  width: auto;
-  color: #fff;
-}
-
-.titleBox::before {
-  content: '';
-  display: inline-block;
-  min-width: 18px;
-  min-height: 18px;
-  background-image: url('../../public/rc_logo_small.png');
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: auto;
-}
-
-.big {
-  height: 40px;
-}
-
-.title {
-  margin-left: 5px;
-}
-
 .buttons,
 .mainTabs,
-.userStatus {
+.titleBox {
   -webkit-app-region: no-drag;
 }
 
@@ -234,25 +210,22 @@
   align-items: flex-end;
   cursor: pointer;
   width: auto;
-  height: 40px;
-  margin-left: 9rem;
-  gap: 20px;
+  height: 43px;
+  margin-left: 0;
 }
 
 .mainTabs .tab {
-  flex: 1;
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 10px 0;
   width: max-content;
-  width: 140px;
+  min-width: 100px;
+  max-width: 150px;
   height: 30px;
-  text-align: left;
   overflow: hidden;
   white-space: nowrap;
+  padding: 8px 13px 0 13px;
 }
 
 .mainTabs .tab:before {
@@ -261,8 +234,8 @@
   z-index: 100;
   top: 0;
   left: 0;
-  width: 10px;
-  height: 31px;
+  min-width: 10px;
+  min-height: 31px;
   background-image: url('../../public/tab_item_mainframe.png');
   background-repeat: no-repeat;
   background-position: 0 0;
@@ -274,20 +247,18 @@
   z-index: 100;
   top: 0;
   right: 0;
-  width: 10px;
-  height: 31px;
+  min-width: 10px;
+  min-height: 31px;
   background-image: url('../../public/tab_item_mainframe.png');
   background-repeat: no-repeat;
   background-position: 0 0;
 }
 
 .mainTabs .tabClose {
-  z-index: 1;
-  position: absolute;
-  top: 0.5rem;
-  right: 10px;
+  z-index: 2;
   min-width: 15px;
   min-height: 15px;
+  align-self: flex-start;
   background-image: url('../../public/ctrl/tabitem_button.png');
   background-repeat: no-repeat;
   background-position: 0 0;
@@ -304,7 +275,7 @@
 .mainTabs .tab .tabBg {
   position: absolute;
   overflow: hidden;
-  width: 120px;
+  width: calc(100% - 20px);
   height: 30px;
   bottom: 0;
   left: 10px;
@@ -324,13 +295,14 @@
 }
 
 .mainTabs .tab .tabLable {
-  flex: 1;
   z-index: 1;
-  max-width: 100%;
-  padding-right: 1rem;
   text-overflow: ellipsis;
-  overflow-x: hidden;
-  color: rgb(255 255 255);
+  overflow: hidden;
+  color: rgb(255, 255, 255);
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .mainTabs .tab.selected .tabLable {
@@ -341,40 +313,50 @@
   color: #0073c6;
 }
 
-/* User Status */
+/* Title */
 
-.userStatus {
+.titleBox {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  cursor: pointer;
-  position: absolute;
-  left: 2.5rem;
-  height: 40px;
+  padding: 0 10px;
+  gap: 5px;
 }
 
-.nameDisplay {
-  color: #000;
+.titleBox::before {
+  content: '';
+  display: inline-block;
+  min-width: 18px;
+  min-height: 18px;
+  background-image: url('../../public/rc_logo_small.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: auto;
+}
+
+.nameBox {
   text-shadow: 0 0 4px #fff9;
-  font-size: 0.9rem;
-  font-weight: bold;
   line-height: 16px;
-  margin-right: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
-  padding: 3px;
+  max-width: 150px;
+  max-height: 26px;
+  padding: 0px 2px;
+  font-size: 12px;
+  font-weight: bold;
+  color: inherit;
 }
 
-.nameDisplay:hover {
+.nameBox:hover {
   color: #222;
   text-shadow: 0 0 4px #fff;
   background: #ffffff1f;
   border-radius: 3px;
 }
 
-.nameDisplay:active {
+.nameBox:active {
   color: #222;
   text-shadow: 0 0 4px #fff;
   background: #ffffff36;

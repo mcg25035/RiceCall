@@ -1,6 +1,4 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { marked } from 'marked';
 
 // CSS
 import setting from '@/styles/popups/setting.module.css';
@@ -32,6 +30,9 @@ import refreshService from '@/services/refresh.service';
 // Utils
 import { createDefault } from '@/utils/createDefault';
 import { createSorter } from '@/utils/createSorter';
+
+// Components
+import MarkdownViewer from '@/components/viewers/Markdown';
 
 interface ServerSettingPopupProps {
   serverId: Server['serverId'];
@@ -83,65 +84,45 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
         name: lang.tr.name,
         field: 'name',
       },
+      {
+        name: lang.tr.unblockDate,
+        field: 'isBlocked',
+      },
     ];
 
     // Refs
     const refreshRef = useRef(false);
 
     // States
-    const [serverName, setServerName] = useState<Server['name']>(
-      createDefault.server().name,
-    );
-    const [serverAvatar, setServerAvatar] = useState<Server['avatar']>(
-      createDefault.server().avatar,
-    );
-    const [serverAvatarUrl, setServerAvatarUrl] = useState<Server['avatarUrl']>(
-      createDefault.server().avatarUrl,
-    );
-    const [serverAnnouncement, setServerAnnouncement] = useState<
-      Server['announcement']
-    >(createDefault.server().announcement);
-    const [serverDescription, setServerDescription] = useState<
-      Server['description']
-    >(createDefault.server().description);
-    const [serverType, setServerType] = useState<Server['type']>(
-      createDefault.server().type,
-    );
-    const [serverDisplayId, setServerDisplayId] = useState<Server['displayId']>(
-      createDefault.server().displayId,
-    );
-    const [serverSlogan, setServerSlogan] = useState<Server['slogan']>(
-      createDefault.server().slogan,
-    );
-    const [serverLevel, setServerLevel] = useState<Server['level']>(
-      createDefault.server().level,
-    );
-    const [serverWealth, setServerWealth] = useState<Server['wealth']>(
-      createDefault.server().wealth,
-    );
-    const [serverCreatedAt, setServerCreatedAt] = useState<Server['createdAt']>(
-      createDefault.server().createdAt,
-    );
-    const [serverVisibility, setServerVisibility] = useState<
-      Server['visibility']
-    >(createDefault.server().visibility);
+    const [server, setServer] = useState<Server>(createDefault.server());
+    const [member, setMember] = useState<Member>(createDefault.member());
     const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
     const [serverApplications, setServerApplications] = useState<
       MemberApplication[]
     >([]);
-    const [permissionLevel, setPermissionLevel] = useState<number>(0);
-
     const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
     const [sortState, setSortState] = useState<1 | -1>(-1);
     const [sortField, setSortField] = useState<string>('permissionLevel');
-
     const [searchText, setSearchText] = useState('');
-
-    const [announcementPreview, setAnnouncementPreview] = useState('');
     const [showPreview, setShowPreview] = useState(false);
 
     // Variables
     const { serverId, userId } = initialData;
+    const {
+      name: serverName,
+      avatar: serverAvatar,
+      avatarUrl: serverAvatarUrl,
+      announcement: serverAnnouncement,
+      description: serverDescription,
+      type: serverType,
+      displayId: serverDisplayId,
+      slogan: serverSlogan,
+      level: serverLevel,
+      wealth: serverWealth,
+      createdAt: serverCreatedAt,
+      visibility: serverVisibility,
+    } = server;
+    const { permissionLevel: userPermission } = member;
     const filteredMembers = serverMembers.filter((member) => {
       const searchLower = searchText.toLowerCase();
       return (
@@ -153,7 +134,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     const filteredBlockMembers = serverMembers.filter((member) => {
       const searchLower = searchText.toLowerCase();
       return (
-        member.isBlocked &&
+        (member.isBlocked === -1 || member.isBlocked > Date.now()) &&
         (member.nickname?.toLowerCase().includes(searchLower) ||
           member.name.toLowerCase().includes(searchLower))
       );
@@ -167,6 +148,66 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     });
 
     // Handlers
+    const handleServerMemberAdd = (member: ServerMember): void => {
+      setServerMembers((prev) => [...prev, member]);
+    };
+
+    const handleServerMemberUpdate = (
+      userId: ServerMember['userId'],
+      serverId: ServerMember['serverId'],
+      member: Partial<ServerMember>,
+    ): void => {
+      setServerMembers((prev) =>
+        prev.map((item) =>
+          item.userId === userId && item.serverId === serverId
+            ? { ...item, ...member }
+            : item,
+        ),
+      );
+    };
+
+    const handleServerMemberDelete = (
+      userId: ServerMember['userId'],
+      serverId: ServerMember['serverId'],
+    ): void => {
+      setServerMembers((prev) =>
+        prev.filter(
+          (item) => !(item.userId === userId && item.serverId === serverId),
+        ),
+      );
+    };
+
+    const handleServerMemberApplicationAdd = (
+      application: MemberApplication,
+    ) => {
+      setServerApplications((prev) => [...prev, application]);
+    };
+
+    const handleServerMemberApplicationUpdate = (
+      userId: User['userId'],
+      serverId: Server['serverId'],
+      application: Partial<MemberApplication>,
+    ) => {
+      setServerApplications((prev) =>
+        prev.map((item) =>
+          item.serverId === serverId && item.userId === userId
+            ? { ...item, ...application }
+            : item,
+        ),
+      );
+    };
+
+    const handleServerMemberApplicationDelete = (
+      userId: User['userId'],
+      serverId: Server['serverId'],
+    ) => {
+      setServerApplications((prev) =>
+        prev.filter(
+          (item) => !(item.userId === userId && item.serverId === serverId),
+        ),
+      );
+    };
+
     const handleSort = <T extends ServerMember | MemberApplication>(
       field: keyof T,
       array: T[],
@@ -194,15 +235,6 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       socket.send.deleteMemberApplication({ userId, serverId });
     };
 
-    const handleCreateMember = (
-      member: Partial<Member>,
-      userId: User['userId'],
-      serverId: Server['serverId'],
-    ) => {
-      if (!socket) return;
-      socket.send.createMember({ member, userId, serverId });
-    };
-
     const handleUpdateMember = (
       member: Partial<Member>,
       userId: User['userId'],
@@ -212,17 +244,12 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       socket.send.updateMember({ member, userId, serverId });
     };
 
-    const handleKickUser = (
-      userId: User['userId'],
-      serverId: Server['serverId'],
-    ) => {
-      if (!socket) return;
-      socket.send.disconnectServer({ userId, serverId });
-    };
-
     const handleOpenMemberApplySetting = () => {
-      ipcService.popup.open(PopupType.MEMBERAPPLY_SETTING);
-      ipcService.initialData.onRequest(PopupType.MEMBERAPPLY_SETTING, {
+      ipcService.popup.open(
+        PopupType.MEMBERAPPLY_SETTING,
+        'memberApplySetting',
+      );
+      ipcService.initialData.onRequest('memberApplySetting', {
         serverId,
       });
     };
@@ -231,8 +258,8 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       userId: User['userId'],
       targetId: User['userId'],
     ) => {
-      ipcService.popup.open(PopupType.APPLY_FRIEND);
-      ipcService.initialData.onRequest(PopupType.APPLY_FRIEND, {
+      ipcService.popup.open(PopupType.APPLY_FRIEND, 'applyFriend');
+      ipcService.initialData.onRequest('applyFriend', {
         userId,
         targetId,
       });
@@ -242,8 +269,8 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       userId: User['userId'],
       serverId: Server['serverId'],
     ) => {
-      ipcService.popup.open(PopupType.EDIT_NICKNAME);
-      ipcService.initialData.onRequest(PopupType.EDIT_NICKNAME, {
+      ipcService.popup.open(PopupType.EDIT_NICKNAME, 'editNickname');
+      ipcService.initialData.onRequest('editNickname', {
         serverId,
         userId,
       });
@@ -254,8 +281,11 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       targetId: User['userId'],
       targetName: User['name'],
     ) => {
-      ipcService.popup.open(PopupType.DIRECT_MESSAGE);
-      ipcService.initialData.onRequest(PopupType.DIRECT_MESSAGE, {
+      ipcService.popup.open(
+        PopupType.DIRECT_MESSAGE,
+        `directMessage-${targetId}`,
+      );
+      ipcService.initialData.onRequest(`directMessage-${targetId}`, {
         userId,
         targetId,
         targetName,
@@ -266,55 +296,19 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       userId: User['userId'],
       targetId: User['userId'],
     ) => {
-      ipcService.popup.open(PopupType.USER_INFO);
-      ipcService.initialData.onRequest(PopupType.USER_INFO, {
+      ipcService.popup.open(PopupType.USER_INFO, `userInfo-${targetId}`);
+      ipcService.initialData.onRequest(`userInfo-${targetId}`, {
         userId,
         targetId,
       });
     };
 
     const handleOpenErrorDialog = (message: string) => {
-      ipcService.popup.open(PopupType.DIALOG_ERROR);
-      ipcService.initialData.onRequest(PopupType.DIALOG_ERROR, {
+      ipcService.popup.open(PopupType.DIALOG_ERROR, 'errorDialog');
+      ipcService.initialData.onRequest('errorDialog', {
         title: message,
-        submitTo: PopupType.DIALOG_ERROR,
+        submitTo: 'errorDialog',
       });
-    };
-
-    const handleServerUpdate = (data: Server | null) => {
-      if (!data) data = createDefault.server();
-      setServerName(data.name);
-      setServerAvatar(data.avatar);
-      setServerAvatarUrl(data.avatarUrl);
-      setServerAnnouncement(data.announcement);
-      setServerDescription(data.description);
-      setServerType(data.type);
-      setServerDisplayId(data.displayId);
-      setServerSlogan(data.slogan);
-      setServerLevel(data.level);
-      setServerWealth(data.wealth);
-      setServerCreatedAt(data.createdAt);
-      setServerVisibility(data.visibility);
-    };
-
-    const handleMembersUpdate = (data: ServerMember[] | null) => {
-      if (!data) data = [];
-      const sorted = [...data].sort(
-        (a, b) => b.permissionLevel - a.permissionLevel,
-      );
-      setServerMembers(sorted);
-    };
-
-    const handleMemberApplicationsUpdate = (
-      data: MemberApplication[] | null,
-    ) => {
-      if (!data) data = [];
-      setServerApplications(data);
-    };
-
-    const handleMemberUpdate = (data: Member | null) => {
-      if (!data) data = createDefault.member();
-      setPermissionLevel(data.permissionLevel);
     };
 
     const handleMemberSort = (field: keyof ServerMember) => {
@@ -336,9 +330,15 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
       if (!socket) return;
 
       const eventHandlers = {
-        [SocketServerEvent.SERVER_MEMBERS_UPDATE]: handleMembersUpdate,
-        [SocketServerEvent.SERVER_MEMBER_APPLICATIONS_UPDATE]:
-          handleMemberApplicationsUpdate,
+        [SocketServerEvent.SERVER_MEMBER_ADD]: handleServerMemberAdd,
+        [SocketServerEvent.SERVER_MEMBER_UPDATE]: handleServerMemberUpdate,
+        [SocketServerEvent.SERVER_MEMBER_DELETE]: handleServerMemberDelete,
+        [SocketServerEvent.SERVER_MEMBER_APPLICATION_ADD]:
+          handleServerMemberApplicationAdd,
+        [SocketServerEvent.SERVER_MEMBER_APPLICATION_UPDATE]:
+          handleServerMemberApplicationUpdate,
+        [SocketServerEvent.SERVER_MEMBER_APPLICATION_DELETE]:
+          handleServerMemberApplicationDelete,
       };
       const unsubscribe: (() => void)[] = [];
 
@@ -370,11 +370,19 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
           refreshService.serverMemberApplications({
             serverId: serverId,
           }),
-        ]).then(([server, member, serverMembers, serverMemberApplications]) => {
-          handleServerUpdate(server);
-          handleMemberUpdate(member);
-          handleMembersUpdate(serverMembers);
-          handleMemberApplicationsUpdate(serverMemberApplications);
+        ]).then(([server, member, members, applications]) => {
+          if (server) {
+            setServer(server);
+          }
+          if (member) {
+            setMember(member);
+          }
+          if (members) {
+            setServerMembers(members);
+          }
+          if (applications) {
+            setServerApplications(applications);
+          }
         });
       };
       refresh();
@@ -383,11 +391,11 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
     return (
       <div className={popup['popupContainer']}>
         <div className={popup['popupBody']}>
-          {/* Left Sidebar */}
+          {/* Sidebar */}
           <div className={setting['left']}>
             <div className={setting['tabs']}>
               {[
-                lang.tr.viewGroupInfo,
+                lang.tr.viewServerInfo,
                 lang.tr.announcement,
                 lang.tr.memberManagement,
                 lang.tr.accessPermission,
@@ -406,706 +414,786 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
               ))}
             </div>
           </div>
-          {/* Right Content */}
-          <div className={setting['right']}>
-            {activeTabIndex === 0 ? (
-              <div className={popup['col']}>
-                <div className={popup['row']}>
-                  <div className={popup['col']}>
-                    <div className={popup['row']}>
-                      <div className={`${popup['inputBox']} ${popup['col']}`}>
-                        <div className={popup['label']}>{lang.tr.name}</div>
-                        <input
-                          type="text"
-                          value={serverName}
-                          onChange={(e) => {
-                            setServerName(e.target.value);
-                          }}
-                        />
-                      </div>
-                      <div className={`${popup['inputBox']} ${popup['col']}`}>
-                        <div className={popup['label']}>{lang.tr.id}</div>
-                        <input type="text" value={serverDisplayId} disabled />
-                      </div>
-                    </div>
-                    <div className={`${popup['inputBox']} ${popup['col']}`}>
-                      <div className={popup['label']}>{lang.tr.slogan}</div>
-                      <input
-                        type="text"
-                        value={serverSlogan}
-                        onChange={(e) => {
-                          setServerSlogan(e.target.value);
-                        }}
-                      />
-                    </div>
-                    <div className={`${popup['inputBox']} ${popup['col']}`}>
-                      <div className={popup['label']}>{lang.tr.type}</div>
-                      <div className={popup['selectBox']}>
-                        <select
-                          value={serverType}
-                          onChange={(e) => {
-                            setServerType(e.target.value as Server['type']);
-                          }}
-                        >
-                          <option value="other">{lang.tr.other}</option>
-                          <option value="game">{lang.tr.game}</option>
-                          <option value="entertainment">
-                            {lang.tr.entertainment}
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div className={setting['avatarWrapper']}>
-                    <div
-                      className={setting['avatarPicture']}
-                      style={{
-                        backgroundImage: `url(${serverAvatarUrl})`,
-                      }}
-                    />
-                    <input
-                      type="file"
-                      id="avatar-upload"
-                      style={{ display: 'none' }}
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) {
-                          handleOpenErrorDialog(lang.tr.canNotReadImage);
-                          return;
-                        }
-                        if (file.size > 5 * 1024 * 1024) {
-                          handleOpenErrorDialog(lang.tr.imageTooLarge);
-                          return;
-                        }
 
-                        const reader = new FileReader();
-                        reader.onloadend = async () => {
-                          const formData = new FormData();
-                          formData.append('_type', 'server');
-                          formData.append('_fileName', serverAvatar);
-                          formData.append('_file', reader.result as string);
-                          const data = await apiService.post(
-                            '/upload',
-                            formData,
-                          );
-                          if (data) {
-                            setServerAvatar(data.avatar);
-                            setServerAvatarUrl(data.avatarUrl);
-                          }
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                    />
-                    <label
-                      htmlFor="avatar-upload"
-                      className={popup['button']}
-                      style={{ marginTop: '10px' }}
-                    >
-                      {lang.tr.changeImage}
-                    </label>
-                  </div>
-                </div>
+          {/* Basic Info*/}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 0 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <div className={popup['row']}>
                 <div className={popup['col']}>
                   <div className={popup['row']}>
                     <div className={`${popup['inputBox']} ${popup['col']}`}>
-                      <div className={popup['label']}>{lang.tr.level}</div>
-                      <input type="text" value={serverLevel} disabled />
+                      <div className={popup['label']}>{lang.tr.name}</div>
+                      <input
+                        name="name"
+                        type="text"
+                        value={serverName}
+                        maxLength={32}
+                        onChange={(e) => {
+                          setServer((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }));
+                        }}
+                      />
                     </div>
                     <div className={`${popup['inputBox']} ${popup['col']}`}>
-                      <div className={popup['label']}>
-                        {lang.tr.creationTime}
-                      </div>
+                      <div className={popup['label']}>{lang.tr.id}</div>
                       <input
+                        name="displayId"
                         type="text"
-                        value={new Date(serverCreatedAt).toLocaleString()}
+                        value={serverDisplayId}
                         disabled
                       />
                     </div>
-                    <div className={`${popup['inputBox']} ${popup['col']}`}>
-                      <div
-                        className={`${popup['label']} ${setting['wealthCoinIcon']}`}
-                      >
-                        {lang.tr.wealth}
-                      </div>
-                      <input type="text" value={serverWealth} disabled />
-                    </div>
                   </div>
                   <div className={`${popup['inputBox']} ${popup['col']}`}>
-                    <div className={popup['label']}>{lang.tr.description}</div>
-                    <textarea
-                      value={serverDescription}
-                      onChange={(e) => setServerDescription(e.target.value)}
+                    <div className={popup['label']}>{lang.tr.slogan}</div>
+                    <input
+                      name="slogan"
+                      type="text"
+                      value={serverSlogan}
+                      maxLength={100}
+                      onChange={(e) => {
+                        setServer((prev) => ({
+                          ...prev,
+                          slogan: e.target.value,
+                        }));
+                      }}
                     />
                   </div>
-                </div>
-              </div>
-            ) : activeTabIndex === 1 ? (
-              <div className={popup['col']}>
-                <div className={setting['headerTextBox']}>
-                  <div className={popup['label']}>
-                    {lang.tr.inputAnnouncement}
-                  </div>
-                  <div
-                    className={popup['button']}
-                    onClick={async () => {
-                      if (showPreview) {
-                        setShowPreview(false);
-                      } else {
-                        const html = await marked.parse(serverAnnouncement);
-                        setAnnouncementPreview(html);
-                        setShowPreview(true);
-                      }
-                    }}
-                  >
-                    {showPreview ? '編輯' : '預覽'}
-                  </div>
-                </div>
-                <div className={`${popup['inputBox']} ${popup['col']}`}>
-                  {showPreview ? (
-                    <>
-                      <div
-                        style={{ minHeight: '330px' }}
-                        className={`${
-                          showPreview ? setting['previewModeArea'] : ''
-                        } ${markdown['markdownContent']}`}
-                        dangerouslySetInnerHTML={{
-                          __html: announcementPreview,
+                  <div className={`${popup['inputBox']} ${popup['col']}`}>
+                    <div className={popup['label']}>{lang.tr.type}</div>
+                    <div className={popup['selectBox']}>
+                      <select
+                        name="type"
+                        value={serverType}
+                        onChange={(e) => {
+                          setServer((prev) => ({
+                            ...prev,
+                            type: e.target.value as Server['type'],
+                          }));
                         }}
-                      />
-                    </>
-                  ) : (
-                    <textarea
-                      style={{ minHeight: '330px' }}
-                      value={serverAnnouncement}
-                      onChange={(e) => setServerAnnouncement(e.target.value)}
-                    />
-                  )}
-                  <div className={popup['label']}>
-                    {lang.tr.markdownSupport}
+                      >
+                        <option value="other">{lang.tr.other}</option>
+                        <option value="game">{lang.tr.game}</option>
+                        <option value="entertainment">
+                          {lang.tr.entertainment}
+                        </option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : activeTabIndex === 2 ? (
-              <div className={popup['col']}>
-                <div
-                  className={`${popup['inputBox']} ${setting['headerBar']} ${popup['row']}`}
-                >
-                  <div className={popup['label']}>
-                    {lang.tr.members}: {filteredMembers.length}
-                  </div>
-                  <div className={setting['searchWrapper']}>
-                    <div className={setting['searchBorder']}>
-                      <div className={setting['searchIcon']}></div>
-                      <input
-                        className={setting['searchInput']}
-                        type="search"
-                        placeholder={lang.tr.searchMemberPlaceholder}
-                        value={searchText}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                          setSearchText(e.target.value)
+                <div className={setting['avatarWrapper']}>
+                  <div
+                    className={setting['avatarPicture']}
+                    style={{
+                      backgroundImage: `url(${serverAvatarUrl})`,
+                    }}
+                  />
+                  <input
+                    name="avatar"
+                    type="file"
+                    id="avatar-upload"
+                    style={{ display: 'none' }}
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) {
+                        handleOpenErrorDialog(lang.tr.canNotReadImage);
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        handleOpenErrorDialog(lang.tr.imageTooLarge);
+                        return;
+                      }
+
+                      const reader = new FileReader();
+                      reader.onloadend = async () => {
+                        const formData = new FormData();
+                        formData.append('_type', 'server');
+                        formData.append('_fileName', serverAvatar);
+                        formData.append('_file', reader.result as string);
+                        const data = await apiService.post('/upload', formData);
+                        if (data) {
+                          setServer((prev) => ({
+                            ...prev,
+                            avatar: data.avatar,
+                            avatarUrl: data.avatarUrl,
+                          }));
                         }
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className={`${popup['inputBox']} ${popup['col']}`}>
-                  <table style={{ height: '330px' }}>
-                    <thead>
-                      <tr>
-                        {MEMBER_FIELDS.map((field) => (
-                          <th
-                            key={field.field}
-                            onClick={() =>
-                              handleMemberSort(
-                                field.field as keyof ServerMember,
-                              )
-                            }
-                          >
-                            {field.name}
-                            {sortField === field.field &&
-                              (sortState === 1 ? (
-                                <ChevronUp size={16} />
-                              ) : (
-                                <ChevronDown size={16} />
-                              ))}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className={setting['tableContainer']}>
-                      {filteredMembers.map((member) => {
-                        const {
-                          name: memberName,
-                          nickname: memberNickname,
-                          gender: memberGender,
-                          permissionLevel: memberPermissionLevel,
-                          contribution: memberContribution,
-                          userId: memberUserId,
-                          serverId: memberServerId,
-                          createdAt: memberJoinDate,
-                        } = member;
-                        const isCurrentUser = memberUserId === userId;
-                        const canManageMember =
-                          !isCurrentUser &&
-                          permissionLevel > memberPermissionLevel &&
-                          permissionLevel > 3 &&
-                          memberPermissionLevel > 1;
-                        const canEditNickname =
-                          (isCurrentUser && permissionLevel > 1) ||
-                          canManageMember;
-                        const canChangeToGuest =
-                          !isCurrentUser &&
-                          permissionLevel > memberPermissionLevel &&
-                          permissionLevel > 4 &&
-                          memberPermissionLevel !== 1;
-                        const canChangeToMember =
-                          permissionLevel > 2 && memberPermissionLevel !== 2;
-                        const canChangeToChannelAdmin =
-                          permissionLevel > 3 && memberPermissionLevel !== 3;
-                        const canChangeToCategoryAdmin =
-                          permissionLevel > 4 && memberPermissionLevel !== 4;
-                        const canChangeToAdmin =
-                          permissionLevel > 5 && memberPermissionLevel !== 5;
-                        const canKick =
-                          !isCurrentUser &&
-                          permissionLevel > 4 &&
-                          permissionLevel > memberPermissionLevel;
-
-                        const removeLevelToMember = (
-                          label: string,
-                          currentLevel: number,
-                        ) => ({
-                          id: 'set-member',
-                          label,
-                          show:
-                            memberPermissionLevel === currentLevel &&
-                            canChangeToMember,
-                          onClick: () =>
-                            handleUpdateMember(
-                              { permissionLevel: 2 },
-                              memberUserId,
-                              memberServerId,
-                            ),
-                        });
-
-                        return (
-                          <tr
-                            key={memberUserId}
-                            onContextMenu={(e) => {
-                              const isCurrentUser = memberUserId === userId;
-                              contextMenu.showContextMenu(e.pageX, e.pageY, [
-                                {
-                                  id: 'direct-message',
-                                  label: lang.tr.directMessage,
-                                  onClick: () =>
-                                    handleOpenDirectMessage(
-                                      userId,
-                                      memberUserId,
-                                      memberName,
-                                    ),
-                                  show: !isCurrentUser,
-                                },
-                                {
-                                  id: 'view-profile',
-                                  label: lang.tr.viewProfile,
-                                  onClick: () =>
-                                    handleOpenUserInfo(userId, memberUserId),
-                                },
-                                {
-                                  id: 'apply-friend',
-                                  label: lang.tr.addFriend,
-                                  onClick: () =>
-                                    handleOpenApplyFriend(userId, memberUserId),
-                                  show: !isCurrentUser,
-                                },
-                                {
-                                  id: 'edit-nickname',
-                                  label: lang.tr.editNickname,
-                                  onClick: () =>
-                                    handleOpenEditNickname(
-                                      memberUserId,
-                                      memberServerId,
-                                    ),
-                                  show: canEditNickname,
-                                },
-                                {
-                                  id: 'separator',
-                                  label: '',
-                                  show: canManageMember,
-                                },
-                                {
-                                  id: 'kick',
-                                  label: lang.tr.kick,
-                                  show: canKick,
-                                  onClick: () =>
-                                    handleKickUser(
-                                      memberUserId,
-                                      memberServerId,
-                                    ),
-                                },
-                                {
-                                  id: 'member-management',
-                                  label: lang.tr.memberManagement,
-                                  show: canManageMember,
-                                  icon: 'submenu',
-                                  hasSubmenu: true,
-                                  submenuItems: [
-                                    {
-                                      id: 'set-channel-admin',
-                                      label: lang.tr.setChannelAdmin,
-                                      show: canChangeToChannelAdmin,
-                                      onClick: () =>
-                                        handleUpdateMember(
-                                          { permissionLevel: 3 },
-                                          memberUserId,
-                                          memberServerId,
-                                        ),
-                                    },
-                                    removeLevelToMember(
-                                      lang.tr.removeChannelAdmin,
-                                      3,
-                                    ),
-
-                                    {
-                                      id: 'set-category-admin',
-                                      label: lang.tr.setCategoryAdmin,
-                                      show: canChangeToCategoryAdmin,
-                                      onClick: () =>
-                                        handleUpdateMember(
-                                          { permissionLevel: 4 },
-                                          memberUserId,
-                                          memberServerId,
-                                        ),
-                                    },
-                                    removeLevelToMember(
-                                      lang.tr.removeCategoryAdmin,
-                                      4,
-                                    ),
-
-                                    {
-                                      id: 'set-admin',
-                                      label: lang.tr.setAdmin,
-                                      show: canChangeToAdmin,
-                                      onClick: () =>
-                                        handleUpdateMember(
-                                          { permissionLevel: 5 },
-                                          memberUserId,
-                                          memberServerId,
-                                        ),
-                                    },
-                                    removeLevelToMember(lang.tr.removeAdmin, 5),
-                                  ],
-                                },
-                                {
-                                  id: 'set-guest',
-                                  label: lang.tr.setGuest,
-                                  show: canChangeToGuest,
-                                  onClick: () =>
-                                    handleUpdateMember(
-                                      { permissionLevel: 1 },
-                                      memberUserId,
-                                      memberServerId,
-                                    ),
-                                },
-                              ]);
-                            }}
-                          >
-                            <td>
-                              <div
-                                className={`${permission[memberGender]} ${
-                                  permission[`lv-${memberPermissionLevel}`]
-                                }`}
-                              />
-                              <div
-                                className={`${popup['p1']} ${
-                                  memberNickname && memberName
-                                    ? setting['memberName']
-                                    : ''
-                                }`}
-                              >
-                                {memberNickname || memberName}
-                              </div>
-                            </td>
-                            <td>
-                              {lang.getPermissionText(memberPermissionLevel)}
-                            </td>
-                            <td>{memberContribution}</td>
-                            <td>
-                              {new Date(memberJoinDate)
-                                .toISOString()
-                                .slice(0, 10)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  <div className={setting['noteText']}>
-                    {lang.tr.rightClickToProcess}
-                  </div>
-                </div>
-              </div>
-            ) : activeTabIndex === 3 ? (
-              <div className={popup['col']}>
-                <div className={popup['pageHeaderText']}>
-                  <div className={popup['label']}>
-                    {lang.tr.accessPermission}
-                  </div>
-                  <div className={popup['textLineSplit']}></div>
-                </div>
-                <div className={popup['inputGroup']}>
-                  <div className={`${popup['inputBox']} ${popup['row']}`}>
-                    <input
-                      type="radio"
-                      id="public"
-                      name="permission"
-                      value="public"
-                      className="mr-3"
-                      checked={serverVisibility === 'public'}
-                      onChange={(e) => {
-                        if (e.target.checked) setServerVisibility('public');
-                      }}
-                    />
-                    <div className={popup['label']}>{lang.tr.publicGroup}</div>
-                  </div>
-
-                  <div className={`${popup['inputBox']} ${popup['row']}`}>
-                    <input
-                      type="radio"
-                      id="members"
-                      name="permission"
-                      value="members"
-                      className="mr-3"
-                      checked={serverVisibility === 'private'}
-                      onChange={(e) => {
-                        if (e.target.checked) setServerVisibility('private');
-                      }}
-                    />
-                    <div>
-                      <div className={popup['label']}>
-                        {lang.tr.semiPublicGroup}
-                      </div>
-                      <div className={setting['hintText']}>
-                        {lang.tr.semiPublicGroupDescription}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={`${popup['inputBox']} ${popup['row']}`}>
-                    <input
-                      type="radio"
-                      id="private"
-                      name="permission"
-                      value="private"
-                      className="mr-3"
-                      checked={serverVisibility === 'invisible'}
-                      onChange={(e) => {
-                        if (e.target.checked) setServerVisibility('invisible');
-                      }}
-                    />
-                    <div>
-                      <div className={popup['label']}>
-                        {lang.tr.privateGroup}
-                      </div>
-                      <div className={setting['hintText']}>
-                        {lang.tr.privateGroupDescription}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : activeTabIndex === 4 ? (
-              <div className={popup['col']}>
-                <div className={`${popup['inputBox']} ${popup['row']}`}>
-                  <div className={popup['label']}>
-                    {lang.tr.applicants}: {filteredApplications.length}
-                  </div>
-                  <button
-                    style={{ marginLeft: 'auto' }}
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                  <label
+                    htmlFor="avatar-upload"
                     className={popup['button']}
-                    onClick={() => handleOpenMemberApplySetting()}
+                    style={{ marginTop: '10px' }}
                   >
-                    {lang.tr.editApply}
-                  </button>
-                  <div className={setting['searchWrapper']}>
-                    <div className={setting['searchBorder']}>
-                      <div className={setting['searchIcon']}></div>
-                      <input
-                        className={setting['searchInput']}
-                        type="search"
-                        placeholder={lang.tr.searchMemberPlaceholder}
-                        value={searchText}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                          setSearchText(e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className={`${popup['inputBox']} ${popup['col']}`}>
-                  <table style={{ height: '330px' }}>
-                    <thead>
-                      <tr>
-                        {APPLICATION_FIELDS.map((field) => (
-                          <th
-                            key={field.field}
-                            onClick={() =>
-                              handleApplicationSort(
-                                field.field as keyof MemberApplication,
-                              )
-                            }
-                          >
-                            {field.name}
-                            {sortField === field.field &&
-                              (sortState === 1 ? (
-                                <ChevronUp size={16} />
-                              ) : (
-                                <ChevronDown size={16} />
-                              ))}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className={setting['tableContainer']}>
-                      {filteredApplications.map((application) => {
-                        const {
-                          userId: applicationUserId,
-                          serverId: applicationServerId,
-                          name: applicationName,
-                          description: applicationDescription,
-                          createdAt: applicationCreatedDate,
-                        } = application;
-                        return (
-                          <tr
-                            key={applicationUserId}
-                            onContextMenu={(e) => {
-                              contextMenu.showContextMenu(e.pageX, e.pageY, [
-                                {
-                                  id: 'accept',
-                                  label: lang.tr.acceptApplication,
-                                  onClick: () => {
-                                    handleDeleteMemberApplication(
-                                      applicationUserId,
-                                      applicationServerId,
-                                    );
-                                    handleCreateMember(
-                                      { permissionLevel: 2 },
-                                      applicationUserId,
-                                      applicationServerId,
-                                    );
-                                  },
-                                },
-                                {
-                                  id: 'deny',
-                                  label: lang.tr.denyApplication,
-                                  onClick: () => {
-                                    handleDeleteMemberApplication(
-                                      applicationUserId,
-                                      applicationServerId,
-                                    );
-                                  },
-                                },
-                              ]);
-                            }}
-                          >
-                            <td>
-                              <div className={popup['p1']}>
-                                {applicationName}
-                              </div>
-                            </td>
-                            <td>{applicationDescription}</td>
-                            <td>
-                              {new Date(applicationCreatedDate)
-                                .toISOString()
-                                .slice(0, 10)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  <div className={setting['noteText']}>
-                    {lang.tr.rightClickToProcess}
-                  </div>
+                    {lang.tr.changeImage}
+                  </label>
                 </div>
               </div>
-            ) : activeTabIndex === 5 ? (
               <div className={popup['col']}>
-                <div
-                  className={`${popup['inputBox']} ${setting['headerBar']} ${popup['row']}`}
-                >
-                  <div className={popup['label']}>
-                    {lang.tr.blacklist}: {filteredBlockMembers.length}
+                <div className={popup['row']}>
+                  <div className={`${popup['inputBox']} ${popup['col']}`}>
+                    <div className={popup['label']}>{lang.tr.level}</div>
+                    <input
+                      name="level"
+                      type="text"
+                      value={serverLevel}
+                      disabled
+                    />
                   </div>
-                  <div className={setting['searchWrapper']}>
-                    <div className={setting['searchBorder']}>
-                      <div className={setting['searchIcon']}></div>
-                      <input
-                        className={setting['searchInput']}
-                        type="search"
-                        placeholder={lang.tr.searchMemberPlaceholder}
-                        value={searchText}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                          setSearchText(e.target.value)
-                        }
-                      />
+                  <div className={`${popup['inputBox']} ${popup['col']}`}>
+                    <div className={popup['label']}>{lang.tr.creationTime}</div>
+                    <input
+                      name="createdAt"
+                      type="text"
+                      value={new Date(serverCreatedAt).toLocaleString()}
+                      disabled
+                    />
+                  </div>
+                  <div className={`${popup['inputBox']} ${popup['col']}`}>
+                    <div
+                      className={`${popup['label']} ${setting['wealthCoinIcon']}`}
+                    >
+                      {lang.tr.wealth}
                     </div>
+                    <input
+                      name="wealth"
+                      type="text"
+                      value={serverWealth}
+                      disabled
+                    />
                   </div>
                 </div>
                 <div className={`${popup['inputBox']} ${popup['col']}`}>
-                  <table style={{ height: '330px' }}>
-                    <thead>
-                      <tr>
-                        {BLOCK_MEMBER_FIELDS.map((field) => (
-                          <th
-                            key={field.field}
-                            onClick={() =>
-                              handleMemberSort(
-                                field.field as keyof ServerMember,
-                              )
-                            }
-                          >
-                            {field.name}
-                            {sortField === field.field &&
+                  <div className={popup['label']}>{lang.tr.groupLink}</div>
+                  <input
+                    name="link"
+                    type="text"
+                    value={`https://ricecall.com.tw/join?sid=${serverDisplayId}`}
+                    disabled
+                  />
+                </div>
+                <div className={`${popup['inputBox']} ${popup['col']}`}>
+                  <div className={popup['label']}>{lang.tr.description}</div>
+                  <textarea
+                    name="description"
+                    value={serverDescription}
+                    onChange={(e) =>
+                      setServer((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Announcement */}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 1 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <div className={setting['headerTextBox']}>
+                <div className={popup['label']}>
+                  {lang.tr.inputAnnouncement}
+                </div>
+                <div
+                  className={popup['button']}
+                  onClick={async () => {
+                    if (showPreview) {
+                      setShowPreview(false);
+                    } else {
+                      setShowPreview(true);
+                    }
+                  }}
+                >
+                  {showPreview ? lang.tr.edit : lang.tr.preview}
+                </div>
+              </div>
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                {showPreview ? (
+                  <div
+                    className={markdown['settingMarkdownContainer']}
+                    style={{ minHeight: '330px' }}
+                  >
+                    <MarkdownViewer markdownText={serverAnnouncement} />
+                  </div>
+                ) : (
+                  <textarea
+                    name="announcement"
+                    style={{ minHeight: '330px' }}
+                    value={serverAnnouncement}
+                    maxLength={1000}
+                    onChange={(e) =>
+                      setServer((prev) => ({
+                        ...prev,
+                        announcement: e.target.value,
+                      }))
+                    }
+                  />
+                )}
+                <div className={popup['label']}>{lang.tr.markdownSupport}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Member Management */}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 2 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <div
+                className={`${popup['inputBox']} ${setting['headerBar']} ${popup['row']}`}
+              >
+                <div className={popup['label']}>
+                  {lang.tr.members}: {filteredMembers.length}
+                </div>
+                <div className={setting['searchWrapper']}>
+                  <div className={setting['searchBorder']}>
+                    <div className={setting['searchIcon']}></div>
+                    <input
+                      name="query"
+                      type="search"
+                      className={setting['searchInput']}
+                      placeholder={lang.tr.searchMemberPlaceholder}
+                      value={searchText}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setSearchText(e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                <table style={{ height: '330px' }}>
+                  <thead>
+                    <tr>
+                      {MEMBER_FIELDS.map((field) => (
+                        <th
+                          key={field.field}
+                          onClick={() =>
+                            handleMemberSort(field.field as keyof ServerMember)
+                          }
+                        >
+                          {field.name}
+                          {/* {sortField === field.field &&
                               (sortState === 1 ? (
                                 <ChevronUp size={16} />
                               ) : (
                                 <ChevronDown size={16} />
-                              ))}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className={setting['tableContainer']}>
-                      {filteredBlockMembers.map((blockMember) => {
-                        const {
-                          userId: blockMemberUserId,
-                          // serverId: blockMemberServerId,
-                          nickname: blockMemberNickname,
-                          name: blockMemberName,
-                          contribution: blockMemberContribution,
-                        } = blockMember;
-                        return (
-                          <tr
-                            key={blockMemberUserId}
-                            onContextMenu={(e) => {
-                              contextMenu.showContextMenu(e.pageX, e.pageY, []);
-                            }}
-                          >
-                            <td>{blockMemberNickname || blockMemberName}</td>
-                            <td>{blockMemberContribution}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  <div className={setting['noteText']}>
-                    {lang.tr.rightClickToProcess}
+                              ))} */}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className={setting['tableContainer']}>
+                    {filteredMembers.map((member) => {
+                      const {
+                        userId: memberUserId,
+                        name: memberName,
+                        nickname: memberNickname,
+                        gender: memberGender,
+                        permissionLevel: memberPermission,
+                        contribution: memberContribution,
+                        createdAt: memberJoinDate,
+                      } = member;
+                      const isCurrentUser = memberUserId === userId;
+                      const canManageMember =
+                        !isCurrentUser &&
+                        userPermission > 4 &&
+                        userPermission > memberPermission;
+                      const canEditNickname =
+                        canManageMember ||
+                        (isCurrentUser && userPermission > 1);
+                      const canChangeToGuest =
+                        canManageMember &&
+                        memberPermission !== 1 &&
+                        userPermission > 5;
+                      const canChangeToMember =
+                        canManageMember &&
+                        memberPermission !== 2 &&
+                        (memberPermission > 1 || userPermission > 5);
+                      const canChangeToChannelAdmin =
+                        canManageMember &&
+                        memberPermission !== 3 &&
+                        memberPermission > 1 &&
+                        userPermission > 3;
+                      const canChangeToCategoryAdmin =
+                        canManageMember &&
+                        memberPermission !== 4 &&
+                        memberPermission > 1 &&
+                        userPermission > 4;
+                      const canChangeToAdmin =
+                        canManageMember &&
+                        memberPermission !== 5 &&
+                        memberPermission > 1 &&
+                        userPermission > 5;
+
+                      return (
+                        <tr
+                          key={memberUserId}
+                          onContextMenu={(e) => {
+                            const isCurrentUser = memberUserId === userId;
+                            contextMenu.showContextMenu(e.clientX, e.clientY, [
+                              {
+                                id: 'direct-message',
+                                label: lang.tr.directMessage,
+                                show: !isCurrentUser,
+                                onClick: () =>
+                                  handleOpenDirectMessage(
+                                    userId,
+                                    memberUserId,
+                                    memberName,
+                                  ),
+                              },
+                              {
+                                id: 'view-profile',
+                                label: lang.tr.viewProfile,
+                                show: !isCurrentUser,
+                                onClick: () =>
+                                  handleOpenUserInfo(userId, memberUserId),
+                              },
+                              {
+                                id: 'apply-friend',
+                                label: lang.tr.addFriend,
+                                show: !isCurrentUser,
+                                onClick: () =>
+                                  handleOpenApplyFriend(userId, memberUserId),
+                              },
+                              {
+                                id: 'edit-nickname',
+                                label: lang.tr.editNickname,
+                                show: canEditNickname,
+                                onClick: () =>
+                                  handleOpenEditNickname(
+                                    memberUserId,
+                                    serverId,
+                                  ),
+                              },
+                              {
+                                id: 'separator',
+                                label: '',
+                                show: canManageMember,
+                              },
+                              {
+                                id: 'member-management',
+                                label: lang.tr.memberManagement,
+                                show: canManageMember,
+                                icon: 'submenu',
+                                hasSubmenu: true,
+                                submenuItems: [
+                                  {
+                                    id: 'set-guest',
+                                    label: lang.tr.setGuest,
+                                    show: canChangeToGuest,
+                                    onClick: () =>
+                                      handleUpdateMember(
+                                        { permissionLevel: 1 },
+                                        memberUserId,
+                                        serverId,
+                                      ),
+                                  },
+                                  {
+                                    id: 'set-member',
+                                    label: lang.tr.setMember,
+                                    show: canChangeToMember,
+                                    onClick: () =>
+                                      handleUpdateMember(
+                                        { permissionLevel: 2 },
+                                        memberUserId,
+                                        serverId,
+                                      ),
+                                  },
+                                  {
+                                    id: 'set-channel-admin',
+                                    label: lang.tr.setChannelAdmin,
+                                    show: canChangeToChannelAdmin,
+                                    onClick: () =>
+                                      handleUpdateMember(
+                                        { permissionLevel: 3 },
+                                        memberUserId,
+                                        serverId,
+                                      ),
+                                  },
+                                  {
+                                    id: 'set-category-admin',
+                                    label: lang.tr.setCategoryAdmin,
+                                    show: canChangeToCategoryAdmin,
+                                    onClick: () =>
+                                      handleUpdateMember(
+                                        { permissionLevel: 4 },
+                                        memberUserId,
+                                        serverId,
+                                      ),
+                                  },
+                                  {
+                                    id: 'set-admin',
+                                    label: lang.tr.setAdmin,
+                                    show: canChangeToAdmin,
+                                    onClick: () =>
+                                      handleUpdateMember(
+                                        { permissionLevel: 5 },
+                                        memberUserId,
+                                        serverId,
+                                      ),
+                                  },
+                                ],
+                              },
+                            ]);
+                          }}
+                        >
+                          <td>
+                            <div
+                              className={`${permission[memberGender]} ${
+                                permission[`lv-${memberPermission}`]
+                              }`}
+                            />
+                            <div
+                              className={`${popup['p1']} ${
+                                memberNickname && memberName
+                                  ? setting['memberName']
+                                  : ''
+                              }`}
+                            >
+                              {memberNickname || memberName}
+                            </div>
+                          </td>
+                          <td>{lang.getPermissionText(memberPermission)}</td>
+                          <td>{memberContribution}</td>
+                          <td>
+                            {new Date(memberJoinDate)
+                              .toISOString()
+                              .slice(0, 10)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className={setting['noteText']}>
+                  {lang.tr.rightClickToProcess}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Access Permission */}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 3 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <div className={popup['pageHeaderText']}>
+                <div className={popup['label']}>{lang.tr.accessPermission}</div>
+                <div className={popup['textLineSplit']}></div>
+              </div>
+              <div className={popup['inputGroup']}>
+                <div className={`${popup['inputBox']} ${popup['row']}`}>
+                  <input
+                    name="visibility"
+                    type="radio"
+                    value="public"
+                    checked={serverVisibility === 'public'}
+                    onChange={(e) => {
+                      if (e.target.checked)
+                        setServer((prev) => ({
+                          ...prev,
+                          visibility: 'public',
+                        }));
+                    }}
+                  />
+                  <div className={popup['label']}>{lang.tr.publicServer}</div>
+                </div>
+
+                <div className={`${popup['inputBox']} ${popup['row']}`}>
+                  <input
+                    name="visibility"
+                    type="radio"
+                    value="private"
+                    checked={serverVisibility === 'private'}
+                    onChange={(e) => {
+                      if (e.target.checked)
+                        setServer((prev) => ({
+                          ...prev,
+                          visibility: 'private',
+                        }));
+                    }}
+                  />
+                  <div>
+                    <div className={popup['label']}>
+                      {lang.tr.semiPublicServer}
+                    </div>
+                    <div className={setting['hintText']}>
+                      {lang.tr.semiPublicServerDescription}
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`${popup['inputBox']} ${popup['row']}`}>
+                  <input
+                    name="visibility"
+                    type="radio"
+                    value="invisible"
+                    checked={serverVisibility === 'invisible'}
+                    onChange={(e) => {
+                      if (e.target.checked)
+                        setServer((prev) => ({
+                          ...prev,
+                          visibility: 'invisible',
+                        }));
+                    }}
+                  />
+                  <div>
+                    <div className={popup['label']}>
+                      {lang.tr.privateServer}
+                    </div>
+                    <div className={setting['hintText']}>
+                      {lang.tr.privateServerDescription}
+                    </div>
                   </div>
                 </div>
               </div>
-            ) : null}
+            </div>
+          </div>
+
+          {/* Member Application Management */}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 4 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <div className={`${popup['inputBox']} ${popup['row']}`}>
+                <div className={popup['label']}>
+                  {lang.tr.applicants}: {filteredApplications.length}
+                </div>
+                <button
+                  style={{ marginLeft: 'auto' }}
+                  className={popup['button']}
+                  onClick={() => handleOpenMemberApplySetting()}
+                >
+                  {lang.tr.editApply}
+                </button>
+                <div className={setting['searchWrapper']}>
+                  <div className={setting['searchBorder']}>
+                    <div className={setting['searchIcon']}></div>
+                    <input
+                      name="query"
+                      type="search"
+                      className={setting['searchInput']}
+                      placeholder={lang.tr.searchMemberPlaceholder}
+                      value={searchText}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setSearchText(e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                <table style={{ height: '330px' }}>
+                  <thead>
+                    <tr>
+                      {APPLICATION_FIELDS.map((field) => (
+                        <th
+                          key={field.field}
+                          onClick={() =>
+                            handleApplicationSort(
+                              field.field as keyof MemberApplication,
+                            )
+                          }
+                        >
+                          {field.name}
+                          {/* {sortField === field.field &&
+                            (sortState === 1 ? (
+                              <ChevronUp size={16} />
+                            ) : (
+                              <ChevronDown size={16} />
+                            ))} */}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className={setting['tableContainer']}>
+                    {filteredApplications.map((application) => {
+                      const {
+                        userId: applicationUserId,
+                        name: applicationName,
+                        description: applicationDescription,
+                        createdAt: applicationCreatedAt,
+                      } = application;
+                      const isCurrentUser = applicationUserId === userId;
+                      const canAccept = !isCurrentUser && userPermission > 4;
+                      const canDeny = !isCurrentUser && userPermission > 4;
+                      return (
+                        <tr
+                          key={applicationUserId}
+                          onContextMenu={(e) => {
+                            contextMenu.showContextMenu(e.clientX, e.clientY, [
+                              {
+                                id: 'view-profile',
+                                label: lang.tr.viewProfile,
+                                show: !isCurrentUser,
+                                onClick: () =>
+                                  handleOpenUserInfo(userId, applicationUserId),
+                              },
+                              {
+                                id: 'accept',
+                                label: lang.tr.acceptApplication,
+                                show: canAccept,
+                                onClick: () => {
+                                  handleDeleteMemberApplication(
+                                    applicationUserId,
+                                    serverId,
+                                  );
+                                  handleUpdateMember(
+                                    { permissionLevel: 2 },
+                                    applicationUserId,
+                                    serverId,
+                                  );
+                                },
+                              },
+                              {
+                                id: 'deny',
+                                label: lang.tr.denyApplication,
+                                show: canDeny,
+                                onClick: () => {
+                                  handleDeleteMemberApplication(
+                                    applicationUserId,
+                                    serverId,
+                                  );
+                                },
+                              },
+                            ]);
+                          }}
+                        >
+                          <td>
+                            <div className={popup['p1']}>{applicationName}</div>
+                          </td>
+                          <td>{applicationDescription}</td>
+                          <td>
+                            {new Date(applicationCreatedAt)
+                              .toISOString()
+                              .slice(0, 10)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className={setting['noteText']}>
+                  {lang.tr.rightClickToProcess}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Blacklist Management */}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 5 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <div
+                className={`${popup['inputBox']} ${setting['headerBar']} ${popup['row']}`}
+              >
+                <div className={popup['label']}>
+                  {lang.tr.blacklist}: {filteredBlockMembers.length}
+                </div>
+                <div className={setting['searchWrapper']}>
+                  <div className={setting['searchBorder']}>
+                    <div className={setting['searchIcon']}></div>
+                    <input
+                      name="query"
+                      type="search"
+                      className={setting['searchInput']}
+                      placeholder={lang.tr.searchMemberPlaceholder}
+                      value={searchText}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setSearchText(e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                <table style={{ height: '330px' }}>
+                  <thead>
+                    <tr>
+                      {BLOCK_MEMBER_FIELDS.map((field) => (
+                        <th
+                          key={field.field}
+                          onClick={() =>
+                            handleMemberSort(field.field as keyof ServerMember)
+                          }
+                        >
+                          {field.name}
+                          {/* {sortField === field.field &&
+                            (sortState === 1 ? (
+                              <ChevronUp size={16} />
+                            ) : (
+                              <ChevronDown size={16} />
+                            ))} */}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className={setting['tableContainer']}>
+                    {filteredBlockMembers.map((member) => {
+                      const {
+                        userId: memberUserId,
+                        nickname: memberNickname,
+                        name: memberName,
+                        isBlocked: memberIsBlocked,
+                      } = member;
+                      return (
+                        <tr
+                          key={memberUserId}
+                          onContextMenu={(e) => {
+                            contextMenu.showContextMenu(e.clientX, e.clientY, [
+                              {
+                                id: 'unblock',
+                                label: lang.tr.unblock,
+                                show: true,
+                                onClick: () => {
+                                  handleUpdateMember(
+                                    { isBlocked: 0 },
+                                    memberUserId,
+                                    serverId,
+                                  );
+                                },
+                              },
+                            ]);
+                          }}
+                        >
+                          <td>{memberNickname || memberName}</td>
+                          <td>
+                            {memberIsBlocked === -1
+                              ? lang.tr.permanent
+                              : new Date(memberIsBlocked)
+                                  .toISOString()
+                                  .slice(0, 10)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className={setting['noteText']}>
+                  {lang.tr.rightClickToProcess}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

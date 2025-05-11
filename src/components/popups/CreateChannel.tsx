@@ -34,28 +34,20 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
     const refreshRef = useRef(false);
 
     // States
-    const [parentName, setParentName] = useState<Channel['name']>(
-      createDefault.channel().name,
-    );
-    const [channelName, setChannelName] = useState<Channel['name']>(
-      createDefault.channel().name,
-    );
+    const [parent, setParent] = useState<Channel>(createDefault.channel());
+    const [channel, setChannel] = useState<Channel>(createDefault.channel());
 
     // Variables
     const { channelId, serverId } = initialData;
+    const { name: parentName } = parent;
+    const { name: channelName } = channel;
 
-    // Handlers
     const handleCreateChannel = (
       channel: Partial<Channel>,
       serverId: Server['serverId'],
     ) => {
       if (!socket) return;
       socket.send.createChannel({ channel, serverId });
-    };
-
-    const handleChannelUpdate = (data: Channel | null) => {
-      if (!data) data = createDefault.channel();
-      setParentName(data.name);
     };
 
     const handleClose = () => {
@@ -71,15 +63,17 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
           refreshService.channel({
             channelId: channelId,
           }),
-        ]).then(([channel]) => {
-          handleChannelUpdate(channel);
+        ]).then(([parent]) => {
+          if (parent) {
+            setParent(parent);
+          }
         });
       };
       refresh();
     }, [channelId]);
 
     return (
-      <form className={popup['popupContainer']}>
+      <div className={popup['popupContainer']}>
         <div className={popup['popupBody']}>
           <div className={setting['body']}>
             <div className={popup['inputGroup']}>
@@ -90,10 +84,16 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
               <div className={popup['inputBox']}>
                 <div className={popup['label']}>{lang.tr.channelName}</div>
                 <input
-                  className={popup['input']}
+                  name="name"
                   type="text"
                   value={channelName}
-                  onChange={(e) => setChannelName(e.target.value)}
+                  maxLength={32}
+                  onChange={(e) =>
+                    setChannel((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                   required
                 />
               </div>
@@ -103,9 +103,7 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
 
         <div className={popup['popupFooter']}>
           <button
-            className={`${popup['button']} ${
-              !channelName.trim() ? popup['disabled'] : ''
-            }`}
+            className={popup['button']}
             disabled={!channelName.trim()}
             onClick={() => {
               handleCreateChannel(
@@ -121,7 +119,7 @@ const CreateChannelPopup: React.FC<CreateChannelPopupProps> = React.memo(
             {lang.tr.cancel}
           </button>
         </div>
-      </form>
+      </div>
     );
   },
 );

@@ -29,10 +29,11 @@ export interface Translation {
   quickEnterServer: string;
   relatedSearch: string;
   searchResult: string;
+  searchEmpty: string;
   recentVisits: string;
-  myGroups: string;
-  favoriteGroups: string;
-  createGroup: string;
+  myServers: string;
+  favoriteServers: string;
+  createServers: string;
   fileSizeError: string;
   fileTypeError: string;
   updateServerError: string;
@@ -46,6 +47,8 @@ export interface Translation {
   level: string;
   creationTime: string;
   wealth: string;
+  xp: string;
+  xpDifference: string;
   description: string;
   changeImage: string;
   inputAnnouncement: string;
@@ -58,26 +61,29 @@ export interface Translation {
   identity: string;
   contribution: string;
   joinDate: string;
-  moveToMyChannel: string;
-  kickOut: string;
-  block: string;
+  moveToChannel: string;
+  forbidVoice: string;
+  forbidText: string;
+  kickChannel: string;
+  kickServer: string;
+  ban: string;
   editNickname: string;
   memberManagement: string;
   inviteToBeMember: string;
   rightClickToProcess: string;
   accessPermission: string;
-  publicGroup: string;
-  semiPublicGroup: string;
-  semiPublicGroupDescription: string;
-  privateGroup: string;
-  privateGroupDescription: string;
+  publicServer: string;
+  semiPublicServer: string;
+  semiPublicServerDescription: string;
+  privateServer: string;
+  privateServerDescription: string;
   applicants: string;
   applicationSettings: string;
   nickname: string;
   applicationDescription: string;
   blacklist: string;
   select: string;
-  viewGroupInfo: string;
+  viewServerInfo: string;
   announcement: string;
   memberApplicationManagement: string;
   blacklistManagement: string;
@@ -119,23 +125,24 @@ export interface Translation {
   friendSelectGroup: string;
   friendApplySent: string;
   friendAddGroup: string;
+  friendDeleteGroup: string;
   editFriendGroup: string;
   friendNote: string;
   max120content: string;
   sendRequest: string;
-  selectGroupType: string;
-  selectGroupTypeDescription: string;
+  selectServerType: string;
+  selectServerTypeDescription: string;
   fillInfo: string;
-  remainingGroup1: string;
-  remainingGroup2: string;
+  remainingServer1: string;
+  remainingServer2: string;
   canNotReadImage: string;
   imageTooLarge: string;
   uploadAvatar: string;
-  groupType: string;
-  groupName: string;
-  groupNamePlaceholder: string;
-  groupSlogan: string;
-  groupSloganPlaceholder: string;
+  serverType: string;
+  serverName: string;
+  serverNamePlaceholder: string;
+  serverSlogan: string;
+  serverSloganPlaceholder: string;
   unknownUser: string;
   channel: string;
   category: string;
@@ -221,6 +228,19 @@ export interface Translation {
   birthdate: string;
   signature: string;
   about: string;
+  editProfile: string;
+  recentlyJoinServer: string;
+  recentlyEarnedBadges: string;
+  joinedServers: string;
+  notPublicJoinedServersTop: string;
+  notPublicJoinedServersBottom: string;
+  noJoinedServers: string;
+  notPublicRecentServersTop: string;
+  notPublicRecentServersBottom: string;
+  noRecentServers: string;
+  notPublicFavoriteServersTop: string;
+  notPublicFavoriteServersBottom: string;
+  noFavoriteServers: string;
   pleaseFixFormErrors: string;
   pleaseInputAllRequired: string;
   accountRequired: string;
@@ -302,7 +322,7 @@ export interface Translation {
   guestTextGapTime: string;
   characters: string;
   seconds: string;
-  groups: string;
+  servers: string;
   male: string;
   female: string;
   taiwan: string;
@@ -375,6 +395,29 @@ export interface Translation {
   unmute: string;
   editChannelOrder: string;
   editChannelName: string;
+  unblock: string;
+  userInfo: string;
+  registering: string;
+  micMuted: string;
+  create: string;
+  changeName: string;
+  moveUp: string;
+  moveDown: string;
+  moveTop: string;
+  moveBottom: string;
+  close: string;
+  showTo: string;
+  soon: string;
+  unblockDate: string;
+  groupLink: string;
+  permanent: string;
+  lobby: string;
+  moveAllUserToChannel: string;
+  setDefaultChannel: string;
+  sendMemberApplication: string;
+  copyCode: string;
+  copied: string;
+  copy: string;
 }
 
 export type LanguageKey = 'tw' | 'cn' | 'en' | 'jp';
@@ -401,6 +444,7 @@ export type User = {
   vip: number;
   xp: number;
   requiredXp: number;
+  // progress: number; (Not used but still in database column)
   birthYear: number;
   birthMonth: number;
   birthDay: number;
@@ -413,13 +457,38 @@ export type User = {
   badges: Badge[];
 };
 
-export type UserServer = Server &
-  Member & {
-    recent: boolean;
-    owned: boolean;
-    favorite: boolean;
-    timestamp: number;
-  };
+export type Badge = {
+  badgeId: string;
+  name: string;
+  rare: string;
+  description: string;
+  order: number;
+  createdAt: number;
+};
+
+export type FriendGroup = {
+  friendGroupId: string;
+  name: string;
+  order: number;
+  userId: string;
+  createdAt: number;
+};
+
+export type Friend = {
+  userId: string;
+  targetId: string;
+  isBlocked: boolean;
+  friendGroupId: string | null;
+  createdAt: number;
+};
+
+export type FriendApplication = User & {
+  // Change name to UserFriendApplication and separate
+  senderId: string;
+  receiverId: string;
+  description: string;
+  createdAt: number;
+};
 
 export type Server = {
   serverId: string;
@@ -434,10 +503,11 @@ export type Server = {
   level: number;
   wealth: number;
   receiveApply: boolean;
-  allowDirectMessage: boolean;
+  // allowDirectMessage: boolean; (Not used but still in database column)
   type: 'game' | 'entertainment' | 'other';
   visibility: 'public' | 'private' | 'invisible';
   lobbyId: string;
+  receptionLobbyId: string | null; // New: Reception Lobby ID
   ownerId: string;
   createdAt: number;
 };
@@ -445,22 +515,23 @@ export type Server = {
 export type BaseChannel = {
   channelId: string;
   name: string;
+  announcement: string; // New:
+  password: string;
   order: number;
   bitrate: number;
   userLimit: number;
   guestTextGapTime: number;
   guestTextWaitTime: number;
   guestTextMaxLength: number;
-  // isRoot: boolean;
+  // isRoot: boolean; (Not used but still in database column)
   isLobby: boolean;
-  slowmode: boolean;
+  // slowmode: boolean; (Not used but still in database column)
   forbidText: boolean;
   forbidGuestText: boolean;
   forbidGuestUrl: boolean;
   type: 'category' | 'channel';
   visibility: 'public' | 'member' | 'private' | 'readonly';
   voiceMode: 'free' | 'queue' | 'forbidden';
-  password: string | null;
   categoryId: string | null;
   serverId: string;
   createdAt: number;
@@ -474,30 +545,6 @@ export type Channel = BaseChannel & {
   type: 'channel';
 };
 
-export type Friend = {
-  userId: string;
-  targetId: string;
-  isBlocked: boolean;
-  friendGroupId: string | null;
-  createdAt: number;
-};
-
-export type FriendApplication = User & {
-  senderId: string;
-  receiverId: string;
-  description: string;
-  applicationStatus: 'pending' | 'accepted' | 'rejected';
-  createdAt: number;
-};
-
-export type FriendGroup = {
-  friendGroupId: string;
-  userId: string;
-  name: string;
-  order: number;
-  createdAt: number;
-};
-
 export type Member = {
   userId: string;
   serverId: string;
@@ -505,29 +552,21 @@ export type Member = {
   contribution: number;
   lastMessageTime: number;
   lastJoinChannelTime: number;
-  isBlocked: boolean;
+  isBlocked: number; // New: Change to number
   permissionLevel: Permission;
   createdAt: number;
 };
 
 export type MemberApplication = User & {
+  // Change name to ServerMemberApplication and separate
   userId: string;
   serverId: string;
   description: string;
-  applicationStatus: 'pending' | 'accepted' | 'rejected';
-  createdAt: number;
-};
-
-export type Badge = {
-  badgeId: string;
-  name: string;
-  rare: string;
-  description: string;
-  order: number;
   createdAt: number;
 };
 
 export type Message = {
+  // Change name to BaseMessage
   messageId: string;
   content: string;
   type: 'general' | 'info' | 'dm';
@@ -537,7 +576,7 @@ export type Message = {
 export type ChannelMessage = Message &
   ServerMember & {
     senderId: string;
-    receiverId: string;
+    serverId: string;
     channelId: string;
     type: 'general';
   };
@@ -554,11 +593,18 @@ export type InfoMessage = Message & {
   type: 'info';
 };
 
-export type UserMember = Member & Server;
+export type UserServerStatus = {
+  recent: boolean;
+  owned: boolean;
+  favorite: boolean;
+  timestamp: number;
+};
 
-export type ServerMember = Member & User;
+export type UserServer = Server & Member & UserServerStatus;
 
-export type UserFriend = Friend & User;
+export type UserFriend = User & Friend;
+
+export type ServerMember = User & Member;
 
 export type ContextMenuItem = {
   id: string;
@@ -597,6 +643,18 @@ export enum SocketClientEvent {
   // User
   SEARCH_USER = 'searchUser',
   UPDATE_USER = 'updateUser',
+  // Friend Group
+  CREATE_FRIEND_GROUP = 'createFriendGroup',
+  UPDATE_FRIEND_GROUP = 'updateFriendGroup',
+  DELETE_FRIEND_GROUP = 'deleteFriendGroup',
+  // Friend
+  CREATE_FRIEND = 'createFriend',
+  UPDATE_FRIEND = 'updateFriend',
+  DELETE_FRIEND = 'deleteFriend',
+  // Friend Application
+  CREATE_FRIEND_APPLICATION = 'createFriendApplication',
+  UPDATE_FRIEND_APPLICATION = 'updateFriendApplication',
+  DELETE_FRIEND_APPLICATION = 'deleteFriendApplication',
   // Server
   SEARCH_SERVER = 'searchServer',
   CONNECT_SERVER = 'connectServer',
@@ -604,10 +662,6 @@ export enum SocketClientEvent {
   CREATE_SERVER = 'createServer',
   UPDATE_SERVER = 'updateServer',
   DELETE_SERVER = 'deleteServer',
-  // Category
-  CREATE_CATEGORY = 'createCategory',
-  UPDATE_CATEGORY = 'updateCategory',
-  DELETE_CATEGORY = 'deleteCategory',
   // Channel
   CONNECT_CHANNEL = 'connectChannel',
   DISCONNECT_CHANNEL = 'disconnectChannel',
@@ -615,35 +669,25 @@ export enum SocketClientEvent {
   UPDATE_CHANNEL = 'updateChannel',
   UPDATE_CHANNELS = 'updateChannels',
   DELETE_CHANNEL = 'deleteChannel',
-  // Friend Group
-  CREATE_FRIEND_GROUP = 'createFriendGroup',
-  UPDATE_FRIEND_GROUP = 'updateFriendGroup',
-  DELETE_FRIEND_GROUP = 'deleteFriendGroup',
   // Member
   CREATE_MEMBER = 'createMember',
   UPDATE_MEMBER = 'updateMember',
   DELETE_MEMBER = 'deleteMember',
-  // Friend
-  CREATE_FRIEND = 'createFriend',
-  UPDATE_FRIEND = 'updateFriend',
-  DELETE_FRIEND = 'deleteFriend',
   // Member Application
   CREATE_MEMBER_APPLICATION = 'createMemberApplication',
   UPDATE_MEMBER_APPLICATION = 'updateMemberApplication',
   DELETE_MEMBER_APPLICATION = 'deleteMemberApplication',
-  // Friend Application
-  CREATE_FRIEND_APPLICATION = 'createFriendApplication',
-  UPDATE_FRIEND_APPLICATION = 'updateFriendApplication',
-  DELETE_FRIEND_APPLICATION = 'deleteFriendApplication',
   // Message
   SEND_MESSAGE = 'message',
   SEND_DIRECT_MESSAGE = 'directMessage',
+  SEND_SHAKE_WINDOW = 'shakeWindow',
   // RTC
   RTC_OFFER = 'RTCOffer',
   RTC_ANSWER = 'RTCAnswer',
   RTC_ICE_CANDIDATE = 'RTCIceCandidate',
   // Echo
   PING = 'ping',
+  // Direct Message Shake
 }
 
 export enum SocketServerEvent {
@@ -652,47 +696,63 @@ export enum SocketServerEvent {
   // User
   USER_SEARCH = 'userSearch',
   USER_UPDATE = 'userUpdate',
-  USER_FRIENDS_UPDATE = 'userFriendsUpdate',
-  USER_FRIEND_GROUPS_UPDATE = 'userFriendGroupsUpdate',
-  USER_FRIEND_APPLICATIONS_UPDATE = 'userFriendApplicationsUpdate',
-  USER_SERVERS_UPDATE = 'userServersUpdate',
+  // Friend Group
+  FRIEND_GROUP_ADD = 'friendGroupAdd',
+  FRIEND_GROUP_UPDATE = 'friendGroupUpdate',
+  FRIEND_GROUP_DELETE = 'friendGroupDelete',
+  FRIEND_GROUPS_UPDATE = 'friendGroupsUpdate',
+  // Friend
+  FRIEND_ADD = 'friendAdd',
+  FRIEND_UPDATE = 'friendUpdate',
+  FRIEND_DELETE = 'friendDelete',
+  FRIENDS_UPDATE = 'friendsUpdate',
+  // Friend Application
+  FRIEND_APPLICATION_ADD = 'friendApplicationAdd',
+  FRIEND_APPLICATION_UPDATE = 'friendApplicationUpdate',
+  FRIEND_APPLICATION_DELETE = 'friendApplicationDelete',
+  FRIEND_APPLICATIONS_UPDATE = 'friendApplicationsUpdate',
   // Server
   SERVER_SEARCH = 'serverSearch',
+  SERVER_ADD = 'serverAdd',
   SERVER_UPDATE = 'serverUpdate',
-  SERVER_CHANNELS_UPDATE = 'serverChannelsUpdate',
-  SERVER_MEMBERS_UPDATE = 'serverMembersUpdate',
-  SERVER_MEMBER_APPLICATIONS_UPDATE = 'serverMemberApplicationsUpdate',
+  SERVER_DELETE = 'serverDelete',
+  SERVERS_UPDATE = 'serversUpdate',
   // Channel
-  CHANNEL_UPDATE = 'channelUpdate',
-  // Category
-  CATEGORY_UPDATE = 'categoryUpdate',
-  // Friend Group
-  FRIEND_GROUP_UPDATE = 'friendGroupUpdate',
+  SERVER_CHANNEL_ADD = 'serverChannelAdd',
+  SERVER_CHANNEL_UPDATE = 'serverChannelUpdate',
+  SERVER_CHANNEL_DELETE = 'serverChannelDelete',
+  SERVER_CHANNELS_UPDATE = 'serverChannelsUpdate',
   // Member
-  MEMBER_UPDATE = 'memberUpdate',
+  SERVER_MEMBER_ADD = 'serverMemberAdd',
+  SERVER_MEMBER_UPDATE = 'serverMemberUpdate',
+  SERVER_MEMBER_DELETE = 'serverMemberDelete',
+  SERVER_MEMBERS_UPDATE = 'serverMembersUpdate',
   // Member Application
-  MEMBER_APPLICATION_UPDATE = 'memberApplicationUpdate',
-  // Friend
-  FRIEND_UPDATE = 'friendUpdate',
-  // Friend Application
-  FRIEND_APPLICATION_UPDATE = 'friendApplicationUpdate',
+  SERVER_MEMBER_APPLICATION_ADD = 'serverMemberApplicationAdd',
+  SERVER_MEMBER_APPLICATION_UPDATE = 'serverMemberApplicationUpdate',
+  SERVER_MEMBER_APPLICATION_DELETE = 'serverMemberApplicationDelete',
+  SERVER_MEMBER_APPLICATIONS_UPDATE = 'serverMemberApplicationsUpdate',
   // Message
   ON_MESSAGE = 'onMessage',
   ON_DIRECT_MESSAGE = 'onDirectMessage',
+  ON_SHAKE_WINDOW = 'onShakeWindow',
   // RTC
   RTC_OFFER = 'RTCOffer',
   RTC_ANSWER = 'RTCAnswer',
   RTC_ICE_CANDIDATE = 'RTCIceCandidate',
   RTC_JOIN = 'RTCJoin',
   RTC_LEAVE = 'RTCLeave',
-  // Play
+  // Play Sound
   PLAY_SOUND = 'playSound',
   // Echo
   PONG = 'pong',
   // Error
   ERROR = 'error',
+  CONNECT_ERROR = 'connect_error',
+  RECONNECT_ERROR = 'reconnect_error',
   // Popup
   OPEN_POPUP = 'openPopup',
+  // Direct Message Shake
 }
 
 export enum PopupType {
@@ -731,7 +791,7 @@ export const PopupSize = {
   [PopupType.CHANNEL_PASSWORD]: { height: 220, width: 400 },
   [PopupType.SERVER_SETTING]: { height: 520, width: 600 },
   [PopupType.SYSTEM_SETTING]: { height: 520, width: 600 },
-  [PopupType.MEMBERAPPLY_SETTING]: { height: 320, width: 500 },
+  [PopupType.MEMBERAPPLY_SETTING]: { height: 220, width: 400 },
   [PopupType.CREATE_SERVER]: { height: 460, width: 520 },
   [PopupType.CREATE_CHANNEL]: { height: 220, width: 400 },
   [PopupType.CREATE_FRIENDGROUP]: { height: 220, width: 400 },

@@ -31,22 +31,15 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
     // Refs
     const refreshRef = useRef(false);
 
+    // States
+    const [server, setServer] = useState<Server>(createDefault.server());
+
     // Variables
     const { serverId } = initialData;
-
-    // States
-    const [isReceiveApply, setIsReceiveApply] = useState<boolean>(
-      createDefault.server().receiveApply,
-    );
-    const [applyNotice, setApplyNotice] = useState<string>(
-      createDefault.server().applyNotice,
-    );
+    const { receiveApply: serverReceiveApply, applyNotice: serverApplyNotice } =
+      server;
 
     // Handlers
-    const handleClose = () => {
-      ipcService.window.close();
-    };
-
     const handleUpdateServer = (
       server: Partial<Server>,
       serverId: Server['serverId'],
@@ -55,10 +48,8 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
       socket.send.updateServer({ server, serverId });
     };
 
-    const handleServerUpdate = (data: Server | null) => {
-      if (!data) data = createDefault.server();
-      setIsReceiveApply(data.receiveApply);
-      setApplyNotice(data.applyNotice);
+    const handleClose = () => {
+      ipcService.window.close();
     };
 
     // Effects
@@ -71,7 +62,9 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
             serverId: serverId,
           }),
         ]).then(([server]) => {
-          handleServerUpdate(server);
+          if (server) {
+            setServer(server);
+          }
         });
       };
       refresh();
@@ -87,20 +80,28 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
                   {lang.tr.isReceiveApply}
                 </label>
                 <input
+                  name="receiveApply"
                   type="checkbox"
-                  checked={isReceiveApply}
+                  checked={serverReceiveApply}
                   onChange={() => {
-                    setIsReceiveApply(!isReceiveApply);
+                    setServer((prev) => ({
+                      ...prev,
+                      receiveApply: !serverReceiveApply,
+                    }));
                   }}
                 />
               </div>
               <div className={`${popup['inputBox']} ${popup['col']}`}>
                 <div className={popup['label']}>{lang.tr.setApplyNotice}</div>
-                <input
-                  type="text"
-                  value={applyNotice}
+                <textarea
+                  name="applyNotice"
+                  value={serverApplyNotice}
+                  maxLength={100}
                   onChange={(e) => {
-                    setApplyNotice(e.target.value);
+                    setServer((prev) => ({
+                      ...prev,
+                      applyNotice: e.target.value,
+                    }));
                   }}
                 />
               </div>
@@ -109,10 +110,13 @@ const MemberApplySettingPopup: React.FC<MemberApplySettingPopupProps> =
         </div>
         <div className={popup['popupFooter']}>
           <button
-            className={`${popup['button']}`}
+            className={popup['button']}
             onClick={() => {
               handleUpdateServer(
-                { receiveApply: isReceiveApply, applyNotice: applyNotice },
+                {
+                  receiveApply: !!serverReceiveApply,
+                  applyNotice: serverApplyNotice,
+                },
                 serverId,
               );
               handleClose();

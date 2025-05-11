@@ -1,4 +1,4 @@
-.contextMenu {
+.contextMenu:not(:empty) {
   position: fixed;
   z-index: 1000;
   display: flex;
@@ -7,7 +7,8 @@
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 1px #00000080;
+  min-width: 120px;
 }
 
 .contextMenu.hidden {
@@ -35,7 +36,7 @@
 .contextMenu .option {
   position: relative;
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
   width: 100%;
   padding: 6px 10px;
@@ -112,4 +113,21 @@
 
 .contextMenu .option.hasSubmenu:hover .contextMenu {
   display: flex;
+}
+
+.contextMenu .option.disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.setting {
+  min-width: auto !important;
+}
+
+.setting .hasSubmenu .contextMenu {
+  min-width: 90px;
+}
+
+.setting .option:not(.hasSubmenu .option) {
+  justify-content: flex-start;
 }

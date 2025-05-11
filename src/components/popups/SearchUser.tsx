@@ -37,13 +37,13 @@ const SearchUserPopup: React.FC<SearchUserPopupProps> = React.memo(
     };
 
     const handleUserSearch = useCallback(
-      (user: User | null) => {
-        if (!user) return;
-        if (user.userId === userId) return;
-        ipcService.popup.open(PopupType.APPLY_FRIEND);
+      (result: User | null) => {
+        if (!result) return;
+        if (result.userId === userId) return;
+        ipcService.popup.open(PopupType.APPLY_FRIEND, 'applyFriend');
         ipcService.initialData.onRequest(
-          PopupType.APPLY_FRIEND,
-          { userId: userId, targetId: user.userId },
+          'applyFriend',
+          { userId: userId, targetId: result.userId },
           () => handleClose(),
         );
       },
@@ -74,13 +74,7 @@ const SearchUserPopup: React.FC<SearchUserPopupProps> = React.memo(
     }, [socket, handleUserSearch]);
 
     return (
-      <form
-        className={popup['popupContainer']}
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSearchUser(searchQuery);
-        }}
-      >
+      <div className={popup['popupContainer']}>
         <div className={popup['popupBody']}>
           <div className={setting['body']}>
             <div className={popup['inputGroup']}>
@@ -89,7 +83,7 @@ const SearchUserPopup: React.FC<SearchUserPopupProps> = React.memo(
                   {lang.tr.pleaseInputFriendAccount}
                 </div>
                 <input
-                  className={popup['input']}
+                  name="query"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -103,10 +97,9 @@ const SearchUserPopup: React.FC<SearchUserPopupProps> = React.memo(
         <div className={popup['popupFooter']}>
           <button
             type="submit"
-            className={`${popup['button']} ${
-              !searchQuery.trim() ? popup['disabled'] : ''
-            }`}
+            className={popup['button']}
             disabled={!searchQuery.trim()}
+            onClick={() => handleSearchUser(searchQuery)}
           >
             {lang.tr.confirm}
           </button>
@@ -114,7 +107,7 @@ const SearchUserPopup: React.FC<SearchUserPopupProps> = React.memo(
             {lang.tr.cancel}
           </button>
         </div>
-      </form>
+      </div>
     );
   },
 );

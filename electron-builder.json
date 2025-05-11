@@ -5,11 +5,7 @@
   "directories": {
     "output": "dist"
   },
-  "files": [
-    "main.js",
-    "package.json",
-    "./out/**/*"
-  ],
+  "files": ["build/**/*", "out/**/*", "resources/**/*", "package.json"],
   "asar": true,
   "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
   "extraFiles": [
@@ -18,36 +14,35 @@
       "to": ".env"
     }
   ],
-  "win": {
-    "icon": "./resources/icon.ico",
-    "target": [
-      "nsis",
-      "portable"
-    ]
-  },
   "nsis": {
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
     "perMachine": true,
     "artifactName": "${productName}-${version}-${os}-${arch}-Setup.${ext}"
   },
+  "win": {
+    "icon": "./resources/icon.ico",
+    "target": ["nsis", "portable"]
+  },
   "mac": {
     "icon": "./resources/icon.icns",
     "category": "public.app-category.social-networking",
-    "target": [
-        "dmg",
-        "zip"
-    ]
+    "target": ["dmg", "zip"]
   },
   "linux": {
     "icon": "./resources/icon.png",
     "category": "Network",
-    "target": [
-        "AppImage",
-        "deb",
-        "rpm",
-        "zip"
-    ]
+    "target": ["AppImage", "rpm", "zip"]
+  },
+  "deb": {
+    "desktop": {
+      "Path": "/opt/RiceCall",
+      "Name": "RiceCall",
+      "Keywords": ["ricecall", "rc"],
+      "Icon": "/usr/share/icons/hicolor/300x300/apps/ricecall.png"
+    },
+    "description": "Ricecall is a voice chat app that allows you to chat with your friends.",
+    "fpm": ["--after-install=build_deb/after-install.sh"]
   },
   "publish": [
     {

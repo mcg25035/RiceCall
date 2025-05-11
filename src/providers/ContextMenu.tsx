@@ -9,7 +9,12 @@ import UserInfoCard from '@/components/UserInfoCard';
 import BadgeInfoCard from '@/components/BadgeInfoCard';
 
 interface ContextMenuContextType {
-  showContextMenu: (x: number, y: number, items: ContextMenuItem[]) => void;
+  showContextMenu: (
+    x: number,
+    y: number,
+    items: ContextMenuItem[],
+    target?: HTMLElement,
+  ) => void;
   showUserInfoBlock: (x: number, y: number, member: ServerMember) => void;
   showBadgeInfoCard: (
     badgeElement: HTMLElement,
@@ -75,19 +80,29 @@ const ContextMenuProvider = ({ children }: ContextMenuProviderProps) => {
     };
   }, [isVisible, userInfo]);
 
-  const showContextMenu = (x: number, y: number, items: ContextMenuItem[]) => {
+  const showContextMenu = (
+    x: number,
+    y: number,
+    items: ContextMenuItem[],
+    target?: HTMLElement,
+  ) => {
+    if (userInfo) closeUserInfoBlock();
+
     setContent(
       <ContextMenu
         x={x}
         y={y}
         items={items}
-        onClose={() => closeContextMenu()}
+        target={target}
+        onClose={closeContextMenu}
       />,
     );
+
     setIsVisible(true);
   };
 
   const showUserInfoBlock = (x: number, y: number, member: ServerMember) => {
+    if (isVisible) closeContextMenu();
     setUserInfo({ x, y, member });
   };
 

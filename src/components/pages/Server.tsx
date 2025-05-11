@@ -1,16 +1,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-
 import dynamic from 'next/dynamic';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 // CSS
 import styles from '@/styles/pages/server.module.css';
-import markdown from '@/styles/viewers/markdown.module.css';
 
 // Components
 import MarkdownViewer from '@/components/viewers/Markdown';
 import MessageViewer from '@/components/viewers/Message';
-import ChannelViewer from '@/components/viewers/Channel';
+import ChannelListViewer from '@/components/viewers/ChannelList';
 import MessageInputBox from '@/components/MessageInputBox';
 
 // Types
@@ -19,10 +17,10 @@ import {
   Server,
   Message,
   Channel,
-  Member,
   ServerMember,
   ChannelMessage,
-  SocketServerEvent,
+  UserServer,
+  UserFriend,
 } from '@/types';
 
 // Providers
@@ -34,33 +32,44 @@ import { useContextMenu } from '@/providers/ContextMenu';
 // Services
 import ipcService from '@/services/ipc.service';
 
-// Utils
-import { createDefault } from '@/utils/createDefault';
-
 interface ServerPageProps {
   user: User;
-  server: Server;
-  channel: Channel;
+  currentServer: UserServer;
+  serverMembers: ServerMember[];
+  serverChannels: Channel[];
+  friends: UserFriend[];
+  currentChannel: Channel;
+  channelMessages: ChannelMessage[];
   display: boolean;
 }
 
 const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
-  ({ user, server, channel, display }) => {
+  ({
+    user,
+    currentServer,
+    serverMembers,
+    serverChannels,
+    friends,
+    currentChannel,
+    channelMessages,
+    display,
+  }) => {
     // Hooks
     const lang = useLanguage();
     const socket = useSocket();
     const webRTC = useWebRTC();
     const contextMenu = useContextMenu();
 
+    // Refs
+    const announcementAreaRef = useRef<HTMLDivElement>(null);
+
     // States
-    const [serverChannels, setServerChannels] = useState<Channel[]>([]);
-    const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
-    const [channelMessages, setChannelMessages] = useState<
-      Record<Channel['channelId'], ChannelMessage[]>
-    >({});
-    const [member, setMember] = useState<Member>(createDefault.member());
     const [sidebarWidth, setSidebarWidth] = useState<number>(270);
-    const [isResizing, setIsResizing] = useState<boolean>(false);
+    const [announcementAreaHeight, setAnnouncementAreaHeight] =
+      useState<number>(200);
+    const [isResizingSidebar, setIsResizingSidebar] = useState<boolean>(false);
+    const [isResizingAnnouncementArea, setIsResizingAnnouncementArea] =
+      useState<boolean>(false);
     const [showMicVolume, setShowMicVolume] = useState(false);
     const [showSpeakerVolume, setShowSpeakerVolume] = useState(false);
     const [currentTime, setCurrentTime] = useState<number>(Date.now());
@@ -71,9 +80,13 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       serverId,
       name: serverName,
       announcement: serverAnnouncement,
-    } = server;
+      permissionLevel: userPermission,
+      lastJoinChannelTime: userLastJoinChannelTime,
+      lastMessageTime: userLastMessageTime,
+    } = currentServer;
     const {
       channelId,
+      announcement: channelAnnouncement,
       bitrate: channelBitrate,
       voiceMode: channelVoiceMode,
       forbidText: channelForbidText,
@@ -81,32 +94,31 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       guestTextMaxLength: channelGuestTextMaxLength,
       guestTextWaitTime: channelGuestTextWaitTime,
       guestTextGapTime: channelGuestTextGapTime,
-    } = channel;
-    const {
-      permissionLevel: memberPermissionLevel,
-      lastJoinChannelTime: memberLastJoinChannelTime,
-      lastMessageTime: memberLastMessageTime,
-    } = member;
-    const serverActiveMembers = serverMembers.filter(
+    } = currentChannel;
+    const activeServerMembers = serverMembers.filter(
       (mb) => mb.currentServerId === serverId,
     );
+    const announcement = channelAnnouncement || serverAnnouncement;
     const leftGapTime =
       channelGuestTextGapTime -
-      Math.floor((currentTime - memberLastJoinChannelTime) / 1000);
+      Math.floor((currentTime - userLastJoinChannelTime) / 1000);
     const leftWaitTime =
       channelGuestTextWaitTime -
-      Math.floor((currentTime - memberLastMessageTime) / 1000);
-    const isForbidByChatMode = channelForbidText && memberPermissionLevel < 3;
-    const isForbidByGuestText =
-      channelForbidGuestText && memberPermissionLevel === 1;
+      Math.floor((currentTime - userLastMessageTime) / 1000);
+    const isForbidByChatMode = channelForbidText && userPermission < 3;
+    const isForbidByGuestText = channelForbidGuestText && userPermission === 1;
     const isForbidByGuestTextGap =
-      channelGuestTextGapTime && leftGapTime > 0 && memberPermissionLevel === 1;
+      channelGuestTextGapTime && leftGapTime > 0 && userPermission === 1;
     const isForbidByGuestTextWait =
-      channelGuestTextWaitTime &&
-      leftWaitTime > 0 &&
-      memberPermissionLevel === 1;
+      channelGuestTextWaitTime && leftWaitTime > 0 && userPermission === 1;
     const textMaxLength =
-      memberPermissionLevel === 1 ? channelGuestTextMaxLength || 100 : 2000;
+      userPermission === 1 ? channelGuestTextMaxLength : 9999;
+    const canChangeToFreeSpeech =
+      userPermission > 4 && channelVoiceMode !== 'free';
+    const canChangeToForbiddenSpeech =
+      userPermission > 4 && channelVoiceMode !== 'forbidden';
+    // const canChangeToQueue =
+    //   userPermission > 4 && channelVoiceMode !== 'queue';
 
     // Handlers
     const handleSendMessage = (
@@ -128,46 +140,31 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
       socket.send.updateChannel({ channel, channelId, serverId });
     };
 
-    const handleMemberUpdate = (data: Partial<Member> | null): void => {
-      if (!data) data = createDefault.member();
-      setMember((prev) => ({ ...prev, ...data }));
-    };
-
-    const handleServerChannelsUpdate = (data: Channel[] | null): void => {
-      if (!data) data = [];
-      setServerChannels(data);
-    };
-
-    const handleServerMembersUpdate = (data: ServerMember[] | null): void => {
-      if (!data) data = [];
-      setServerMembers(data);
-    };
-
-    const handleOnMessagesUpdate = (data: ChannelMessage): void => {
-      if (!data) return;
-      setChannelMessages((prev) => ({
-        ...prev,
-        [data.channelId]: [...(prev[data.channelId] || []), data],
-      }));
-    };
-
-    const handleStartResizing = useCallback((e: React.MouseEvent) => {
-      e.preventDefault();
-      setIsResizing(true);
-    }, []);
-
-    const handleStopResizing = useCallback(() => {
-      setIsResizing(false);
-    }, []);
-
-    const handleResize = useCallback(
+    const handleResizeSidebar = useCallback(
       (e: MouseEvent) => {
-        if (!isResizing) return;
-        const maxWidth = window.innerWidth * 0.3;
-        const newWidth = Math.max(270, Math.min(e.clientX, maxWidth));
+        if (!isResizingSidebar) return;
+        // const maxWidth = window.innerWidth * 0.3;
+        const maxWidth = 400;
+        const minWidth = 250;
+        const newWidth = Math.max(minWidth, Math.min(e.clientX, maxWidth));
         setSidebarWidth(newWidth);
       },
-      [isResizing],
+      [isResizingSidebar],
+    );
+
+    const handleResizeAnnouncementArea = useCallback(
+      (e: MouseEvent) => {
+        if (!isResizingAnnouncementArea) return;
+        if (!announcementAreaRef.current) return;
+        // const maxHeight = window.innerHeight * 0.6;
+        const maxHeight = 500;
+        const minHeight = 100;
+        const newHeight =
+          Math.max(minHeight, Math.min(e.clientY, maxHeight)) -
+          announcementAreaRef.current.offsetTop;
+        setAnnouncementAreaHeight(newHeight);
+      },
+      [isResizingAnnouncementArea],
     );
 
     const handleClickOutside = useCallback((e: MouseEvent) => {
@@ -196,39 +193,33 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
     }, [handleClickOutside]);
 
     useEffect(() => {
-      window.addEventListener('mousemove', handleResize);
-      window.addEventListener('mouseup', handleStopResizing);
+      window.addEventListener('mousemove', handleResizeSidebar);
+      window.addEventListener('mouseup', () => setIsResizingSidebar(false));
       return () => {
-        window.removeEventListener('mousemove', handleResize);
-        window.removeEventListener('mouseup', handleStopResizing);
+        window.removeEventListener('mousemove', handleResizeSidebar);
+        window.removeEventListener('mouseup', () =>
+          setIsResizingSidebar(false),
+        );
       };
-    }, [handleResize, handleStopResizing]);
+    }, [handleResizeSidebar]);
 
     useEffect(() => {
-      if (!socket) return;
-
-      const eventHandlers = {
-        [SocketServerEvent.MEMBER_UPDATE]: handleMemberUpdate,
-        [SocketServerEvent.SERVER_CHANNELS_UPDATE]: handleServerChannelsUpdate,
-        [SocketServerEvent.SERVER_MEMBERS_UPDATE]: handleServerMembersUpdate,
-        [SocketServerEvent.ON_MESSAGE]: handleOnMessagesUpdate,
-      };
-      const unsubscribe: (() => void)[] = [];
-
-      Object.entries(eventHandlers).map(([event, handler]) => {
-        const unsub = socket.on[event as SocketServerEvent](handler);
-        unsubscribe.push(unsub);
-      });
-
+      window.addEventListener('mousemove', handleResizeAnnouncementArea);
+      window.addEventListener('mouseup', () =>
+        setIsResizingAnnouncementArea(false),
+      );
       return () => {
-        unsubscribe.forEach((unsub) => unsub());
+        window.removeEventListener('mousemove', handleResizeAnnouncementArea);
+        window.removeEventListener('mouseup', () =>
+          setIsResizingAnnouncementArea(false),
+        );
       };
-    }, [socket]);
+    }, [handleResizeAnnouncementArea]);
 
     useEffect(() => {
       if (!webRTC || !channelBitrate) return;
       webRTC.handleUpdateBitrate(channelBitrate);
-    }, [channelBitrate]);
+    }, [channelBitrate]); // Please ignore this warning
 
     useEffect(() => {
       const timer = setInterval(() => {
@@ -243,7 +234,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
           details: `${lang.tr.in} ${serverName}`,
           state: `${lang.tr.chatWithMembers.replace(
             '{0}',
-            serverActiveMembers.length.toString(),
+            activeServerMembers.length.toString(),
           )}`,
           largeImageKey: 'app_icon',
           largeImageText: 'RC Voice',
@@ -258,12 +249,12 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
           ],
         });
       }
-    }, [lang, serverName, serverActiveMembers]);
+    }, [lang, serverName, activeServerMembers]);
 
     return (
       <div
         className={styles['serverWrapper']}
-        style={{ display: display ? 'flex' : 'none' }}
+        style={display ? {} : { display: 'none' }}
       >
         {/* Main Content */}
         <main className={styles['serverContent']}>
@@ -272,30 +263,37 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
             className={styles['sidebar']}
             style={{ width: `${sidebarWidth}px` }}
           >
-            <ChannelViewer
-              user={user}
-              server={server}
-              currentChannel={channel}
-              serverActiveMembers={serverActiveMembers}
+            <ChannelListViewer
+              currentServer={currentServer}
+              currentChannel={currentChannel}
+              serverMembers={activeServerMembers}
               serverChannels={serverChannels}
-              permissionLevel={memberPermissionLevel}
+              friends={friends}
             />
           </div>
           {/* Resize Handle */}
           <div
             className="resizeHandle"
-            onMouseDown={handleStartResizing}
-            onMouseUp={handleStopResizing}
+            onMouseDown={() => setIsResizingSidebar(true)}
+            onMouseUp={() => setIsResizingSidebar(false)}
           />
           {/* Right Content */}
           <div className={styles['mainContent']}>
             <div
-              className={`${styles['announcementArea']} ${markdown['markdownContent']}`}
+              ref={announcementAreaRef}
+              className={styles['announcementArea']}
+              style={{ height: `${announcementAreaHeight}px` }}
             >
-              <MarkdownViewer markdownText={serverAnnouncement} />
+              <MarkdownViewer markdownText={announcement} />
             </div>
+            {/* Resize Handle */}
+            <div
+              className="resizeHandleVertical"
+              onMouseDown={() => setIsResizingAnnouncementArea(true)}
+              onMouseUp={() => setIsResizingAnnouncementArea(false)}
+            />
             <div className={styles['messageArea']}>
-              <MessageViewer messages={channelMessages[channelId] || []} />
+              <MessageViewer messages={channelMessages} />
             </div>
             <div className={styles['inputArea']}>
               <MessageInputBox
@@ -329,7 +327,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
             </div>
             <div className={styles['buttonArea']}>
               <div className={styles['buttons']}>
-                {memberPermissionLevel >= 3 && (
+                {userPermission >= 3 && (
                   <div
                     className={styles['voiceModeDropdown']}
                     onClick={(e) =>
@@ -337,6 +335,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                         {
                           id: 'freeSpeech',
                           label: lang.tr.freeSpeech,
+                          show: canChangeToFreeSpeech,
                           onClick: () => {
                             handleUpdateChannel(
                               { voiceMode: 'free' },
@@ -348,6 +347,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                         {
                           id: 'forbiddenSpeech',
                           label: lang.tr.forbiddenSpeech,
+                          show: canChangeToForbiddenSpeech,
                           onClick: () => {
                             handleUpdateChannel(
                               { voiceMode: 'forbidden' },
@@ -360,8 +360,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                           id: 'queue',
                           label: lang.tr.queue,
                           icon: 'submenu',
-                          show: false,
-                          disabled: true,
+                          show: false, // canChangeToQueue
                           hasSubmenu: true,
                           onClick: () => {
                             handleUpdateChannel(
@@ -374,7 +373,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                             {
                               id: 'forbiddenQueue',
                               label: lang.tr.forbiddenQueue,
-                              disabled: channelVoiceMode === 'queue',
+                              // show: canChangeToForbiddenQueue,
                               onClick: () => {
                                 // handleUpdateChannel({ queueMode: 'forbidden' }, currentChannelId, serverId);
                               },
@@ -382,7 +381,7 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                             {
                               id: 'controlQueue',
                               label: lang.tr.controlQueue,
-                              disabled: channelVoiceMode === 'queue',
+                              // show: canChangeToControlQueue,
                               onClick: () => {
                                 // handleUpdateChannel({ queueMode: 'control' }, currentChannelId, serverId);
                               },
@@ -423,7 +422,9 @@ const ServerPageComponent: React.FC<ServerPageProps> = React.memo(
                 <div className={styles['micText']}>
                   {webRTC.isMute ? lang.tr.takeMic : lang.tr.takenMic}
                   <div className={styles['micSubText']}>
-                    {!webRTC.isMute && webRTC.micVolume === 0 ? '麥已靜音' : ''}
+                    {!webRTC.isMute && webRTC.micVolume === 0
+                      ? lang.tr.micMuted
+                      : ''}
                   </div>
                 </div>
               </div>

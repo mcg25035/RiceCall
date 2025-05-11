@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 // Types
-import { FriendGroup, SocketServerEvent, User } from '@/types';
+import { FriendGroup, User } from '@/types';
 
 // Providers
 import { useSocket } from '@/providers/Socket';
@@ -32,16 +32,14 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
     // Refs
     const refreshRef = useRef(false);
 
+    // States
+    const [friendGroup, setFriendGroup] = useState<FriendGroup>(
+      createDefault.friendGroup(),
+    );
+
     // Variables
     const { userId, friendGroupId } = initialData;
-
-    // States
-    const [groupName, setGroupName] = useState<string>(
-      createDefault.friendGroup().name,
-    );
-    const [groupOrder, setGroupOrder] = useState<number>(
-      createDefault.friendGroup().order,
-    );
+    const { name: groupName, order: groupOrder } = friendGroup;
 
     // Handlers
     const handleUpdateFriendGroup = (
@@ -53,35 +51,11 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
       socket.send.updateFriendGroup({ group, friendGroupId, userId });
     };
 
-    const handleFriendGroupUpdate = (data: FriendGroup | null) => {
-      if (!data) data = createDefault.friendGroup();
-      setGroupName(data.name);
-      setGroupOrder(data.order);
-    };
-
     const handleClose = () => {
       ipcService.window.close();
     };
 
-    // FIXME: Add refresh
-    useEffect(() => {
-      if (!socket) return;
-
-      const eventHandlers = {
-        [SocketServerEvent.USER_FRIEND_GROUPS_UPDATE]: handleFriendGroupUpdate,
-      };
-      const unsubscribe: (() => void)[] = [];
-
-      Object.entries(eventHandlers).map(([event, handler]) => {
-        const unsub = socket.on[event as SocketServerEvent](handler);
-        unsubscribe.push(unsub);
-      });
-
-      return () => {
-        unsubscribe.forEach((unsub) => unsub());
-      };
-    }, [socket]);
-
+    // Effects
     useEffect(() => {
       if (!friendGroupId || refreshRef.current) return;
       const refresh = async () => {
@@ -91,7 +65,9 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
             friendGroupId: friendGroupId,
           }),
         ]).then(([friendGroup]) => {
-          handleFriendGroupUpdate(friendGroup);
+          if (friendGroup) {
+            setFriendGroup(friendGroup);
+          }
         });
       };
       refresh();
@@ -102,48 +78,22 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
         <div className={popup['popupBody']}>
           <div className={setting['body']}>
             <div className={popup['inputGroup']}>
-              <div className={`${popup['row']}`}>
-                <div
-                  className={`${popup['inputBox']} ${popup['col']}`}
-                  style={{
-                    flex: '3',
-                  }}
-                >
-                  <div className={popup['label']}>
-                    {lang.tr.pleaseInputFriendGroupName}
-                  </div>
-                  <input
-                    className={popup['input']}
-                    type="text"
-                    placeholder={groupName}
-                    value={groupName}
-                    maxLength={20}
-                    onChange={(e) => setGroupName(e.target.value)}
-                    required
-                  />
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                <div className={popup['label']}>
+                  {lang.tr.pleaseInputFriendGroupName}
                 </div>
-                <div
-                  className={`${popup['inputBox']} ${popup['col']}`}
-                  style={{
-                    flex: '1',
-                  }}
-                >
-                  <div className={popup['label']}>
-                    {lang.tr.friendGroupOrder}
-                  </div>
-                  <input
-                    className={popup['input']}
-                    type="number"
-                    placeholder={groupOrder.toString()}
-                    value={groupOrder}
-                    max={999}
-                    min={-999}
-                    onChange={(e) =>
-                      setGroupOrder(parseInt(e.target.value) || 0)
-                    }
-                    required
-                  />
-                </div>
+                <input
+                  name="name"
+                  type="text"
+                  value={groupName}
+                  maxLength={32}
+                  onChange={(e) =>
+                    setFriendGroup((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                />
               </div>
             </div>
           </div>
@@ -151,9 +101,7 @@ const EditFriendGroupPopup: React.FC<EditFriendGroupPopupProps> = React.memo(
 
         <div className={popup['popupFooter']}>
           <button
-            className={`${popup['button']} ${
-              !groupName.trim() ? popup['disabled'] : ''
-            }`}
+            className={popup['button']}
             disabled={!groupName.trim()}
             onClick={() => {
               handleUpdateFriendGroup(

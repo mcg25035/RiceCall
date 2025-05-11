@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 // CSS
 import popup from '@/styles/popup.module.css';
 import setting from '@/styles/popups/setting.module.css';
+import markdown from '@/styles/viewers/markdown.module.css';
 
 // Types
 import { Channel, Server } from '@/types';
@@ -17,6 +18,9 @@ import refreshService from '@/services/refresh.service';
 
 // Utils
 import { createDefault } from '@/utils/createDefault';
+
+// Components
+import MarkdownViewer from '@/components/viewers/Markdown';
 
 interface ChannelSettingPopupProps {
   serverId: Server['serverId'];
@@ -34,48 +38,32 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
 
     // States
     const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
-    const [channelName, setChannelName] = useState<Channel['name']>(
-      createDefault.channel().name,
-    );
-    const [channelUserLimit, setChannelUserLimit] = useState<
-      Channel['userLimit']
-    >(createDefault.channel().userLimit);
-    const [channelIsLobby, setChannelIsLobby] = useState<Channel['isLobby']>(
-      createDefault.channel().isLobby,
-    );
-    const [channelVisibility, setChannelVisibility] = useState<
-      Channel['visibility']
-    >(createDefault.channel().visibility);
-    const [channelPassword, setChannelPassword] = useState<Channel['password']>(
-      createDefault.channel().password,
-    );
-    const [channelForbidText, setChannelForbidText] = useState<
-      Channel['forbidText']
-    >(createDefault.channel().forbidText);
-    const [channelVoiceMode, setChannelVoiceMode] = useState<
-      Channel['voiceMode']
-    >(createDefault.channel().voiceMode);
-    const [channelGuestTextMaxLength, setChannelGuestTextMaxLength] = useState<
-      Channel['guestTextMaxLength']
-    >(createDefault.channel().guestTextMaxLength);
-    const [channelGuestTextWaitTime, setChannelGuestTextWaitTime] = useState<
-      Channel['guestTextWaitTime']
-    >(createDefault.channel().guestTextWaitTime);
-    const [channelGuestTextGapTime, setChannelGuestTextGapTime] = useState<
-      Channel['guestTextGapTime']
-    >(createDefault.channel().guestTextGapTime);
-    const [channelGuestTextForbid, setChannelGuestTextForbid] = useState<
-      Channel['forbidGuestText']
-    >(createDefault.channel().forbidGuestText);
-    const [channelGuestTextForbidUrl, setChannelGuestTextForbidUrl] = useState<
-      Channel['forbidGuestUrl']
-    >(createDefault.channel().forbidGuestUrl);
-    const [channelOrder, setChannelOrder] = useState<Channel['order']>(
-      createDefault.channel().order,
-    );
+    const [showPreview, setShowPreview] = useState<boolean>(false);
+    const [channel, setChannel] = useState<Channel>(createDefault.channel());
+    const [server, setServer] = useState<Server>(createDefault.server());
 
     // Variables
     const { channelId, serverId } = initialData;
+    const { lobbyId: serverLobbyId, receptionLobbyId: serverReceptionLobbyId } =
+      server;
+    const {
+      name: channelName,
+      announcement: channelAnnouncement,
+      visibility: channelVisibility,
+      password: channelPassword,
+      userLimit: channelUserLimit,
+      voiceMode: channelVoiceMode,
+      order: channelOrder,
+      forbidText: channelForbidText,
+      forbidGuestText: channelForbidGuestText,
+      forbidGuestUrl: channelForbidGuestUrl,
+      guestTextMaxLength: channelGuestTextMaxLength,
+      guestTextWaitTime: channelGuestTextWaitTime,
+      guestTextGapTime: channelGuestTextGapTime,
+      bitrate: channelBitrate,
+    } = channel;
+    const isLobby = serverLobbyId === channelId;
+    const isReceptionLobby = serverReceptionLobbyId === channelId;
 
     // Handlers
     const handleUpdateChannel = (
@@ -85,23 +73,6 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
     ) => {
       if (!socket) return;
       socket.send.updateChannel({ channel, channelId, serverId });
-    };
-
-    const handleChannelUpdate = (data: Channel | null) => {
-      if (!data) data = createDefault.channel();
-      setChannelName(data.name);
-      setChannelOrder(data.order);
-      setChannelIsLobby(data.isLobby);
-      setChannelVisibility(data.visibility);
-      setChannelPassword(data.password);
-      setChannelUserLimit(data.userLimit);
-      setChannelVoiceMode(data.voiceMode);
-      setChannelForbidText(data.forbidText);
-      setChannelGuestTextForbid(data.forbidGuestText);
-      setChannelGuestTextForbidUrl(data.forbidGuestUrl);
-      setChannelGuestTextMaxLength(data.guestTextMaxLength);
-      setChannelGuestTextWaitTime(data.guestTextWaitTime);
-      setChannelGuestTextGapTime(data.guestTextGapTime);
     };
 
     const handleClose = () => {
@@ -117,17 +88,25 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
           refreshService.channel({
             channelId: channelId,
           }),
-        ]).then(([channel]) => {
-          handleChannelUpdate(channel);
+          refreshService.server({
+            serverId: serverId,
+          }),
+        ]).then(([channel, server]) => {
+          if (channel) {
+            setChannel(channel);
+          }
+          if (server) {
+            setServer(server);
+          }
         });
       };
       refresh();
-    }, [channelId]);
+    }, [channelId, serverId]);
 
     return (
       <div className={popup['popupContainer']}>
         <div className={popup['popupBody']}>
-          {/* Left Sidebar */}
+          {/* Sidebar */}
           <div className={setting['left']}>
             <div className={setting['tabs']}>
               {[
@@ -150,344 +129,468 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
               ))}
             </div>
           </div>
-          {/* Right Content */}
-          <div className={setting['right']}>
-            {activeTabIndex === 0 ? (
-              <>
-                <div className={popup['col']}>
-                  <div className={popup['row']}>
-                    <div className={`${popup['inputBox']} ${popup['col']}`}>
-                      <div className={popup['label']}>
-                        {lang.tr.channelNameLabel}
-                      </div>
-                      <input
-                        type="text"
-                        value={channelName || ''}
-                        onChange={(e) => setChannelName(e.target.value)}
-                      />
-                    </div>
 
-                    <div className={`${popup['inputBox']} ${popup['col']}`}>
-                      <div className={popup['label']}>{lang.tr.userLimit}</div>
-                      <input
-                        type="number"
-                        value={channelUserLimit || 0}
-                        disabled={
-                          channelVisibility === 'readonly' || channelIsLobby
-                        }
-                        onChange={(e) =>
-                          setChannelUserLimit(
-                            Math.max(
-                              0,
-                              Math.min(999, parseInt(e.target.value) || 0),
-                            ),
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div className={`${popup['inputBox']} ${popup['col']}`}>
-                    <div className={popup['label']}>{lang.tr.channelMode}</div>
-                    <div className={popup['selectBox']}>
-                      <select
-                        value={channelVoiceMode}
-                        onChange={(e) =>
-                          setChannelVoiceMode(
-                            e.target.value as Channel['voiceMode'],
-                          )
-                        }
-                      >
-                        <option value="free">{lang.tr.freeSpeech}</option>
-                        <option value="forbidden">
-                          {lang.tr.forbiddenSpeech}
-                        </option>
-                        <option value="queue">{lang.tr.queueSpeech}</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div className={setting['saperator']} />
-                <div className={popup['col']}>
+          {/* Basic Info */}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 0 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <div className={popup['row']}>
+                <div className={`${popup['inputBox']} ${popup['col']}`}>
                   <div className={popup['label']}>
-                    {lang.tr.channelAudioQuality}
+                    {lang.tr.channelNameLabel}
                   </div>
-                  <div className={popup['inputGroup']}>
-                    <div
-                      className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
-                    >
-                      <input type="radio" name="voiceQuality" defaultChecked />
-                      <div>
-                        <label className={popup['label']}>
-                          {lang.tr.chatMode}
-                        </label>
-                        <div className={popup['hint']}>
-                          {lang.tr.chatModeDescription}
-                        </div>
-                      </div>
-                    </div>
+                  <input
+                    name="name"
+                    type="text"
+                    value={channelName}
+                    maxLength={32}
+                    onChange={(e) =>
+                      setChannel((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
 
-                    <div
-                      className={`${popup['inputBox']} ${popup['row']} ${popup['disabled']}`}
-                    >
-                      <input type="radio" name="voiceQuality" />
-                      <div>
-                        <label className={popup['label']}>
-                          {lang.tr.entertainmentMode}
-                        </label>
-                        <div className={popup['hint']}>
-                          {lang.tr.entertainmentModeDescription}
-                        </div>
-                      </div>
+                <div className={`${popup['inputBox']} ${popup['col']}`}>
+                  <div className={popup['label']}>{lang.tr.userLimit}</div>
+                  <input
+                    name="userLimit"
+                    type="number"
+                    value={channelUserLimit}
+                    min={0}
+                    max={999}
+                    disabled={channelVisibility === 'readonly' || isLobby}
+                    onChange={(e) =>
+                      setChannel((prev) => ({
+                        ...prev,
+                        userLimit: Math.max(
+                          0,
+                          Math.min(999, parseInt(e.target.value) || 0),
+                        ),
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                <div className={popup['label']}>{lang.tr.channelMode}</div>
+                <div className={popup['selectBox']}>
+                  <select
+                    value={channelVoiceMode}
+                    onChange={(e) =>
+                      setChannel((prev) => ({
+                        ...prev,
+                        voiceMode: e.target.value as Channel['voiceMode'],
+                      }))
+                    }
+                  >
+                    <option value="free">{lang.tr.freeSpeech}</option>
+                    <option value="forbidden">{lang.tr.forbiddenSpeech}</option>
+                    <option value="queue" disabled>
+                      {lang.tr.queueSpeech}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className={setting['saperator']} />
+            <div className={popup['col']}>
+              <div className={popup['label']}>
+                {lang.tr.channelAudioQuality}
+              </div>
+              <div className={popup['inputGroup']}>
+                <div className={`${popup['inputBox']} ${popup['row']}`}>
+                  <input
+                    name="bitrate"
+                    type="radio"
+                    checked={channelBitrate === 64000}
+                    onChange={() => {
+                      setChannel((prev) => ({
+                        ...prev,
+                        bitrate: 64000,
+                      }));
+                    }}
+                  />
+                  <div>
+                    <label className={popup['label']}>{lang.tr.chatMode}</label>
+                    <div className={popup['hint']}>
+                      {lang.tr.chatModeDescription}
                     </div>
                   </div>
                 </div>
-              </>
-            ) : activeTabIndex === 1 ? (
-              <div className={popup['col']}>
+
+                <div className={`${popup['inputBox']} ${popup['row']}`}>
+                  <input
+                    name="bitrate"
+                    type="radio"
+                    checked={channelBitrate === 256000}
+                    onChange={() => {
+                      setChannel((prev) => ({
+                        ...prev,
+                        bitrate: 256000,
+                      }));
+                    }}
+                  />
+                  <div>
+                    <label className={popup['label']}>
+                      {lang.tr.entertainmentMode}
+                    </label>
+                    <div className={popup['hint']}>
+                      {lang.tr.entertainmentModeDescription}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Channel Announcement */}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 1 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <div className={setting['headerTextBox']}>
                 <div className={popup['label']}>
                   {lang.tr.inputAnnouncement}
                 </div>
                 <div
-                  className={`${popup['inputBox']} ${popup['col']} ${popup['disabled']}`}
+                  className={popup['button']}
+                  onClick={async () => {
+                    if (showPreview) {
+                      setShowPreview(false);
+                    } else {
+                      setShowPreview(true);
+                    }
+                  }}
                 >
+                  {showPreview ? lang.tr.edit : lang.tr.preview}
+                </div>
+              </div>
+              <div className={`${popup['inputBox']} ${popup['col']}`}>
+                {showPreview ? (
+                  <div
+                    className={markdown['settingMarkdownContainer']}
+                    style={{ minHeight: '330px' }}
+                  >
+                    <MarkdownViewer markdownText={channelAnnouncement} />
+                  </div>
+                ) : (
                   <textarea
-                    style={{ minHeight: '200px' }}
-                    // value={channelAnnouncement}
-                    value={''}
-                    // onChange={(e) => setChannelAnnouncement(e.target.value)}
+                    name="announcement"
+                    style={{ minHeight: '330px' }}
+                    value={channelAnnouncement}
+                    maxLength={1000}
+                    onChange={(e) =>
+                      setChannel((prev) => ({
+                        ...prev,
+                        announcement: e.target.value,
+                      }))
+                    }
+                  />
+                )}
+                <div className={popup['label']}>{lang.tr.markdownSupport}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Access Permissions */}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 2 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <label>{lang.tr.accessPermissions}</label>
+              <div className={popup['inputGroup']}>
+                <div
+                  className={`
+                    ${popup['inputBox']} 
+                    ${isLobby ? popup['disabled'] : ''}
+                  `}
+                >
+                  <input
+                    type="radio"
+                    name="visibility"
+                    checked={channelVisibility === 'public'}
+                    onChange={() => {
+                      setChannel((prev) => ({
+                        ...prev,
+                        visibility: 'public',
+                      }));
+                    }}
+                  />
+                  <div>
+                    <label className={popup['label']}>
+                      {lang.tr.channelPublic}
+                    </label>
+                  </div>
+                </div>
+
+                <div
+                  className={`
+                    ${popup['inputBox']} 
+                    ${isLobby ? popup['disabled'] : ''}
+                  `}
+                >
+                  <input
+                    type="radio"
+                    name="visibility"
+                    checked={channelVisibility === 'member'}
+                    onChange={() => {
+                      setChannel((prev) => ({
+                        ...prev,
+                        visibility: 'member',
+                      }));
+                    }}
+                  />
+                  <div>
+                    <label className={popup['label']}>
+                      {lang.tr.channelMember}
+                    </label>
+                  </div>
+                </div>
+
+                <div
+                  className={`
+                    ${popup['inputBox']} 
+                    ${isLobby || isReceptionLobby ? popup['disabled'] : ''}
+                  `}
+                >
+                  <input
+                    type="radio"
+                    name="visibility"
+                    checked={channelVisibility === 'readonly'}
+                    onChange={() => {
+                      setChannel((prev) => ({
+                        ...prev,
+                        visibility: 'readonly',
+                      }));
+                    }}
+                  />
+                  <div>
+                    <label className={popup['label']}>
+                      {lang.tr.channelReadonly}
+                    </label>
+                  </div>
+                </div>
+
+                <div
+                  className={`
+                    ${popup['inputBox']} 
+                    ${isLobby || isReceptionLobby ? popup['disabled'] : ''}
+                  `}
+                >
+                  <input
+                    type="radio"
+                    name="visibility"
+                    checked={channelVisibility === 'private'}
+                    onChange={() => {
+                      setChannel((prev) => ({
+                        ...prev,
+                        visibility: 'private',
+                      }));
+                    }}
+                  />
+                  <label className={popup['label']}>
+                    {lang.tr.channelPrivate}
+                  </label>
+                </div>
+
+                {channelVisibility === 'private' && (
+                  <div className={popup['inputBox']}>
+                    <input
+                      name="password"
+                      type="text"
+                      value={channelPassword}
+                      maxLength={4}
+                      onChange={(e) => {
+                        setChannel((prev) => ({
+                          ...prev,
+                          password: e.target.value,
+                        }));
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Speaking Permissions */}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 3 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <label>{lang.tr.speakingPermissions + lang.tr.soon}</label>
+              <div className={popup['inputGroup']}>
+                <div className={`${popup['inputBox']} ${popup['disabled']}`}>
+                  <input
+                    name="forbidGuestQueue"
+                    type="checkbox"
+                    checked={false}
                     onChange={() => {}}
                   />
+                  <div>
+                    <label className={popup['label']}>
+                      {lang.tr.forbidGuestQueue}
+                    </label>
+                  </div>
+                </div>
+
+                <div className={`${popup['inputBox']} ${popup['disabled']}`}>
+                  <input
+                    name="forbidGuestVoice"
+                    type="checkbox"
+                    checked={false}
+                    onChange={() => {}}
+                  />
+                  <div>
+                    <label className={popup['label']}>
+                      {lang.tr.forbidGuestVoice}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Text Permissions */}
+          <div
+            className={setting['right']}
+            style={activeTabIndex === 4 ? {} : { display: 'none' }}
+          >
+            <div className={popup['col']}>
+              <label>{lang.tr.textPermissions}</label>
+              <div className={popup['inputGroup']}>
+                <div className={popup['inputBox']}>
+                  <input
+                    name="forbidText"
+                    type="checkbox"
+                    checked={channelForbidText}
+                    onChange={(e) => {
+                      setChannel((prev) => ({
+                        ...prev,
+                        forbidText: e.target.checked,
+                      }));
+                    }}
+                  />
+                  <label className={popup['label']}>
+                    {lang.tr.forbidOnlyAdminText}
+                  </label>
+                </div>
+
+                <div className={popup['inputBox']}>
+                  <input
+                    name="forbidGuestText"
+                    type="checkbox"
+                    checked={channelForbidGuestText}
+                    onChange={(e) =>
+                      setChannel((prev) => ({
+                        ...prev,
+                        forbidGuestText: e.target.checked,
+                      }))
+                    }
+                  />
+                  <label className={popup['label']}>
+                    {lang.tr.forbidGuestText}
+                  </label>
+                </div>
+
+                <div className={popup['inputBox']}>
+                  <input
+                    name="forbidGuestUrl"
+                    type="checkbox"
+                    checked={channelForbidGuestUrl}
+                    onChange={(e) =>
+                      setChannel((prev) => ({
+                        ...prev,
+                        forbidGuestUrl: e.target.checked,
+                      }))
+                    }
+                  />
+                  <label className={popup['label']}>
+                    {lang.tr.forbidGuestUrl}
+                  </label>
+                </div>
+
+                <div className={`${popup['inputBox']} ${popup['row']}`}>
                   <div className={popup['label']}>
-                    {lang.tr.markdownSupport}
+                    {lang.tr.guestTextMaxLength}
                   </div>
+                  <input
+                    name="guestTextMaxLength"
+                    type="number"
+                    value={channelGuestTextMaxLength}
+                    min={0}
+                    max={9999}
+                    onChange={(e) =>
+                      setChannel((prev) => ({
+                        ...prev,
+                        guestTextMaxLength: Math.max(
+                          0,
+                          Math.min(9999, parseInt(e.target.value) || 0),
+                        ),
+                      }))
+                    }
+                    style={{ width: '60px' }}
+                  />
+                  <div className={popup['label']}>{lang.tr.characters}</div>
+                </div>
+
+                <div className={`${popup['inputBox']} ${popup['row']}`}>
+                  <div className={popup['label']}>
+                    {lang.tr.guestTextWaitTime}
+                  </div>
+                  <input
+                    name="guestTextWaitTime"
+                    type="number"
+                    value={channelGuestTextWaitTime}
+                    min={0}
+                    max={9999}
+                    onChange={(e) =>
+                      setChannel((prev) => ({
+                        ...prev,
+                        guestTextWaitTime: Math.max(
+                          0,
+                          Math.min(9999, parseInt(e.target.value) || 0),
+                        ),
+                      }))
+                    }
+                    style={{ width: '60px' }}
+                  />
+                  <div className={popup['label']}>{lang.tr.seconds}</div>
+                </div>
+
+                <div className={`${popup['inputBox']} ${popup['row']}`}>
+                  <div className={popup['label']}>
+                    {lang.tr.guestTextGapTime}
+                  </div>
+                  <input
+                    name="guestTextGapTime"
+                    type="number"
+                    value={channelGuestTextGapTime}
+                    min={0}
+                    max={9999}
+                    onChange={(e) =>
+                      setChannel((prev) => ({
+                        ...prev,
+                        guestTextGapTime: Math.max(
+                          0,
+                          Math.min(9999, parseInt(e.target.value) || 0),
+                        ),
+                      }))
+                    }
+                    style={{ width: '60px' }}
+                  />
+                  <div className={popup['label']}>{lang.tr.seconds}</div>
                 </div>
               </div>
-            ) : activeTabIndex === 2 ? (
-              <div className={popup['col']}>
-                <label>{lang.tr.accessPermissions}</label>
-                <div className={popup['inputGroup']}>
-                  <div
-                    className={`${popup['inputBox']} ${
-                      channelIsLobby ? popup['disabled'] : ''
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="voiceQuality"
-                      checked={channelVisibility === 'public'}
-                      onChange={() => {
-                        setChannelVisibility('public');
-                      }}
-                    />
-                    <div>
-                      <label className={popup['label']}>
-                        {lang.tr.channelPublic}
-                      </label>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`${popup['inputBox']} ${
-                      channelIsLobby ? popup['disabled'] : ''
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="voiceQuality"
-                      checked={channelVisibility === 'member'}
-                      onChange={() => {
-                        setChannelVisibility('member');
-                      }}
-                    />
-                    <div>
-                      <label className={popup['label']}>
-                        {lang.tr.channelMember}
-                      </label>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`${popup['inputBox']} ${
-                      channelIsLobby ? popup['disabled'] : ''
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="voiceQuality"
-                      checked={channelVisibility === 'readonly'}
-                      onChange={() => {
-                        setChannelVisibility('readonly');
-                      }}
-                    />
-                    <div>
-                      <label className={popup['label']}>
-                        {lang.tr.channelReadonly}
-                      </label>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`${popup['inputBox']} ${
-                      channelIsLobby ? popup['disabled'] : ''
-                    } ${popup['row']}`}
-                  >
-                    <input
-                      type="radio"
-                      name="voiceQuality"
-                      checked={channelVisibility === 'private'}
-                      onChange={() => {
-                        setChannelVisibility('private');
-                      }}
-                    />
-                    <label className={popup['label']}>
-                      {lang.tr.channelPrivate}
-                    </label>
-                  </div>
-
-                  {channelVisibility === 'private' && (
-                    <div className={popup['inputBox']}>
-                      <input
-                        className={popup['input']}
-                        type="text"
-                        value={channelPassword || ''}
-                        maxLength={4}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (isNaN(parseInt(value))) setChannelPassword(null);
-                          else setChannelPassword(value);
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : activeTabIndex === 3 ? (
-              <div className={popup['col']}>
-                <label>{lang.tr.speakingPermissions}</label>
-                <div className={popup['inputGroup']}>
-                  <div className={`${popup['inputBox']} ${popup['disabled']}`}>
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      onChange={() => {}}
-                    />
-                    <div>
-                      <label className={popup['label']}>
-                        {lang.tr.forbidGuestQueue}
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className={`${popup['inputBox']} ${popup['disabled']}`}>
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      onChange={() => {}}
-                    />
-                    <div>
-                      <label className={popup['label']}>
-                        {lang.tr.forbidGuestVoice}
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : activeTabIndex === 4 ? (
-              <div className={popup['col']}>
-                <label>{lang.tr.textPermissions}</label>
-                <div className={popup['inputGroup']}>
-                  <div className={popup['inputBox']}>
-                    <input
-                      type="checkbox"
-                      checked={channelForbidText}
-                      onChange={(e) => {
-                        setChannelForbidText(e.target.checked);
-                      }}
-                    />
-                    <label className={popup['label']}>
-                      {lang.tr.forbidOnlyAdminText}
-                    </label>
-                  </div>
-
-                  <div className={popup['inputBox']}>
-                    <input
-                      type="checkbox"
-                      checked={channelGuestTextForbid}
-                      onChange={(e) =>
-                        setChannelGuestTextForbid(e.target.checked)
-                      }
-                    />
-                    <label className={popup['label']}>
-                      {lang.tr.forbidGuestText}
-                    </label>
-                  </div>
-
-                  <div className={popup['inputBox']}>
-                    <input
-                      type="checkbox"
-                      checked={channelGuestTextForbidUrl}
-                      onChange={(e) =>
-                        setChannelGuestTextForbidUrl(e.target.checked)
-                      }
-                    />
-                    <label className={popup['label']}>
-                      {lang.tr.forbidGuestUrl}
-                    </label>
-                  </div>
-
-                  <div className={`${popup['inputBox']} ${popup['row']}`}>
-                    <div className={popup['label']}>
-                      {lang.tr.guestTextMaxLength}
-                    </div>
-                    <input
-                      type="number"
-                      value={channelGuestTextMaxLength}
-                      onChange={(e) =>
-                        setChannelGuestTextMaxLength(
-                          Math.max(0, parseInt(e.target.value) || 0),
-                        )
-                      }
-                      style={{ width: '60px' }}
-                    />
-                    <div className={popup['label']}>{lang.tr.characters}</div>
-                  </div>
-
-                  <div className={`${popup['inputBox']} ${popup['row']}`}>
-                    <div className={popup['label']}>
-                      {lang.tr.guestTextWaitTime}
-                    </div>
-                    <input
-                      type="number"
-                      value={channelGuestTextWaitTime}
-                      onChange={(e) =>
-                        setChannelGuestTextWaitTime(
-                          Math.max(0, parseInt(e.target.value) || 0),
-                        )
-                      }
-                      style={{ width: '60px' }}
-                    />
-                    <div className={popup['label']}>{lang.tr.seconds}</div>
-                  </div>
-
-                  <div className={`${popup['inputBox']} ${popup['row']}`}>
-                    <div className={popup['label']}>
-                      {lang.tr.guestTextGapTime}
-                    </div>
-                    <input
-                      type="number"
-                      value={channelGuestTextGapTime}
-                      onChange={(e) =>
-                        setChannelGuestTextGapTime(
-                          Math.max(0, parseInt(e.target.value) || 0),
-                        )
-                      }
-                      style={{ width: '60px' }}
-                    />
-                    <div className={popup['label']}>{lang.tr.seconds}</div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            </div>
           </div>
         </div>
 
@@ -498,17 +601,19 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
               handleUpdateChannel(
                 {
                   name: channelName,
-                  visibility: channelVisibility,
+                  announcement: channelAnnouncement,
                   password: channelPassword,
-                  userLimit: channelUserLimit,
-                  voiceMode: channelVoiceMode,
                   order: channelOrder,
-                  forbidText: channelForbidText,
-                  forbidGuestText: channelGuestTextForbid,
-                  forbidGuestUrl: channelGuestTextForbidUrl,
+                  userLimit: channelUserLimit,
                   guestTextMaxLength: channelGuestTextMaxLength,
                   guestTextWaitTime: channelGuestTextWaitTime,
                   guestTextGapTime: channelGuestTextGapTime,
+                  bitrate: channelBitrate,
+                  forbidText: !!channelForbidText,
+                  forbidGuestText: !!channelForbidGuestText,
+                  forbidGuestUrl: !!channelForbidGuestUrl,
+                  visibility: channelVisibility,
+                  voiceMode: channelVoiceMode,
                 },
                 channelId,
                 serverId,

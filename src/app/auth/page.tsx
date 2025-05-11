@@ -14,16 +14,7 @@ import ipcService from '@/services/ipc.service';
 import authService from '@/services/auth.service';
 
 const Header: React.FC = React.memo(() => {
-  // States
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
   // Handlers
-  const handleFullscreen = () => {
-    if (isFullscreen) ipcService.window.unmaximize();
-    else ipcService.window.maximize();
-    setIsFullscreen(!isFullscreen);
-  };
-
   const handleMinimize = () => {
     ipcService.window.minimize();
   };
@@ -41,10 +32,6 @@ const Header: React.FC = React.memo(() => {
       {/* Buttons */}
       <div className={header['buttons']}>
         <div className={header['minimize']} onClick={() => handleMinimize()} />
-        <div
-          className={isFullscreen ? header['restore'] : header['maxsize']}
-          onClick={() => handleFullscreen()}
-        />
         <div className={header['close']} onClick={() => handleClose()} />
       </div>
     </div>
@@ -59,7 +46,11 @@ const Auth: React.FC = () => {
 
   // Effects
   useEffect(() => {
-    setTimeout(() => authService.autoLogin(), 1000); // Can be change to when socket is onReady not just specific time
+    const autoLogin = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await authService.autoLogin();
+    };
+    autoLogin();
   }, []);
 
   const getMainContent = () => {

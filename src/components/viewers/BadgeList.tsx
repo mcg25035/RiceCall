@@ -51,13 +51,13 @@ const BadgeContainer: React.FC<BadgeContainerProps> = React.memo(
 
 BadgeContainer.displayName = 'BadgeContainer';
 
-interface BadgeViewerProps {
+interface BadgeListViewerProps {
   badges: Badge[];
   maxDisplay?: number;
   preferBelow?: boolean;
 }
 
-const BadgeViewer: React.FC<BadgeViewerProps> = React.memo(
+const BadgeListViewer: React.FC<BadgeListViewerProps> = React.memo(
   ({ badges, preferBelow, maxDisplay = 21 }) => {
     const sortedBadges = [...badges]
       .sort((a, b) =>
@@ -79,6 +79,6 @@ const BadgeViewer: React.FC<BadgeViewerProps> = React.memo(
   },
 );
 
-BadgeViewer.displayName = 'BadgeViewer';
+BadgeListViewer.displayName = 'BadgeListViewer';
 
-export default BadgeViewer;
+export default BadgeListViewer;

@@ -10,6 +10,7 @@ interface ContextMenuProps {
   x: number;
   y: number;
   items: ContextMenuItem[];
+  target?: HTMLElement;
   onClose: () => void;
   side?: 'left' | 'right';
 }
@@ -19,6 +20,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   y,
   items,
   side = 'right',
+  target,
   onClose,
 }) => {
   // Ref
@@ -28,51 +30,43 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   const [subMenu, setSubMenu] = useState<React.ReactNode>(null);
   const [menuX, setMenuX] = useState(x);
   const [menuY, setMenuY] = useState(y);
+  const isSetting = items[0]?.icon;
 
   // Effect
   useEffect(() => {
-    if (menuRef.current) {
-      const menuWidth = menuRef.current.offsetWidth;
-      const menuHeight = menuRef.current.offsetHeight;
-      const windowWidth = window.innerWidth;
-      const windowHeight = window.innerHeight;
-
-      let newMenuX = x;
-      let newMenuY = y;
-
-      if (side === 'left') {
-        newMenuX = x - menuWidth;
-        newMenuY = y;
-
-        if (x < 20 + menuWidth) {
-          newMenuX = 20;
-        }
-
-        if (y > windowHeight - menuHeight - 20) {
-          newMenuY = windowHeight - menuHeight - 20;
-        }
-      } else {
-        newMenuX = x;
-        newMenuY = y;
-
-        if (x + menuWidth > windowWidth - 20) {
-          newMenuX = windowWidth - menuWidth - 20;
-        }
-
-        if (y > windowHeight - menuHeight - 20) {
-          newMenuY = windowHeight - menuHeight - 20;
-        }
+    if (!menuRef.current) return;
+    const menuWidth = menuRef.current.offsetWidth,
+      menuHeight = menuRef.current.offsetHeight,
+      windowWidth = window.innerWidth,
+      windowHeight = window.innerHeight;
+    let newMenuX = x,
+      newMenuY = y;
+    if (
+      target &&
+      (target.classList[0].includes('setting') ||
+        target.classList[0].includes('menu'))
+    ) {
+      const rect = target.getBoundingClientRect();
+      newMenuX = rect.left;
+      newMenuY = rect.bottom;
+      if (newMenuY + menuHeight > windowHeight) {
+        newMenuY = rect.top - menuHeight;
       }
-
-      setMenuX(newMenuX);
-      setMenuY(newMenuY);
+    } else if (side === 'left') {
+      newMenuX = x - menuWidth;
     }
-  }, [x, y, side, menuRef]);
+    newMenuX = Math.max(8, Math.min(newMenuX, windowWidth - menuWidth - 8));
+    newMenuY = Math.max(8, Math.min(newMenuY, windowHeight - menuHeight - 8));
+    setMenuX(newMenuX);
+    setMenuY(newMenuY);
+  }, [x, y, target, side]);
 
   return (
     <div
       ref={menuRef}
-      className={`context-menu-container ${contextMenu['contextMenu']}`}
+      className={`context-menu-container ${
+        isSetting ? contextMenu[isSetting] : ''
+      } ${contextMenu['contextMenu']}`}
       style={{ top: menuY, left: menuX }}
     >
       {items
@@ -87,9 +81,11 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
               className={`
                 ${contextMenu['option']} 
                 ${item.hasSubmenu ? contextMenu['hasSubmenu'] : ''}
+                ${item.disabled ? contextMenu['disabled'] : ''}
               `}
               data-type={item.icon || ''}
               onClick={() => {
+                if (item.disabled) return;
                 item.onClick?.();
                 onClose();
               }}

@@ -73,10 +73,29 @@ body,
 }
 
 div.resizeHandle {
-  width: 0.125rem;
+  width: 0.25rem;
   height: 100%;
   background: rgb(229 231 235);
   cursor: col-resize;
+  transition: background 0.1s ease-in-out;
+}
+
+div.resizeHandle:active,
+div.resizeHandle:hover {
+  background: rgb(200, 202, 206);
+}
+
+div.resizeHandleVertical {
+  width: 100%;
+  height: 0.25rem;
+  background: rgb(229 231 235);
+  cursor: row-resize;
+  transition: background 0.1s ease-in-out;
+}
+
+div.resizeHandleVertical:active,
+div.resizeHandleVertical:hover {
+  background: rgb(200, 202, 206);
 }
 
 input[type='radio'] {
@@ -113,4 +132,24 @@ input[type='checkbox']:hover {
 input[type='radio']:checked:hover,
 input[type='checkbox']:checked:hover {
   background-position: -18px -18px;
+}
+
+div,
+p,
+textarea,
+input,
+select,
+table,
+button,
+a {
+  outline: none;
+}
+
+.hljs span {
+  font-size: 0.875rem;
+  font-family: monospace;
+}
+
+.hljs {
+  line-height: 1.25rem;
 }

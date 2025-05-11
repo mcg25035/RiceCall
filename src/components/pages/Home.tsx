@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import dynamic from 'next/dynamic';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -8,33 +9,26 @@ import homePage from '@/styles/pages/home.module.css';
 import ServerListViewer from '@/components/viewers/ServerList';
 
 // Type
-import {
-  PopupType,
-  Server,
-  SocketServerEvent,
-  User,
-  UserServer,
-} from '@/types';
+import { PopupType, SocketServerEvent, User, UserServer } from '@/types';
 
 // Providers
 import { useSocket } from '@/providers/Socket';
 import { useLanguage } from '@/providers/Language';
+import { useMainTab } from '@/providers/MainTab';
 
 // Services
 import ipcService from '@/services/ipc.service';
-import refreshService from '@/services/refresh.service';
-import { useMainTab } from '@/providers/MainTab';
 
 export interface ServerListSectionProps {
   title: string;
-  servers: Server[];
-  userId: string;
-  onServerClick?: (server: Server) => void;
+  servers: UserServer[];
+  user: User;
+  onServerClick?: (server: UserServer) => void;
 }
 
 const ServerListSection: React.FC<ServerListSectionProps> = ({
   title,
-  userId,
+  user,
   servers,
   onServerClick,
 }) => {
@@ -52,7 +46,7 @@ const ServerListSection: React.FC<ServerListSectionProps> = ({
     <div className={homePage['serverList']}>
       <div className={homePage['serverListTitle']}>{title}</div>
       <ServerListViewer
-        userId={userId}
+        user={user}
         servers={displayedServers}
         onServerClick={onServerClick}
       />
@@ -72,7 +66,7 @@ const ServerListSection: React.FC<ServerListSectionProps> = ({
 };
 
 const SearchResultItem: React.FC<{
-  server: Server;
+  server: UserServer;
   onClick: () => void;
 }> = ({ server, onClick }) => (
   <div className={homePage['dropdownItem']} onClick={onClick}>
@@ -94,52 +88,45 @@ const SearchResultItem: React.FC<{
 
 interface HomePageProps {
   user: User;
-  server: Server;
+  servers: UserServer[];
+  currentServer: UserServer;
   display: boolean;
 }
 
 const HomePageComponent: React.FC<HomePageProps> = React.memo(
-  ({ user, server, display }) => {
+  ({ user, servers, currentServer, display }) => {
     // Hooks
     const lang = useLanguage();
     const socket = useSocket();
     const mainTab = useMainTab();
 
     // Refs
-    const refreshed = useRef(false);
+    const searchRef = useRef<HTMLDivElement>(null);
 
     // States
-    const [userServers, setUserServers] = useState<UserServer[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const searchRef = useRef<HTMLDivElement>(null);
-    const [exactMatch, setExactMatch] = useState<Server | null>(null);
-    const [personalResults, setPersonalResults] = useState<Server[]>([]);
-    const [relatedResults, setRelatedResults] = useState<Server[]>([]);
+    const [exactMatch, setExactMatch] = useState<UserServer | null>(null);
+    const [personalResults, setPersonalResults] = useState<UserServer[]>([]);
+    const [relatedResults, setRelatedResults] = useState<UserServer[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [loadingGroupID, setLoadingGroupID] = useState<string>();
+    const [loadingServerID, setLoadingServerID] = useState<string>();
+    const [section, setSection] = useState<number>(0);
 
     // Variables
     const { userId, name: userName, currentServerId } = user;
     const hasResults =
       exactMatch || personalResults.length > 0 || relatedResults.length > 0;
-    const recentServers = userServers.filter((s) => s.recent).slice(0, 9);
-    const favoriteServers = userServers.filter((s) => s.favorite);
-    const personalServers = userServers
-      .filter((s) => s.permissionLevel > 1 && s.permissionLevel < 7)
-      .sort((a, b) => b.permissionLevel - a.permissionLevel);
+    const recentServers = servers
+      .filter((s) => s.recent)
+      .sort((a, b) => b.timestamp - a.timestamp);
+    const favoriteServers = servers.filter((s) => s.favorite);
+    const ownedServers = servers.filter((s) => s.permissionLevel > 1);
 
     // Handlers
-    const handleUserServersUpdate = (data: UserServer[] | null) => {
-      if (!data) data = [];
-      setUserServers(data);
-    };
-
     const handleSearchServer = (query: string) => {
-      if (!socket || query.trim() === '') {
-        setExactMatch(null);
-        setPersonalResults([]);
-        setRelatedResults([]);
+      if (!socket || !query.trim()) {
+        handleClearSearchState();
         return;
       }
       socket.send.searchServer({ query });
@@ -147,96 +134,93 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     };
 
     const handleConnectServer = (
-      serverId: Server['serverId'],
-      serverDisplayId: Server['displayId'],
+      serverId: UserServer['serverId'],
+      serverDisplayId: UserServer['displayId'],
     ) => {
       if (!socket) return;
+      if (currentServerId == serverId) {
+        mainTab.setSelectedTabId('server');
+        return;
+      }
       socket.send.connectServer({
         serverId,
         userId: userId,
       });
-      setShowDropdown(false);
-      setSearchQuery('');
+      handleClearSearchState();
       setIsLoading(true);
-      setLoadingGroupID(serverDisplayId);
+      setLoadingServerID(serverDisplayId);
     };
 
-    const handleServerSearch = useCallback(
-      (servers: Server[], query: string) => {
-        if (!query.trim()) {
-          setExactMatch(null);
-          setPersonalResults([]);
-          setRelatedResults([]);
-          return;
-        }
+    const handleServerSearch = (servers: UserServer[]) => {
+      setExactMatch(null);
+      setPersonalResults([]);
+      setRelatedResults([]);
 
-        setExactMatch(null);
-        setPersonalResults([]);
-        setRelatedResults([]);
+      if (!servers.length) return;
 
-        if (!servers.length) return;
+      const sortedServers = servers.sort((a, b) => {
+        const aHasId = a.displayId.toString().includes(searchQuery);
+        const bHasId = b.displayId.toString().includes(searchQuery);
+        if (aHasId && !bHasId) return -1;
+        if (!aHasId && bHasId) return 1;
+        return 0;
+      });
 
-        const exact = servers.find(
-          (server) => server.displayId.toString() === query.trim(),
-        );
+      const exact = sortedServers.find(
+        (server) => server.displayId === searchQuery,
+      );
+      setExactMatch(exact || null);
 
-        if (exact) setExactMatch(exact);
+      const personal = sortedServers.filter((server) =>
+        servers.map((s) => s.serverId).includes(server.serverId),
+      );
+      setPersonalResults(personal);
 
-        const sortedServers = servers.sort((a, b) => {
-          const aHasId = a.displayId.toString().includes(query.trim());
-          const bHasId = b.displayId.toString().includes(query.trim());
-          if (aHasId && !bHasId) return -1;
-          if (!aHasId && bHasId) return 1;
-          return 0;
-        });
-
-        const personal = sortedServers.filter(
-          (server) =>
-            userServers.some(
-              (s) => s.recent && s.serverId === server.serverId,
-            ) ||
-            userServers.some(
-              (s) => s.favorite && s.serverId === server.serverId,
-            ) ||
-            userServers.some((s) => s.owned && s.serverId === server.serverId),
-        );
-        setPersonalResults(personal);
-
-        const related = sortedServers
-          .filter((server) => !personal.includes(server))
-          .filter((server) => server.visibility !== 'invisible');
-        setRelatedResults(related);
-      },
-      [userServers, setExactMatch, setPersonalResults, setRelatedResults],
-    );
+      const related = sortedServers
+        .filter((server) => !personal.includes(server))
+        .filter((server) => server.visibility !== 'invisible');
+      setRelatedResults(related);
+    };
 
     const handleOpenCreateServer = (userId: User['userId']) => {
-      ipcService.popup.open(PopupType.CREATE_SERVER);
+      ipcService.popup.open(PopupType.CREATE_SERVER, 'createServer');
       ipcService.initialData.onRequest(PopupType.CREATE_SERVER, { userId });
     };
 
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClearSearchState = () => {
+      setSearchQuery('');
+      setExactMatch(null);
+      setPersonalResults([]);
+      setRelatedResults([]);
+      setShowDropdown(false);
+    };
+
+    const handleDeepLink = (serverId: string) => {
+      if (!userId) return;
+      handleConnectServer(userId, serverId);
+    };
+
+    const handleClickOutside = useCallback((event: MouseEvent) => {
       if (
         searchRef.current &&
         !searchRef.current.contains(event.target as Node)
       ) {
         setShowDropdown(false);
       }
-    };
+    }, []);
 
     // Effects
     useEffect(() => {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.addEventListener('mousedown', handleClickOutside);
-    }, []);
+      return () =>
+        document.removeEventListener('mousedown', handleClickOutside);
+    }, [handleClickOutside]);
 
     useEffect(() => {
       if (!socket) return;
 
       const eventHandlers = {
-        [SocketServerEvent.SERVER_SEARCH]: (servers: Server[]) =>
-          handleServerSearch(servers, searchQuery),
-        [SocketServerEvent.USER_SERVERS_UPDATE]: handleUserServersUpdate,
+        [SocketServerEvent.SERVER_SEARCH]: handleServerSearch,
       };
       const unsubscribe: (() => void)[] = [];
 
@@ -248,31 +232,23 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       return () => {
         unsubscribe.forEach((unsub) => unsub());
       };
-    }, [socket, searchQuery, handleServerSearch]);
-
-    useEffect(() => {
-      if (!userId || refreshed.current) return;
-      const refresh = async () => {
-        refreshed.current = true;
-        Promise.all([
-          refreshService.userServers({
-            userId: userId,
-          }),
-        ]).then(([userServers]) => {
-          handleUserServersUpdate(userServers);
-        });
-      };
-      refresh();
-    }, [userId]);
+    }, [socket, searchQuery]);
 
     useEffect(() => {
       if (mainTab.selectedTabId == 'server') {
-        if (!server) return;
+        if (!currentServer) return;
         setIsLoading(false);
-        setLoadingGroupID('');
+        setLoadingServerID('');
         localStorage.removeItem('trigger-handle-server-select');
       }
-    }, [server, isLoading, mainTab]);
+    }, [currentServer, isLoading, mainTab]);
+
+    useEffect(() => {
+      ipcService.deepLink.onDeepLink(handleDeepLink);
+      return () => {
+        ipcService.deepLink.offDeepLink();
+      };
+    }, [handleDeepLink]);
 
     useEffect(() => {
       if (!lang) return;
@@ -299,7 +275,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
         const { serverDisplayId } = JSON.parse(newValue);
         mainTab.setSelectedTabId('home');
         setIsLoading(true);
-        setLoadingGroupID(serverDisplayId);
+        setLoadingServerID(serverDisplayId);
       };
       window.addEventListener('storage', handler);
       return () => window.removeEventListener('storage', handler);
@@ -308,7 +284,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     return (
       <div
         className={homePage['homeWrapper']}
-        style={{ display: display ? 'flex' : 'none' }}
+        style={display ? {} : { display: 'none' }}
       >
         {/* Header */}
         <header className={homePage['homeHeader']}>
@@ -317,15 +293,14 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             <div className={homePage['forwardBtn']} />
             <div className={homePage['searchBar']} ref={searchRef}>
               <input
-                type="search"
                 placeholder={lang.tr.searchPlaceholder}
                 className={homePage['searchInput']}
                 value={searchQuery}
                 onChange={(e) => {
                   const value = e.target.value;
                   setSearchQuery(value);
-                  handleSearchServer(value);
                   setShowDropdown(true);
+                  handleSearchServer(value);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && exactMatch) {
@@ -337,120 +312,167 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
                 }}
                 onFocus={() => setShowDropdown(true)}
               />
-
-              {showDropdown && hasResults && (
+              {searchQuery ? (
+                <button
+                  className={homePage['searchInputClear']}
+                  onClick={handleClearSearchState}
+                />
+              ) : (
+                <i className={homePage['searchInputIcon']} />
+              )}
+              {showDropdown && (
                 <div className={homePage['searchDropdown']}>
-                  {exactMatch && (
-                    <div className={homePage['dropdownHeaderText']}>
-                      {lang.tr.quickEnterServer}
-                      {exactMatch.displayId}
+                  {hasResults && (
+                    <>
+                      {exactMatch && (
+                        <div className={homePage['dropdownHeaderText']}>
+                          {lang.tr.quickEnterServer} {exactMatch.displayId}
+                        </div>
+                      )}
+                      {personalResults.length > 0 && (
+                        <>
+                          <div className={homePage['dropdownHeader']}>
+                            <div>{lang.tr.personalExclusive}</div>
+                          </div>
+                          {personalResults.map((server) => (
+                            <SearchResultItem
+                              key={server.serverId}
+                              server={server}
+                              onClick={() => {
+                                handleConnectServer(
+                                  server.serverId,
+                                  server.displayId,
+                                );
+                              }}
+                            />
+                          ))}
+                        </>
+                      )}
+                      {relatedResults.length > 0 && (
+                        <>
+                          <div className={homePage['dropdownHeader']}>
+                            <div>{lang.tr.relatedSearch}</div>
+                          </div>
+                          {relatedResults.map((server) => (
+                            <SearchResultItem
+                              key={server.serverId}
+                              server={server}
+                              onClick={() => {
+                                handleConnectServer(
+                                  server.serverId,
+                                  server.displayId,
+                                );
+                              }}
+                            />
+                          ))}
+                        </>
+                      )}
+                    </>
+                  )}
+                  {!hasResults && searchQuery === '' && (
+                    <div
+                      className={`${homePage['dropdownItem']} ${homePage['inputEmptyItem']}`}
+                    >
+                      {lang.tr.searchEmpty}
                     </div>
-                  )}
-
-                  {personalResults.length > 0 && (
-                    <>
-                      <div className={homePage['dropdownHeader']}>
-                        <div>{lang.tr.personalExclusive}</div>
-                      </div>
-                      {personalResults.map((server) => (
-                        <SearchResultItem
-                          key={server.serverId}
-                          server={server}
-                          onClick={() =>
-                            handleConnectServer(
-                              server.serverId,
-                              server.displayId,
-                            )
-                          }
-                        />
-                      ))}
-                    </>
-                  )}
-
-                  {relatedResults.length > 0 && (
-                    <>
-                      <div className={homePage['dropdownHeader']}>
-                        <div>{lang.tr.relatedSearch}</div>
-                      </div>
-                      {relatedResults.map((server) => (
-                        <SearchResultItem
-                          key={server.serverId}
-                          server={server}
-                          onClick={() =>
-                            handleConnectServer(
-                              server.serverId,
-                              server.displayId,
-                            )
-                          }
-                        />
-                      ))}
-                    </>
                   )}
                 </div>
               )}
             </div>
           </div>
+
           <div className={homePage['mid']}>
-            <button
-              className={`${homePage['navegateItem']} ${homePage['active']}`}
+            <div
+              className={`${homePage['navegateItem']} ${
+                section === 0 ? homePage['active'] : ''
+              }`}
               data-key="60060"
+              onClick={() => setSection(0)}
             >
               {lang.tr.home}
-            </button>
-            <button className={homePage['navegateItem']} data-key="30014">
+            </div>
+            <div
+              className={`${homePage['navegateItem']} ${
+                section === 1 ? homePage['active'] : ''
+              }`}
+              data-key="30014"
+              onClick={() => setSection(1)}
+            >
               {lang.tr.game}
-            </button>
-            <button className={homePage['navegateItem']} data-key="30375">
+            </div>
+            <div
+              className={`${homePage['navegateItem']} ${
+                section === 2 ? homePage['active'] : ''
+              }`}
+              data-key="30375"
+              onClick={() => setSection(2)}
+            >
               {lang.tr.live}
-            </button>
+            </div>
           </div>
+
           <div className={homePage['right']}>
-            <button
+            <div
               className={homePage['navegateItem']}
               data-key="30014"
               onClick={() => handleOpenCreateServer(userId)}
             >
-              {lang.tr.createGroup}
-            </button>
-            <button className={homePage['navegateItem']} data-key="60004">
+              {lang.tr.createServers}
+            </div>
+            <div
+              className={homePage['navegateItem']}
+              data-key="60004"
+              onClick={() => setSection(3)}
+            >
               {lang.tr.personalExclusive}
-            </button>
+            </div>
           </div>
         </header>
 
-        {/* Main Content */}
-        <main className={homePage['homeContent']}>
+        {/* Announcement */}
+        <webview
+          src="https://ricecall.com.tw/announcement"
+          className={homePage['webview']}
+          style={section === 0 ? {} : { display: 'none' }}
+        />
+
+        {/* Personal Exclusive */}
+        <main
+          className={homePage['homeContent']}
+          style={section === 3 ? {} : { display: 'none' }}
+        >
           <ServerListSection
             title={lang.tr.recentVisits}
             servers={recentServers}
-            userId={userId}
+            user={user}
             onServerClick={(server) => {
-              if (currentServerId == server.serverId) {
-                mainTab.setSelectedTabId('server');
-              } else {
-                setIsLoading(true);
-                setLoadingGroupID(server.displayId);
-              }
+              handleConnectServer(server.serverId, server.displayId);
             }}
           />
           <ServerListSection
-            title={lang.tr.myGroups}
-            servers={personalServers}
-            userId={userId}
+            title={lang.tr.myServers}
+            servers={ownedServers}
+            user={user}
             onServerClick={(server) => {
-              setIsLoading(true);
-              setLoadingGroupID(server.displayId);
+              handleConnectServer(server.serverId, server.displayId);
             }}
           />
           <ServerListSection
-            title={lang.tr.favoriteGroups}
+            title={lang.tr.favoriteServers}
             servers={favoriteServers}
-            userId={userId}
+            user={user}
             onServerClick={(server) => {
-              setIsLoading(true);
-              setLoadingGroupID(server.displayId);
+              handleConnectServer(server.serverId, server.displayId);
             }}
           />
+        </main>
+
+        {/* Not Available */}
+        <main
+          className={homePage['homeContent']}
+          style={section === 1 || section === 2 ? {} : { display: 'none' }}
+        >
+          <div>{'抱歉，此頁面尚未開放'}</div>
         </main>
 
         {/* Loading */}
@@ -459,8 +481,8 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             <div className={homePage['loadingBox']}>
               <div className={homePage['loadingTitleContain']}>
                 <div>{lang.tr.connectingServer}</div>
-                <div className={homePage['loadingGroupID']}>
-                  {loadingGroupID}
+                <div className={homePage['loadingServerID']}>
+                  {loadingServerID}
                 </div>
               </div>
               <div className={homePage['loadingGif']}></div>

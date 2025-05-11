@@ -7,11 +7,10 @@ import React, {
 } from 'react';
 
 // Types
-import type { Badge, Server, User, UserServer } from '@/types';
-import { PopupType } from '@/types';
+import { Server, User, UserServer, PopupType, Friend } from '@/types';
 
 // Components
-import BadgeViewer from '@/components/viewers/Badge';
+import BadgeListViewer from '@/components/viewers/BadgeList';
 
 // Providers
 import { useSocket } from '@/providers/Socket';
@@ -55,71 +54,48 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
     const CURRENT_DAY = TODAY.getDate();
     const MAIN_TABS = [
       { id: 'about', label: lang.tr.about },
-      { id: 'groups', label: lang.tr.groups },
+      { id: 'groups', label: lang.tr.servers },
       { id: 'userSetting', label: '' },
     ];
 
     // User states
-    const [userAvatar, setUserAvatar] = useState<User['avatar']>(
-      createDefault.user().avatar,
-    );
-    const [userAvatarUrl, setUserAvatarUrl] = useState<User['avatarUrl']>(
-      createDefault.user().avatarUrl,
-    );
-    const [userName, setUserName] = useState<User['name']>(
-      createDefault.user().name,
-    );
-    const [userGender, setUserGender] = useState<User['gender']>(
-      createDefault.user().gender,
-    );
-    const [userSignature, setUserSignature] = useState<User['signature']>(
-      createDefault.user().signature,
-    );
-    const [userLevel, setUserLevel] = useState<User['level']>(
-      createDefault.user().level,
-    );
-    const [userXP, setUserXP] = useState<User['xp']>(createDefault.user().xp);
-    const [userRequiredXP, setUserRequiredXP] = useState<User['requiredXp']>(
-      createDefault.user().requiredXp,
-    );
-    const [userVip, setUserVip] = useState<User['vip']>(
-      createDefault.user().vip,
-    );
-    const [userBirthYear, setUserBirthYear] = useState<User['birthYear']>(
-      createDefault.user().birthYear,
-    );
-    const [userBirthMonth, setUserBirthMonth] = useState<User['birthMonth']>(
-      createDefault.user().birthMonth,
-    );
-    const [userBirthDay, setUserBirthDay] = useState<User['birthDay']>(
-      createDefault.user().birthDay,
-    );
-    const [userCountry, setUserCountry] = useState<User['country']>(
-      createDefault.user().country,
-    );
-    const [userServers, setUserServers] = useState<UserServer[]>([]);
-    const [userBadges, setUserBadges] = useState<Badge[]>([]);
+    const [user, setUser] = useState<User>(createDefault.user());
+    const [friend, setFriend] = useState<Friend>(createDefault.friend());
+    const [servers, setServers] = useState<UserServer[]>([]);
     const [serversView, setServersView] = useState('joined');
-    const [isFriend, setIsFriend] = useState(false);
     const [selectedTabId, setSelectedTabId] = useState<
       'about' | 'groups' | 'userSetting'
     >('about');
 
     // Variables
     const { userId, targetId } = initialData;
-    const userGrade = Math.min(56, userLevel);
+    const {
+      name: userName,
+      avatar: userAvatar,
+      avatarUrl: userAvatarUrl,
+      gender: userGender,
+      signature: userSignature,
+      level: userLevel,
+      xp: userXP,
+      requiredXp: userRequiredXP,
+      vip: userVip,
+      birthYear: userBirthYear,
+      birthMonth: userBirthMonth,
+      birthDay: userBirthDay,
+      country: userCountry,
+      badges: userBadges,
+    } = user;
     const isSelf = targetId === userId;
+    const isFriend = !!friend.targetId;
     const isEditing = isSelf && selectedTabId === 'userSetting';
-    const userJoinedServers = userServers
-      .filter(
-        (server) => server.permissionLevel > 1 && server.permissionLevel < 7,
-      )
+    const joinedServers = servers
+      .filter((s) => s.permissionLevel > 1 && s.permissionLevel < 7)
       .sort((a, b) => b.permissionLevel - a.permissionLevel);
-    const userFavoriteServers = userJoinedServers
-      .filter((server) => server.favorite)
+    const favoriteServers = servers
+      .filter((s) => s.favorite)
       .sort((a, b) => b.permissionLevel - a.permissionLevel);
-    const userRecentServers = userJoinedServers
-      .filter((server) => server.recent)
+    const recentServers = servers
+      .filter((s) => s.recent)
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 4);
 
@@ -186,35 +162,12 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
       socket.send.updateUser({ user, userId });
     };
 
-    const handleUserUpdate = (data: User | null) => {
-      if (!data) data = createDefault.user();
-      setUserName(data.name);
-      setUserAvatar(data.avatar);
-      setUserAvatarUrl(data.avatarUrl);
-      setUserGender(data.gender);
-      setUserSignature(data.signature);
-      setUserLevel(data.level);
-      setUserVip(data.vip);
-      setUserBirthYear(data.birthYear);
-      setUserBirthMonth(data.birthMonth);
-      setUserBirthDay(data.birthDay);
-      setUserCountry(data.country);
-      setUserRequiredXP(data.requiredXp);
-      setUserXP(data.xp);
-      setUserBadges(data.badges);
-    };
-
-    const handleUserServerUpdate = (data: UserServer[] | null) => {
-      if (!data) return;
-      setUserServers(data);
-    };
-
     const handleOpenApplyFriend = (
       userId: User['userId'],
       targetId: User['userId'],
     ) => {
-      ipcService.popup.open(PopupType.APPLY_FRIEND);
-      ipcService.initialData.onRequest(PopupType.APPLY_FRIEND, {
+      ipcService.popup.open(PopupType.APPLY_FRIEND, 'applyFriend');
+      ipcService.initialData.onRequest('applyFriend', {
         userId,
         targetId,
       });
@@ -260,13 +213,20 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
           refreshService.userServers({
             userId: targetId,
           }),
-          refreshService.userFriends({
-            userId: targetId,
+          refreshService.friend({
+            userId: userId,
+            targetId: targetId,
           }),
-        ]).then(([user, userServers, userFriends]) => {
-          handleUserUpdate(user);
-          handleUserServerUpdate(userServers);
-          setIsFriend(!!userFriends?.find((fd) => fd.targetId === userId));
+        ]).then(([user, servers, friend]) => {
+          if (user) {
+            setUser(user);
+          }
+          if (servers) {
+            setServers(servers);
+          }
+          if (friend) {
+            setFriend(friend);
+          }
         });
       };
       refresh();
@@ -276,13 +236,16 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
       const daysInMonth = new Date(userBirthYear, userBirthMonth, 0).getDate();
 
       if (userBirthDay > daysInMonth) {
-        setUserBirthDay(daysInMonth);
+        setUser((prev) => ({ ...prev, birthDay: daysInMonth }));
       }
 
       if (isFutureDate(userBirthYear, userBirthMonth, userBirthDay)) {
-        setUserBirthYear(CURRENT_YEAR);
-        setUserBirthMonth(CURRENT_MONTH);
-        setUserBirthDay(CURRENT_DAY);
+        setUser((prev) => ({
+          ...prev,
+          birthYear: CURRENT_YEAR,
+          birthMonth: CURRENT_MONTH,
+          birthDay: CURRENT_DAY,
+        }));
       }
     }, [
       userBirthYear,
@@ -309,18 +272,18 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                     className={setting['button']}
                     onClick={() => setSelectedTabId('userSetting')}
                   >
-                    {'編輯資料' /** EDIT PROFILE **/}
+                    {lang.tr.editProfile}
                   </div>
                 </div>
               )}
               <div className={setting['userAboutMeShow']}>{userSignature}</div>
               <div className={setting['userProfileContent']}>
                 <div className={setting['title']}>
-                  {'最近訪問' /** LAST JOIN GROUP **/}
+                  {lang.tr.recentlyJoinServer}
                 </div>
-                {!ProfilePrivate && userRecentServers.length ? (
+                {!ProfilePrivate && recentServers.length ? (
                   <div className={setting['serverItems']}>
-                    {userRecentServers.map((server) => (
+                    {recentServers.map((server) => (
                       <div
                         key={server.serverId}
                         className={setting['serverItem']}
@@ -356,21 +319,21 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                 ) : ProfilePrivate ? (
                   PrivateElement(
                     <>
-                      對方沒有對外
+                      {lang.tr.notPublicRecentServersTop}
                       <br />
-                      公開最近訪問
+                      {lang.tr.notPublicRecentServersBottom}
                     </>,
                   )
                 ) : (
-                  PrivateElement('最近沒訪問語音群')
+                  PrivateElement(lang.tr.noRecentServers)
                 )}
               </div>
               <div className={`${setting['userProfileContent']}`}>
                 <div className={setting['title']}>
-                  {'最近獲得' /** BADGE TITLE **/}
+                  {lang.tr.recentlyEarnedBadges}
                 </div>
                 <div className={setting['badgeViewer']}>
-                  <BadgeViewer badges={userBadges} maxDisplay={13} />
+                  <BadgeListViewer badges={userBadges} maxDisplay={13} />
                 </div>
               </div>
             </>
@@ -384,8 +347,8 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                     value={serversView}
                     onChange={(e) => setServersView(e.target.value)}
                   >
-                    <option value="joined">{'加入的群'}</option>
-                    <option value="favorite">{'收藏的群'}</option>
+                    <option value="joined">{lang.tr.joinedServers}</option>
+                    <option value="favorite">{lang.tr.favoriteServers}</option>
                   </select>
                 </div>
               </div>
@@ -394,14 +357,14 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                   ? ProfilePrivate
                     ? PrivateElement(
                         <>
-                          對方沒有對外公開
+                          {lang.tr.notPublicJoinedServersTop}
                           <br />
-                          加入的語音群
+                          {lang.tr.notPublicJoinedServersBottom}
                         </>,
                       )
-                    : userJoinedServers.length === 0
-                    ? PrivateElement('沒有加入的語音群')
-                    : userJoinedServers.map((server) => (
+                    : joinedServers.length === 0
+                    ? PrivateElement(lang.tr.noJoinedServers)
+                    : joinedServers.map((server) => (
                         <div
                           key={server.serverId}
                           className={setting['serverItem']}
@@ -431,7 +394,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                                 }`}
                               />
                               <div className={setting['contributionBox']}>
-                                <div>{'貢獻:'}</div>
+                                <div className={setting['contributionIcon']} />
                                 <div className={setting['contributionValue']}>
                                   {server.contribution}
                                 </div>
@@ -443,14 +406,14 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                   : ProfilePrivate
                   ? PrivateElement(
                       <>
-                        對方沒有對外公開
+                        {lang.tr.notPublicFavoriteServersTop}
                         <br />
-                        收藏的語音群
+                        {lang.tr.notPublicFavoriteServersBottom}
                       </>,
                     )
-                  : userFavoriteServers.length === 0
-                  ? PrivateElement('沒有收藏的語音群')
-                  : userFavoriteServers.map((server) => (
+                  : favoriteServers.length === 0
+                  ? PrivateElement(lang.tr.noFavoriteServers)
+                  : favoriteServers.map((server) => (
                       <div
                         key={server.serverId}
                         className={setting['serverItem']}
@@ -480,7 +443,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                               }`}
                             />
                             <div className={setting['contributionBox']}>
-                              <div>{'貢獻:'}</div>
+                              <div className={setting['contributionIcon']} />
                               <div className={setting['contributionValue']}>
                                 {server.contribution}
                               </div>
@@ -544,12 +507,13 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                         {lang.tr.nickname}
                       </label>
                       <input
+                        name="name"
                         type="text"
-                        id="profile-form-nickname"
                         value={userName}
                         maxLength={32}
-                        minLength={2}
-                        onChange={(e) => setUserName(e.target.value)}
+                        onChange={(e) =>
+                          setUser((prev) => ({ ...prev, name: e.target.value }))
+                        }
                       />
                     </div>
 
@@ -566,7 +530,10 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                         <select
                           value={userGender}
                           onChange={(e) =>
-                            setUserGender(e.target.value as User['gender'])
+                            setUser((prev) => ({
+                              ...prev,
+                              gender: e.target.value as User['gender'],
+                            }))
                           }
                         >
                           <option value="Male">{lang.tr.male}</option>
@@ -587,7 +554,12 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                       <div className={popup['selectBox']}>
                         <select
                           value={userCountry}
-                          onChange={(e) => setUserCountry(e.target.value)}
+                          onChange={(e) =>
+                            setUser((prev) => ({
+                              ...prev,
+                              country: e.target.value,
+                            }))
+                          }
                         >
                           <option value="taiwan">{lang.tr.taiwan}</option>
                           <option value="china">{lang.tr.china}</option>
@@ -651,7 +623,10 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                             id="birthYear"
                             value={userBirthYear}
                             onChange={(e) =>
-                              setUserBirthYear(Number(e.target.value))
+                              setUser((prev) => ({
+                                ...prev,
+                                birthYear: Number(e.target.value),
+                              }))
                             }
                           >
                             {yearOptions.map((year) => (
@@ -671,7 +646,10 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                             id="birthMonth"
                             value={userBirthMonth}
                             onChange={(e) =>
-                              setUserBirthMonth(Number(e.target.value))
+                              setUser((prev) => ({
+                                ...prev,
+                                birthMonth: Number(e.target.value),
+                              }))
                             }
                           >
                             {monthOptions.map((month) => (
@@ -694,7 +672,10 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                             id="birthDay"
                             value={userBirthDay}
                             onChange={(e) =>
-                              setUserBirthDay(Number(e.target.value))
+                              setUser((prev) => ({
+                                ...prev,
+                                birthDay: Number(e.target.value),
+                              }))
                             }
                           >
                             {dayOptions.map((day) => (
@@ -724,11 +705,16 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                       {lang.tr.signature}
                     </label>
                     <input
+                      name="signature"
                       type="text"
-                      id="profile-form-signature"
                       value={userSignature}
-                      maxLength={200}
-                      onChange={(e) => setUserSignature(e.target.value)}
+                      maxLength={100}
+                      onChange={(e) =>
+                        setUser((prev) => ({
+                          ...prev,
+                          signature: e.target.value,
+                        }))
+                      }
                     />
                   </div>
 
@@ -741,7 +727,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                     >
                       {lang.tr.about}
                     </label>
-                    <textarea id="profile-form-about" />
+                    <textarea name="about" />
                   </div>
                 </div>
               </div>
@@ -786,8 +772,11 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                     formData.append('_file', reader.result as string);
                     const data = await apiService.post('/upload', formData);
                     if (data) {
-                      setUserAvatar(data.avatar);
-                      setUserAvatarUrl(data.avatarUrl);
+                      setUser((prev) => ({
+                        ...prev,
+                        avatar: data.avatar,
+                        avatarUrl: data.avatarUrl,
+                      }));
                     }
                   };
                   reader.readAsDataURL(file);
@@ -806,9 +795,12 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                 />
               )}
               <div
-                className={`${grade['grade']} ${grade[`lv-${userGrade}`]}`}
+                className={`
+                  ${grade['grade']} 
+                  ${grade[`lv-${Math.min(56, userLevel)}`]}
+                `}
                 title={
-                  `等級：${userLevel}級，積分：${userXP}，升級還需：${userRequiredXP}` /** LEVEL:{userLevel} EXP:{userXP} LEVEL UP REQUIRED:{userRequiredXP}**/
+                  `${lang.tr.level}：${userLevel}，${lang.tr.xp}：${userXP}，${lang.tr.xpDifference}：${userRequiredXP}` /** LEVEL:{userLevel} EXP:{userXP} LEVEL UP REQUIRED:{userRequiredXP}**/
                 }
               />
             </div>
@@ -871,7 +863,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
             </div>
           )}
           <div className={popup['button']} onClick={() => handleClose()}>
-            {'關閉' /** CLOSE **/}
+            {lang.tr.close /** CLOSE **/}
           </div>
         </div>
       </div>

@@ -37,15 +37,16 @@ const DialogPopup: React.FC<DialogPopupProps> = (
   const containerRef = useRef<HTMLFormElement>(null);
 
   // Handlers
-  const handleClose = () => {
-    ipcService.window.close();
-  };
-
   const handleSubmit = () => {
     ipcService.popup.submit(submitTo);
     handleClose();
   };
 
+  const handleClose = () => {
+    ipcService.window.close();
+  };
+
+  // Effects
   useEffect(() => {
     containerRef.current?.focus();
   }, []);
@@ -61,15 +62,13 @@ const DialogPopup: React.FC<DialogPopupProps> = (
     >
       <div className={popup['popupBody']}>
         <div className={setting['body']}>
-          <div className={`${popup['inputGroup']} ${popup['dialogCenter']}`}>
-            <div className={`${popup['inputBox']} ${popup['dialogContent']}`}>
-              <div
-                className={`${popup['dialogIcon']} ${
-                  popup[DIALOG_ICON[iconType]]
-                }`}
-              />
-              <div className={popup['label']}>{title}</div>
-            </div>
+          <div className={popup['dialogContent']}>
+            <div
+              className={`${popup['dialogIcon']} ${
+                popup[DIALOG_ICON[iconType]]
+              }`}
+            />
+            <div className={popup['label']}>{title}</div>
           </div>
         </div>
       </div>

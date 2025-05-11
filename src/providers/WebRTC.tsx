@@ -244,7 +244,11 @@ const WebRTCProvider = ({ children }: WebRTCProviderProps) => {
     (deviceId: string) => {
       navigator.mediaDevices
         .getUserMedia({
-          audio: true,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: false,
+          },
           ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
         })
         .then((stream) => {
@@ -613,14 +617,14 @@ const WebRTCProvider = ({ children }: WebRTCProviderProps) => {
     handleUpdateInputStream('');
     handleUpdateOutputStream('');
 
-    ipcService.audio.get('input', async (deviceId) => {
+    ipcService.systemSettings.get.inputAudioDevice(async (deviceId) => {
       // Get device info
       const devices = await navigator.mediaDevices.enumerateDevices();
       const deviceInfo = devices.find((d) => d.deviceId === deviceId);
       console.info('New input stream device info:', deviceInfo);
       handleUpdateInputStream(deviceId || '');
     });
-    ipcService.audio.get('output', async (deviceId) => {
+    ipcService.systemSettings.get.outputAudioDevice(async (deviceId) => {
       // Get device info
       const devices = await navigator.mediaDevices.enumerateDevices();
       const deviceInfo = devices.find((d) => d.deviceId === deviceId);

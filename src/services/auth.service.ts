@@ -13,7 +13,6 @@ interface RegisterFormData {
   account: string;
   password: string;
   username: string;
-  gender: 'Male' | 'Female';
 }
 
 interface AccountItem {
@@ -35,45 +34,39 @@ const saveParsed = (data: { accounts: AccountItem[]; remembered: string[] }) =>
   localStorage.setItem('login-accounts', JSON.stringify(data));
 
 export const authService = {
-  login: async (formData: LoginFormData): Promise<boolean> => {
-    const res = await apiService.post('/login', {
-      ...formData,
-      password: formData.password,
-    });
+  login: async (data: LoginFormData): Promise<boolean> => {
+    const res = await apiService.post('/login', data);
     if (!res?.token) return false;
     localStorage.setItem('token', res.token);
     const parsed = getParsed();
     parsed.accounts = parsed.accounts.map((acc) =>
-      acc.account === formData.account
+      acc.account === data.account
         ? {
             ...acc,
-            token: formData.autoLogin ? res.token : '',
-            auto: formData.autoLogin,
+            token: data.autoLogin ? res.token : '',
+            auto: data.autoLogin,
             selected: true,
           }
         : { ...acc, token: acc.auto ? acc.token : '', selected: false },
     );
-    if (!parsed.accounts.find((a) => a.account === formData.account)) {
+    if (!parsed.accounts.find((a) => a.account === data.account)) {
       parsed.accounts.push({
-        account: formData.account,
-        token: formData.autoLogin ? res.token : '',
-        auto: formData.autoLogin,
+        account: data.account,
+        token: data.autoLogin ? res.token : '',
+        auto: data.autoLogin,
         selected: true,
       });
     }
-    parsed.remembered = formData.rememberAccount
-      ? Array.from(new Set([...parsed.remembered, formData.account]))
-      : parsed.remembered.filter((a) => a !== formData.account);
+    parsed.remembered = data.rememberAccount
+      ? Array.from(new Set([...parsed.remembered, data.account]))
+      : parsed.remembered.filter((a) => a !== data.account);
     saveParsed(parsed);
     ipcService.auth.login(res.token);
     return true;
   },
 
   register: async (data: RegisterFormData) => {
-    const res = await apiService.post('/register', {
-      ...data,
-      password: data.password,
-    });
+    const res = await apiService.post('/register', data);
     return !!res;
   },
 

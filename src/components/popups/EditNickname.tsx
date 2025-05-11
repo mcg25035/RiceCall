@@ -32,20 +32,16 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
     // Refs
     const refreshRef = useRef(false);
 
+    // States
+    const [member, setMember] = useState<Member>(createDefault.member());
+    const [user, setUser] = useState<User>(createDefault.user());
+
     // Variables
     const { userId, serverId } = initialData;
-
-    // States
-    const [memberNickname, setMemberNickname] = useState(
-      createDefault.member().nickname,
-    );
-    const [userName, setUserName] = useState(createDefault.user().name);
+    const { nickname: memberNickname } = member;
+    const { name: userName } = user;
 
     // Handlers
-    const handleClose = () => {
-      ipcService.window.close();
-    };
-
     const handleUpdateMember = (
       member: Partial<Member>,
       userId: User['userId'],
@@ -55,14 +51,8 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
       socket.send.updateMember({ member, userId, serverId });
     };
 
-    const handleMemberUpdate = (data: Member | null) => {
-      if (!data) data = createDefault.member();
-      setMemberNickname(data.nickname);
-    };
-
-    const handleUserUpdate = (data: User | null) => {
-      if (!data) data = createDefault.user();
-      setUserName(data.name);
+    const handleClose = () => {
+      ipcService.window.close();
     };
 
     // Effects
@@ -71,16 +61,20 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
       const refresh = async () => {
         refreshRef.current = true;
         Promise.all([
+          refreshService.user({
+            userId: userId,
+          }),
           refreshService.member({
             userId: userId,
             serverId: serverId,
           }),
-          refreshService.user({
-            userId: userId,
-          }),
-        ]).then(([member, user]) => {
-          handleMemberUpdate(member);
-          handleUserUpdate(user);
+        ]).then(([user, member]) => {
+          if (user) {
+            setUser(user);
+          }
+          if (member) {
+            setMember(member);
+          }
         });
       };
       refresh();
@@ -100,11 +94,15 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
                   {lang.tr.pleaseEnterTheMemberNickname}
                 </div>
                 <input
-                  className={popup['input']}
+                  name="nickname"
                   type="text"
                   value={memberNickname || ''}
+                  maxLength={32}
                   onChange={(e) => {
-                    setMemberNickname(e.target.value);
+                    setMember((prev) => ({
+                      ...prev,
+                      nickname: e.target.value,
+                    }));
                   }}
                 />
               </div>
@@ -113,7 +111,7 @@ const EditNicknamePopup: React.FC<EditNicknamePopupProps> = React.memo(
         </div>
         <div className={popup['popupFooter']}>
           <button
-            className={`${popup['button']}`}
+            className={popup['button']}
             onClick={() => {
               handleUpdateMember(
                 { nickname: memberNickname },

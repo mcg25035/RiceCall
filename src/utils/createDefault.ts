@@ -6,11 +6,12 @@ import {
   MemberApplication,
   ServerMember,
   Permission,
-  UserMember,
+  UserServer,
   Member,
   Friend,
   UserFriend,
   FriendGroup,
+  UserServerStatus,
 } from '@/types';
 
 export const createDefault = {
@@ -30,7 +31,6 @@ export const createDefault = {
     vip: 0,
     xp: 0,
     requiredXp: 0,
-    // progress: 0,
     currentChannelId: '',
     currentServerId: '',
     lastActiveAt: 0,
@@ -42,13 +42,12 @@ export const createDefault = {
   channel: (overrides: Partial<Channel> = {}): Channel => ({
     channelId: '',
     name: '',
+    announcement: '',
     type: 'channel',
     visibility: 'public',
     password: '',
     voiceMode: 'free',
     isLobby: false,
-    // isRoot: false,
-    slowmode: false,
     forbidText: false,
     forbidGuestText: false,
     forbidGuestUrl: false,
@@ -70,19 +69,19 @@ export const createDefault = {
     avatar: `${Date.now()}`,
     avatarUrl: `${process.env.NEXT_PUBLIC_SERVER_URL}/images/serverAvatars/`,
     announcement: '',
+    applyNotice: '',
     description: '',
     slogan: '',
     type: 'other',
     visibility: 'public',
-    allowDirectMessage: true,
+    receiveApply: true,
     level: 0,
     wealth: 0,
     displayId: '',
     lobbyId: '',
+    receptionLobbyId: '',
     ownerId: '',
     createdAt: 0,
-    receiveApply: true,
-    applyNotice: '',
     ...overrides,
   }),
 
@@ -113,7 +112,7 @@ export const createDefault = {
   member: (overrides: Partial<Member> = {}): Member => ({
     userId: '',
     serverId: '',
-    isBlocked: false,
+    isBlocked: 0,
     nickname: null,
     contribution: 0,
     lastMessageTime: 0,
@@ -123,25 +122,35 @@ export const createDefault = {
     ...overrides,
   }),
 
-  userMember: (overrides: Partial<UserMember> = {}): UserMember => ({
-    ...createDefault.member(),
+  userServerStatus: (
+    overrides: Partial<UserServerStatus> = {},
+  ): UserServerStatus => ({
+    recent: false,
+    owned: false,
+    favorite: false,
+    timestamp: 0,
+    ...overrides,
+  }),
+
+  userServer: (overrides: Partial<UserServer> = {}): UserServer => ({
     ...createDefault.server(),
+    ...createDefault.member(),
+    ...createDefault.userServerStatus(),
     ...overrides,
   }),
 
   serverMember: (overrides: Partial<ServerMember> = {}): ServerMember => ({
-    ...createDefault.member(),
     ...createDefault.user(),
+    ...createDefault.member(),
     ...overrides,
   }),
 
   friendApplication: (
     overrides: Partial<FriendApplication> = {},
   ): FriendApplication => ({
-    description: '',
-    applicationStatus: 'pending',
     senderId: '',
     receiverId: '',
+    description: '',
     ...createDefault.user(),
     ...overrides,
   }),
@@ -151,7 +160,6 @@ export const createDefault = {
   ): MemberApplication => ({
     serverId: '',
     description: '',
-    applicationStatus: 'pending',
     ...createDefault.user(),
     ...overrides,
   }),

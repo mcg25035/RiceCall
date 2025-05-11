@@ -4,52 +4,29 @@ import React from 'react';
 import homePage from '@/styles/pages/home.module.css';
 
 // Type
-import { Server, User } from '@/types';
-
-// Providers
-import { useSocket } from '@/providers/Socket';
+import { UserServer, User } from '@/types';
 
 interface ServerCardProps {
-  server: Server;
-  userId: User['userId'];
+  user: User;
+  server: UserServer;
   onClick?: () => void;
 }
 
 const ServerCard: React.FC<ServerCardProps> = React.memo(
-  ({ userId, server, onClick }) => {
-    // Hooks
-    const socket = useSocket();
-
+  ({ user, server, onClick }) => {
     // Variables
     const {
-      serverId,
       name: serverName,
       avatarUrl: serverAvatarUrl,
       displayId: serverDisplayId,
       slogan: serverSlogan,
       ownerId: serverOwnerId,
     } = server;
+    const { userId } = user;
     const isOwner = serverOwnerId === userId;
 
-    // Handlers
-    const handleServerSelect = (
-      userId: User['userId'],
-      serverId: Server['serverId'],
-    ) => {
-      setTimeout(() => {
-        if (!socket) return;
-        socket.send.connectServer({ userId, serverId });
-      }, 1500);
-      onClick?.();
-    };
-
     return (
-      <div
-        className={homePage['serverCard']}
-        onClick={() => {
-          handleServerSelect(userId, serverId);
-        }}
-      >
+      <div className={homePage['serverCard']} onClick={onClick}>
         <div
           className={homePage['serverAvatarPicture']}
           style={{ backgroundImage: `url(${serverAvatarUrl})` }}
@@ -78,19 +55,19 @@ ServerCard.displayName = 'ServerCard';
 
 // ServerGrid Component
 interface ServerListViewerProps {
-  servers: Server[];
-  userId: User['userId'];
-  onServerClick?: (server: Server) => void;
+  user: User;
+  servers: UserServer[];
+  onServerClick?: (server: UserServer) => void;
 }
 
 const ServerListViewer: React.FC<ServerListViewerProps> = React.memo(
-  ({ userId, servers, onServerClick }) => {
+  ({ user, servers, onServerClick }) => {
     return (
       <div className={homePage['serverCards']}>
         {servers.map((server) => (
           <ServerCard
             key={server.serverId}
-            userId={userId}
+            user={user}
             server={server}
             onClick={() => onServerClick?.(server)}
           />

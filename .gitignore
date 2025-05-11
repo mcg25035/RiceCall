@@ -32,29 +32,12 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
+.env
+!.env.example
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
+# lock files
 package-lock.json
-
-# sqlite
-*.sqlite
-
-# uploads
-/test-server/uploads/*
-!/test-server/uploads/serverAvatars
-!/test-server/uploads/userAvatars
-/test-server/uploads/serverAvatars/*
-!/test-server/uploads/serverAvatars/__default.png
-/test-server/uploads/userAvatars/*
-!/test-server/uploads/userAvatars/__default.png
-
-# env
-.env
-!.env.example

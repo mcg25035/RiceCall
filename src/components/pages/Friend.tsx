@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 // CSS
 import friendPage from '@/styles/pages/friend.module.css';
@@ -8,10 +8,10 @@ import vip from '@/styles/vip.module.css';
 
 // Components
 import FriendListViewer from '@/components/viewers/FriendList';
-import BadgeViewer from '@/components/viewers/Badge';
+import BadgeListViewer from '@/components/viewers/BadgeList';
 
 // Types
-import { FriendGroup, SocketServerEvent, User, UserFriend } from '@/types';
+import { User, UserFriend, FriendGroup } from '@/types';
 
 // Providers
 import { useSocket } from '@/providers/Socket';
@@ -19,15 +19,16 @@ import { useLanguage } from '@/providers/Language';
 
 // Services
 import ipcService from '@/services/ipc.service';
-import refreshService from '@/services/refresh.service';
 
 interface FriendPageProps {
   user: User;
+  friends: UserFriend[];
+  friendGroups: FriendGroup[];
   display: boolean;
 }
 
 const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
-  ({ user, display }) => {
+  ({ user, friends, friendGroups, display }) => {
     // Hooks
     const lang = useLanguage();
     const socket = useSocket();
@@ -35,12 +36,7 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
     // Constants
     const MAXLENGTH = 300;
 
-    // Refs
-    const refreshed = useRef(false);
-
     // States
-    const [userFriendGroups, setUserFriendGroups] = useState<FriendGroup[]>([]);
-    const [userFriends, setUserFriends] = useState<UserFriend[]>([]);
     const [isComposing, setIsComposing] = useState<boolean>(false);
     const [sidebarWidth, setSidebarWidth] = useState<number>(270);
     const [isResizing, setIsResizing] = useState<boolean>(false);
@@ -58,7 +54,6 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
       vip: userVip,
       badges: userBadges,
     } = user;
-    const userGrade = Math.min(56, userLevel); // 56 is max level
 
     // Handlers
     const handleChangeSignature = (
@@ -69,30 +64,13 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
       socket.send.updateUser({ user: { signature }, userId });
     };
 
-    const handleUserFriendGroupsUpdate = (data: FriendGroup[] | null) => {
-      if (!data) data = [];
-      setUserFriendGroups(data);
-    };
-
-    const handleUserFriendsUpdate = (data: UserFriend[] | null) => {
-      if (!data) data = [];
-      setUserFriends(data);
-    };
-
-    const handleStartResizing = useCallback((e: React.MouseEvent) => {
-      e.preventDefault();
-      setIsResizing(true);
-    }, []);
-
-    const handleStopResizing = useCallback(() => {
-      setIsResizing(false);
-    }, []);
-
     const handleResize = useCallback(
       (e: MouseEvent) => {
         if (!isResizing) return;
-        const maxWidth = window.innerWidth * 0.3;
-        const newWidth = Math.max(270, Math.min(e.clientX, maxWidth));
+        // const maxWidth = window.innerWidth * 0.3;
+        const maxWidth = 400;
+        const minWidth = 250;
+        const newWidth = Math.max(minWidth, Math.min(e.clientX, maxWidth));
         setSidebarWidth(newWidth);
       },
       [isResizing],
@@ -101,51 +79,12 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
     // Effects
     useEffect(() => {
       window.addEventListener('mousemove', handleResize);
-      window.addEventListener('mouseup', handleStopResizing);
+      window.addEventListener('mouseup', () => setIsResizing(false));
       return () => {
         window.removeEventListener('mousemove', handleResize);
-        window.removeEventListener('mouseup', handleStopResizing);
+        window.removeEventListener('mouseup', () => setIsResizing(false));
       };
-    }, [handleResize, handleStopResizing]);
-
-    useEffect(() => {
-      if (!socket) return;
-
-      const eventHandlers = {
-        [SocketServerEvent.USER_FRIEND_GROUPS_UPDATE]:
-          handleUserFriendGroupsUpdate,
-        [SocketServerEvent.USER_FRIENDS_UPDATE]: handleUserFriendsUpdate,
-      };
-      const unsubscribe: (() => void)[] = [];
-
-      Object.entries(eventHandlers).map(([event, handler]) => {
-        const unsub = socket.on[event as SocketServerEvent](handler);
-        unsubscribe.push(unsub);
-      });
-
-      return () => {
-        unsubscribe.forEach((unsub) => unsub());
-      };
-    }, [socket]);
-
-    useEffect(() => {
-      if (!userId || refreshed.current) return;
-      const refresh = async () => {
-        refreshed.current = true;
-        Promise.all([
-          refreshService.userFriendGroups({
-            userId: userId,
-          }),
-          refreshService.userFriends({
-            userId: userId,
-          }),
-        ]).then(([userFriendGroups, userFriends]) => {
-          handleUserFriendGroupsUpdate(userFriendGroups);
-          handleUserFriendsUpdate(userFriends);
-        });
-      };
-      refresh();
-    }, [userId]);
+    }, [handleResize]);
 
     useEffect(() => {
       if (!lang) return;
@@ -169,7 +108,7 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
     return (
       <div
         className={friendPage['friendWrapper']}
-        style={{ display: display ? 'flex' : 'none' }}
+        style={display ? {} : { display: 'none' }}
       >
         {/* Header */}
         <header className={friendPage['friendHeader']}>
@@ -181,7 +120,9 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
             <div className={friendPage['container']}>
               <div className={friendPage['levelIcon']} />
               <div
-                className={`${grade['grade']} ${grade[`lv-${userGrade}`]}`}
+                className={`${grade['grade']} ${
+                  grade[`lv-${Math.min(56, userLevel)}`]
+                }`}
               />
               <div className={friendPage['wealthIcon']} />
               <label className={friendPage['wealthValue']}>0</label>
@@ -194,7 +135,7 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
             <div
               className={`${friendPage['container']} ${friendPage['myBadges']}`}
             >
-              <BadgeViewer badges={userBadges} maxDisplay={5} />
+              <BadgeListViewer badges={userBadges} maxDisplay={5} />
             </div>
           </div>
           <div className={friendPage['signatureBox']}>
@@ -231,16 +172,16 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
             style={{ width: `${sidebarWidth}px` }}
           >
             <FriendListViewer
-              friendGroups={userFriendGroups || []}
-              friends={userFriends || []}
-              userId={userId}
+              friendGroups={friendGroups}
+              friends={friends}
+              user={user}
             />
           </div>
           {/* Resize Handle */}
           <div
             className="resizeHandle"
-            onMouseDown={handleStartResizing}
-            onMouseUp={handleStopResizing}
+            onMouseDown={() => setIsResizing(true)}
+            onMouseUp={() => setIsResizing(false)}
           />
           {/* Right Content */}
           <div className={friendPage['mainContent']}>

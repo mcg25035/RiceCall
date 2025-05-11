@@ -136,7 +136,6 @@
   min-height: 0;
   min-width: 0;
   background-color: #f1f2f5;
-  border-right: 1px solid #e2e8f0;
 }
 
 .sidebar .navigateTabs {
@@ -206,7 +205,7 @@
   padding-bottom: 0;
   padding-right: 0;
   border-top: 1px solid #ddd;
-  margin-top: 5px;
+  margin-top: 2;
   background: #fff;
 }
 
@@ -215,7 +214,6 @@
   padding: 5px;
   border: 1px solid #fff;
   width: 125px;
-  outline: none;
 }
 
 .searchBar .searchIcon {
@@ -313,11 +311,11 @@
 
 .friendList .tab {
   font-weight: bold;
-  cursor: pointer;
   display: flex;
   align-items: center;
   padding: 5px;
   border-radius: 3px;
+  font-size: 13px;
 }
 
 .friendList .tab:hover {
@@ -325,12 +323,12 @@
 }
 
 .friendList .tab .tabLable {
-  font-size: 1rem;
-  margin-right: 5px;
+  margin-right: 1;
+  font-weight: 100;
 }
 
 .friendList .tab .tabCount {
-  font-size: 1rem;
+  font-weight: 100;
 }
 
 .friendList .tab .toggleIcon {
@@ -345,16 +343,8 @@
   background-position: 0 0;
 }
 
-.friendList .tab:hover .toggleIcon {
-  background-position: 0 -14px;
-}
-
 .friendList .tab .toggleIcon.expanded {
   background-position: -14px 0;
-}
-
-.friendList .tab:hover .toggleIcon.expanded {
-  background-position: -14px -14px;
 }
 
 .friendCard {

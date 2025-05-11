@@ -16,6 +16,11 @@ import {
   Server,
   User,
   Channel,
+  UserServer,
+  FriendGroup,
+  UserFriend,
+  ServerMember,
+  ChannelMessage,
 } from '@/types';
 
 // Pages
@@ -28,8 +33,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 // Utils
 import { createDefault } from '@/utils/createDefault';
-import { StandardizedError } from '@/utils/errorHandler';
-import { errorHandler } from '@/utils/errorHandler';
+import StandardizedError, { errorHandler } from '@/utils/errorHandler';
 
 // Providers
 import WebRTCProvider from '@/providers/WebRTC';
@@ -42,177 +46,190 @@ import { useMainTab } from '@/providers/MainTab';
 // Services
 import ipcService from '@/services/ipc.service';
 import authService from '@/services/auth.service';
+import refreshService from '@/services/refresh.service';
 
 interface HeaderProps {
-  userId: User['userId'];
-  userName: User['name'];
-  userStatus: User['status'];
-  serverId: Server['serverId'];
-  serverName: Server['name'];
+  user: User;
+  userServer: UserServer;
 }
 
-const Header: React.FC<HeaderProps> = React.memo(
-  ({ userId, userName, userStatus, serverId, serverName }) => {
-    // Hooks
-    const socket = useSocket();
-    const lang = useLanguage();
-    const contextMenu = useContextMenu();
-    const mainTab = useMainTab();
+const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
+  // Hooks
+  const socket = useSocket();
+  const lang = useLanguage();
+  const contextMenu = useContextMenu();
+  const mainTab = useMainTab();
 
-    // States
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  // States
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
-    // Constants
-    const MAIN_TABS = [
-      { id: 'home', label: lang.tr.home },
-      { id: 'friends', label: lang.tr.friends },
-      { id: 'server', label: serverName },
-    ];
-    const STATUS_OPTIONS = [
-      { status: 'online', label: lang.tr.online },
-      { status: 'dnd', label: lang.tr.dnd },
-      { status: 'idle', label: lang.tr.idle },
-      { status: 'gn', label: lang.tr.gn },
-    ];
+  const { userId, name: userName, status: userStatus } = user;
+  const { serverId, name: serverName } = userServer;
 
-    // Handlers
-    const handleLeaveServer = (
-      userId: User['userId'],
-      serverId: Server['serverId'],
-    ) => {
-      if (!socket) return;
-      socket.send.disconnectServer({ userId, serverId });
-    };
+  // Constants
+  const MAIN_TABS = [
+    { id: 'home', label: lang.tr.home },
+    { id: 'friends', label: lang.tr.friends },
+    { id: 'server', label: serverName },
+  ];
+  const STATUS_OPTIONS = [
+    { status: 'online', label: lang.tr.online },
+    { status: 'dnd', label: lang.tr.dnd },
+    { status: 'idle', label: lang.tr.idle },
+    { status: 'gn', label: lang.tr.gn },
+  ];
 
-    const handleUpdateStatus = (
-      status: User['status'],
-      userId: User['userId'],
-    ) => {
-      if (!socket) return;
-      socket.send.updateUser({ user: { status }, userId });
-    };
+  // Handlers
+  const handleLeaveServer = (
+    userId: User['userId'],
+    serverId: Server['serverId'],
+  ) => {
+    if (!socket) return;
+    socket.send.disconnectServer({ userId, serverId });
+  };
 
-    const handleLogout = () => {
-      authService.logout();
-    };
+  const handleUpdateStatus = (
+    status: User['status'],
+    userId: User['userId'],
+  ) => {
+    if (!socket) return;
+    socket.send.updateUser({ user: { status }, userId });
+  };
 
-    const handleFullscreen = () => {
-      if (isFullscreen) ipcService.window.unmaximize();
-      else ipcService.window.maximize();
-      setIsFullscreen(!isFullscreen);
-    };
+  const handleOpenUserSetting = (userId: User['userId']) => {
+    const targetId = userId;
+    ipcService.popup.open(PopupType.USER_INFO, 'userSetting');
+    ipcService.initialData.onRequest('userSetting', { userId, targetId });
+  };
 
-    const handleMinimize = () => {
-      ipcService.window.minimize();
-    };
+  const handleOpenSystemSetting = () => {
+    ipcService.popup.open(PopupType.SYSTEM_SETTING, 'systemSetting');
+    ipcService.initialData.onRequest('systemSetting', {});
+  };
 
-    const handleClose = () => {
-      ipcService.window.close();
-    };
+  const handleLogout = () => {
+    authService.logout();
+  };
 
-    const handleLanguageChange = (language: LanguageKey) => {
-      lang.set(language);
-      localStorage.setItem('language', language);
-    };
+  const handleExit = () => {
+    ipcService.exit();
+  };
 
-    const handleOpenUserSetting = (userId: User['userId']) => {
-      const targetId = userId;
-      ipcService.popup.open(PopupType.USER_INFO);
-      ipcService.initialData.onRequest(PopupType.USER_INFO, {
-        userId,
-        targetId,
-      });
-    };
+  const handleFullscreen = () => {
+    if (isFullscreen) {
+      ipcService.window.unmaximize();
+    } else {
+      ipcService.window.maximize();
+    }
+  };
 
-    const handleOpenSystemSetting = () => {
-      ipcService.popup.open(PopupType.SYSTEM_SETTING);
-      ipcService.initialData.onRequest(PopupType.SYSTEM_SETTING, {});
-    };
+  const handleMinimize = () => {
+    ipcService.window.minimize();
+  };
 
-    return (
-      <div className={header['header']}>
-        {/* Title */}
-        <div className={`${header['titleBox']} ${header['big']}`}></div>
-        {/* User Status */}
-        <div className={header['userStatus']}>
+  const handleClose = () => {
+    ipcService.window.close();
+  };
+
+  const handleLanguageChange = (language: LanguageKey) => {
+    lang.set(language);
+    localStorage.setItem('language', language);
+  };
+
+  // Effects
+  useEffect(() => {
+    ipcService.window.onMaximize(() => {
+      setIsFullscreen(true);
+    });
+
+    ipcService.window.onUnmaximize(() => {
+      setIsFullscreen(false);
+    });
+  }, []);
+
+  return (
+    <div className={header['header']}>
+      {/* Title */}
+      <div className={`${header['titleBox']} ${header['big']}`}>
+        <div
+          className={header['nameBox']}
+          onClick={() => handleOpenUserSetting(userId)}
+        >
+          {userName}
+        </div>
+        <div
+          className={header['statusBox']}
+          onClick={() => {
+            setShowStatusDropdown(!showStatusDropdown);
+          }}
+        >
+          <div className={header['statusDisplay']} datatype={userStatus} />
+          <div className={header['statusTriangle']} />
           <div
-            className={header['nameDisplay']}
-            onClick={() => handleOpenUserSetting(userId)}
+            className={`${header['statusDropdown']} ${
+              showStatusDropdown ? '' : header['hidden']
+            }`}
           >
-            {userName}
+            {STATUS_OPTIONS.map((option) => (
+              <div
+                key={option.status}
+                className={header['option']}
+                datatype={option.status}
+                onClick={() => {
+                  handleUpdateStatus(option.status as User['status'], userId);
+                  setShowStatusDropdown(false);
+                }}
+              />
+            ))}
           </div>
-          <div
-            className={header['statusBox']}
-            onClick={() => {
-              setShowStatusDropdown(!showStatusDropdown);
-            }}
-          >
-            <div className={header['statusDisplay']} datatype={userStatus} />
-            <div className={header['statusTriangle']} />
+        </div>
+      </div>
+      {/* Main Tabs */}
+      <div className={header['mainTabs']}>
+        {MAIN_TABS.map((Tab) => {
+          const TabId = Tab.id;
+          const TabLable = Tab.label;
+          const TabClose = TabId === 'server';
+          if (TabId === 'server' && !serverId) return null;
+          return (
             <div
-              className={`${header['statusDropdown']} ${
-                showStatusDropdown ? '' : header['hidden']
+              key={`Tabs-${TabId}`}
+              className={`${header['tab']} ${
+                TabId === mainTab.selectedTabId ? header['selected'] : ''
               }`}
+              onClick={() =>
+                mainTab.setSelectedTabId(TabId as 'home' | 'friends' | 'server')
+              }
             >
-              {STATUS_OPTIONS.map((option) => (
+              <div className={header['tabLable']}>{TabLable}</div>
+              <div className={header['tabBg']} />
+              {TabClose && (
                 <div
-                  key={option.status}
-                  className={header['option']}
-                  datatype={option.status}
-                  onClick={() => {
-                    handleUpdateStatus(option.status as User['status'], userId);
-                    setShowStatusDropdown(false);
+                  className={header['tabClose']}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLeaveServer(userId, serverId);
                   }}
                 />
-              ))}
+              )}
             </div>
-          </div>
-        </div>
-        {/* Main Tabs */}
-        <div className={header['mainTabs']}>
-          {MAIN_TABS.map((Tab) => {
-            const TabId = Tab.id;
-            const TabLable = Tab.label;
-            const TabClose = TabId === 'server';
-            if (TabId === 'server' && !serverId) return null;
-            return (
-              <div
-                key={`Tabs-${TabId}`}
-                className={`${header['tab']} ${
-                  TabId === mainTab.selectedTabId ? header['selected'] : ''
-                }`}
-                onClick={() =>
-                  mainTab.setSelectedTabId(
-                    TabId as 'home' | 'friends' | 'server',
-                  )
-                }
-              >
-                <div className={header['tabLable']}>{TabLable}</div>
-                <div className={header['tabBg']} />
-                {TabClose && (
-                  <div
-                    className={header['tabClose']}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLeaveServer(userId, serverId);
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {/* Buttons */}
-        <div className={header['buttons']}>
-          <div className={header['gift']} />
-          <div className={header['game']} />
-          <div className={header['notice']} />
-          <div className={header['spliter']} />
-          <div
-            className={header['menu']}
-            onClick={(e) =>
-              contextMenu.showContextMenu(e.clientX, e.clientY, [
+          );
+        })}
+      </div>
+      {/* Buttons */}
+      <div className={header['buttons']}>
+        <div className={header['gift']} />
+        <div className={header['game']} />
+        <div className={header['notice']} />
+        <div className={header['spliter']} />
+        <div
+          className={header['menu']}
+          onClick={(e) =>
+            contextMenu.showContextMenu(
+              e.clientX,
+              e.clientY,
+              [
                 {
                   id: 'system-setting',
                   label: lang.tr.systemSettings,
@@ -255,7 +272,7 @@ const Header: React.FC<HeaderProps> = React.memo(
                     },
                     {
                       id: 'language-select-cn',
-                      label: '簡體中文',
+                      label: '简体中文',
                       onClick: () => handleLanguageChange('cn'),
                     },
                     {
@@ -280,25 +297,23 @@ const Header: React.FC<HeaderProps> = React.memo(
                   id: 'exit',
                   label: lang.tr.exit,
                   icon: 'exit',
-                  onClick: () => handleClose(),
+                  onClick: () => handleExit(),
                 },
-              ])
-            }
-          />
-          <div
-            className={header['minimize']}
-            onClick={() => handleMinimize()}
-          />
-          <div
-            className={isFullscreen ? header['restore'] : header['maxsize']}
-            onClick={() => handleFullscreen()}
-          />
-          <div className={header['close']} onClick={() => handleClose()} />
-        </div>
+              ],
+              e.currentTarget as HTMLElement,
+            )
+          }
+        />
+        <div className={header['minimize']} onClick={() => handleMinimize()} />
+        <div
+          className={isFullscreen ? header['restore'] : header['maxsize']}
+          onClick={() => handleFullscreen()}
+        />
+        <div className={header['close']} onClick={() => handleClose()} />
       </div>
-    );
-  },
-);
+    </div>
+  );
+});
 
 Header.displayName = 'Header';
 
@@ -321,32 +336,160 @@ const RootPageComponent = () => {
 
   // States
   const [user, setUser] = useState<User>(createDefault.user());
-  const [server, setServer] = useState<Server>(createDefault.server());
+  const [servers, setServers] = useState<UserServer[]>([]);
+  const [friends, setFriends] = useState<UserFriend[]>([]);
+  const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]);
+  const [server, setServer] = useState<UserServer>(createDefault.userServer());
+  const [serverMembers, setServerMembers] = useState<ServerMember[]>([]);
+  const [serverChannels, setServerChannels] = useState<Channel[]>([]);
   const [channel, setChannel] = useState<Channel>(createDefault.channel());
+  const [channelMessages, setChannelMessages] = useState<ChannelMessage[]>([]);
 
   // Variables
-  const { userId, name: userName, status: userStatus } = user;
-  const { serverId, name: serverName } = server;
+  const { userId } = user;
 
   // Handlers
-  const handleUserUpdate = (data: Partial<User> | null) => {
-    if (!data) data = createDefault.user();
-    setUser((prev) => ({ ...prev, ...data }));
+  const handleUserUpdate = (user: Partial<User>) => {
+    setUser((prev) => ({ ...prev, ...user }));
   };
 
-  const handleServerUpdate = (data: Partial<Server> | null) => {
-    if (data != null) {
-      if (data.serverId) mainTab.setSelectedTabId('server');
-    } else {
-      mainTab.setSelectedTabId('home');
-    }
-    if (!data) data = createDefault.server();
-    setServer((prev) => ({ ...prev, ...data }));
+  const handleServerAdd = (server: UserServer) => {
+    setServers((prev) => [...prev, server]);
   };
 
-  const handleCurrentChannelUpdate = (data: Partial<Channel> | null) => {
-    if (!data) data = createDefault.channel();
-    setChannel((prev) => ({ ...prev, ...data }));
+  const handleServerUpdate = (
+    id: UserServer['serverId'],
+    server: UserServer,
+  ) => {
+    setServers((prev) =>
+      prev.map((item) =>
+        item.serverId === id ? { ...item, ...server } : item,
+      ),
+    );
+  };
+
+  const handleServerDelete = (id: UserServer['serverId']) => {
+    setServers((prev) => prev.filter((item) => item.serverId !== id));
+  };
+
+  const handleServersUpdate = (servers: UserServer[]) => {
+    setServers(servers);
+  };
+
+  const handleFriendAdd = (friend: UserFriend) => {
+    setFriends((prev) => [...prev, friend]);
+  };
+
+  const handleFriendUpdate = (
+    userId: UserFriend['userId'],
+    targetId: UserFriend['targetId'],
+    friend: Partial<UserFriend>,
+  ) => {
+    setFriends((prev) =>
+      prev.map((item) =>
+        item.userId === userId && item.targetId === targetId
+          ? { ...item, ...friend }
+          : item,
+      ),
+    );
+  };
+
+  const handleFriendDelete = (
+    userId: UserFriend['userId'],
+    targetId: UserFriend['targetId'],
+  ) => {
+    setFriends((prev) =>
+      prev.filter(
+        (item) => !(item.userId === userId && item.targetId === targetId),
+      ),
+    );
+  };
+
+  const handleFriendsUpdate = (friends: UserFriend[]) => {
+    setFriends(friends);
+  };
+
+  const handleFriendGroupAdd = (friendGroup: FriendGroup) => {
+    setFriendGroups((prev) => [...prev, friendGroup]);
+  };
+
+  const handleFriendGroupUpdate = (
+    id: FriendGroup['friendGroupId'],
+    friendGroup: Partial<FriendGroup>,
+  ) => {
+    setFriendGroups((prev) =>
+      prev.map((item) =>
+        item.friendGroupId === id ? { ...item, ...friendGroup } : item,
+      ),
+    );
+  };
+
+  const handleFriendGroupDelete = (id: FriendGroup['friendGroupId']) => {
+    setFriendGroups((prev) => prev.filter((item) => item.friendGroupId !== id));
+  };
+
+  const handleFriendGroupsUpdate = (friendGroups: FriendGroup[]) => {
+    setFriendGroups(friendGroups);
+  };
+
+  const handleServerMemberAdd = (member: ServerMember): void => {
+    setServerMembers((prev) => [...prev, member]);
+  };
+
+  const handleServerMemberUpdate = (
+    userId: ServerMember['userId'],
+    serverId: ServerMember['serverId'],
+    member: Partial<ServerMember>,
+  ): void => {
+    setServerMembers((prev) =>
+      prev.map((item) =>
+        item.userId === userId && item.serverId === serverId
+          ? { ...item, ...member }
+          : item,
+      ),
+    );
+  };
+
+  const handleServerMemberDelete = (
+    userId: ServerMember['userId'],
+    serverId: ServerMember['serverId'],
+  ): void => {
+    setServerMembers((prev) =>
+      prev.filter(
+        (item) => !(item.userId === userId && item.serverId === serverId),
+      ),
+    );
+  };
+
+  const handleServerMembersUpdate = (members: ServerMember[]) => {
+    setServerMembers(members);
+  };
+
+  const handleServerChannelAdd = (channel: Channel): void => {
+    setServerChannels((prev) => [...prev, channel]);
+  };
+
+  const handleServerChannelUpdate = (
+    id: Channel['channelId'],
+    channel: Partial<Channel>,
+  ): void => {
+    setServerChannels((prev) =>
+      prev.map((item) =>
+        item.channelId === id ? { ...item, ...channel } : item,
+      ),
+    );
+  };
+
+  const handleServerChannelDelete = (id: Channel['channelId']): void => {
+    setServerChannels((prev) => prev.filter((item) => item.channelId !== id));
+  };
+
+  const handleServerChannelsUpdate = (channels: Channel[]) => {
+    setServerChannels(channels);
+  };
+
+  const handleOnMessages = (...channelMessages: ChannelMessage[]): void => {
+    setChannelMessages((prev) => [...prev, ...channelMessages]);
   };
 
   const handlePlaySound = (sound: string) => {
@@ -367,12 +510,40 @@ const RootPageComponent = () => {
     new errorHandler(error).show();
   };
 
-  const handleOpenPopup = (data: { type: PopupType; initialData: any }) => {
-    ipcService.popup.open(data.type);
-    ipcService.initialData.onRequest(data.type, data.initialData);
-    ipcService.popup.onSubmit(data.type, () => {
-      switch (data.type) {
-        case PopupType.DIALOG_ALERT:
+  const handleConnectError = () => {
+    new errorHandler(
+      new StandardizedError({
+        name: 'ConnectError',
+        message: '連線失敗',
+        part: 'SOCKET',
+        tag: 'CONNECT_ERROR',
+        statusCode: 500,
+      }),
+    ).show();
+  };
+
+  const handleReconnectError = () => {
+    new errorHandler(
+      new StandardizedError({
+        name: 'ReconnectError',
+        message: '重新連線失敗',
+        part: 'SOCKET',
+        tag: 'RECONNECT_ERROR',
+        statusCode: 500,
+      }),
+    ).show();
+  };
+
+  const handleOpenPopup = (popup: {
+    type: PopupType;
+    id: string; // FIXME: Server didn't return this
+    initialData: any;
+  }) => {
+    ipcService.popup.open(popup.type, popup.id);
+    ipcService.initialData.onRequest(popup.id, popup.initialData);
+    ipcService.popup.onSubmit(popup.id, () => {
+      switch (popup.id) {
+        case 'logout':
           ipcService.auth.logout();
           break;
       }
@@ -381,19 +552,59 @@ const RootPageComponent = () => {
 
   // Effects
   useEffect(() => {
+    const channel =
+      serverChannels.find((item) => item.channelId === user.currentChannelId) ||
+      createDefault.channel();
+    setChannel(channel);
+  }, [user.currentChannelId, serverChannels]);
+
+  useEffect(() => {
+    if (user.currentServerId) {
+      if (mainTab.selectedTabId === 'home') mainTab.setSelectedTabId('server');
+    } else {
+      if (mainTab.selectedTabId === 'server') mainTab.setSelectedTabId('home');
+    }
+    const server =
+      servers.find((item) => item.serverId === user.currentServerId) ||
+      createDefault.userServer();
+    setServer(server);
+  }, [user.currentServerId, servers]);
+
+  useEffect(() => {
     if (!socket) return;
 
     const eventHandlers = {
       [SocketServerEvent.USER_UPDATE]: handleUserUpdate,
+      [SocketServerEvent.SERVER_ADD]: handleServerAdd,
       [SocketServerEvent.SERVER_UPDATE]: handleServerUpdate,
-      [SocketServerEvent.CHANNEL_UPDATE]: handleCurrentChannelUpdate,
+      [SocketServerEvent.SERVER_DELETE]: handleServerDelete,
+      [SocketServerEvent.SERVERS_UPDATE]: handleServersUpdate,
+      [SocketServerEvent.FRIEND_ADD]: handleFriendAdd,
+      [SocketServerEvent.FRIEND_UPDATE]: handleFriendUpdate,
+      [SocketServerEvent.FRIEND_DELETE]: handleFriendDelete,
+      [SocketServerEvent.FRIENDS_UPDATE]: handleFriendsUpdate,
+      [SocketServerEvent.FRIEND_GROUP_ADD]: handleFriendGroupAdd,
+      [SocketServerEvent.FRIEND_GROUP_UPDATE]: handleFriendGroupUpdate,
+      [SocketServerEvent.FRIEND_GROUP_DELETE]: handleFriendGroupDelete,
+      [SocketServerEvent.FRIEND_GROUPS_UPDATE]: handleFriendGroupsUpdate,
+      [SocketServerEvent.SERVER_MEMBER_ADD]: handleServerMemberAdd,
+      [SocketServerEvent.SERVER_MEMBER_UPDATE]: handleServerMemberUpdate,
+      [SocketServerEvent.SERVER_MEMBER_DELETE]: handleServerMemberDelete,
+      [SocketServerEvent.SERVER_MEMBERS_UPDATE]: handleServerMembersUpdate,
+      [SocketServerEvent.SERVER_CHANNEL_ADD]: handleServerChannelAdd,
+      [SocketServerEvent.SERVER_CHANNEL_UPDATE]: handleServerChannelUpdate,
+      [SocketServerEvent.SERVER_CHANNEL_DELETE]: handleServerChannelDelete,
+      [SocketServerEvent.SERVER_CHANNELS_UPDATE]: handleServerChannelsUpdate,
+      [SocketServerEvent.ON_MESSAGE]: handleOnMessages,
       [SocketServerEvent.PLAY_SOUND]: handlePlaySound,
-      [SocketServerEvent.ERROR]: handleError,
       [SocketServerEvent.OPEN_POPUP]: handleOpenPopup,
+      [SocketServerEvent.ERROR]: handleError,
+      [SocketServerEvent.CONNECT_ERROR]: handleConnectError,
+      [SocketServerEvent.RECONNECT_ERROR]: handleReconnectError,
     };
     const unsubscribe: (() => void)[] = [];
 
-    Object.entries(eventHandlers).map(([event, handler]) => {
+    Object.entries(eventHandlers).forEach(([event, handler]) => {
       const unsub = socket.on[event as SocketServerEvent](handler);
       unsubscribe.push(unsub);
     });
@@ -404,12 +615,40 @@ const RootPageComponent = () => {
   }, [socket]);
 
   useEffect(() => {
+    if (!userId) return;
+    const refresh = async () => {
+      Promise.all([
+        refreshService.userServers({
+          userId: userId,
+        }),
+        refreshService.userFriends({
+          userId: userId,
+        }),
+        refreshService.userFriendGroups({
+          userId: userId,
+        }),
+      ]).then(([servers, friends, friendGroups]) => {
+        if (servers) {
+          setServers(servers);
+        }
+        if (friends) {
+          setFriends(friends);
+        }
+        if (friendGroups) {
+          setFriendGroups(friendGroups);
+        }
+      });
+    };
+    refresh();
+  }, [userId]);
+
+  useEffect(() => {
     if (socket.isConnected) {
       mainTab.setSelectedTabId('home');
     } else {
       mainTab.setSelectedTabId('home');
       setUser(createDefault.user());
-      setServer(createDefault.server());
+      setServer(createDefault.userServer());
       setChannel(createDefault.channel());
     }
   }, [socket.isConnected]);
@@ -418,6 +657,7 @@ const RootPageComponent = () => {
     if (!lang) return;
     const language = localStorage.getItem('language');
     if (language) lang.set(language as LanguageKey);
+    localStorage.setItem('pageReloadFlag', 'true');
   }, [lang]);
 
   const getMainContent = () => {
@@ -426,15 +666,25 @@ const RootPageComponent = () => {
       <>
         <HomePage
           user={user}
-          server={server}
+          servers={servers}
+          currentServer={server}
           display={mainTab.selectedTabId === 'home'}
         />
-        <FriendPage user={user} display={mainTab.selectedTabId === 'friends'} />
+        <FriendPage
+          user={user}
+          friends={friends}
+          friendGroups={friendGroups}
+          display={mainTab.selectedTabId === 'friends'}
+        />
         <ExpandedProvider>
           <ServerPage
             user={user}
-            server={server}
-            channel={channel}
+            currentServer={server}
+            currentChannel={channel}
+            friends={friends}
+            serverMembers={serverMembers}
+            serverChannels={serverChannels}
+            channelMessages={channelMessages}
             display={mainTab.selectedTabId === 'server'}
           />
         </ExpandedProvider>
@@ -445,13 +695,7 @@ const RootPageComponent = () => {
   return (
     <WebRTCProvider>
       <div className="wrapper">
-        <Header
-          userId={userId}
-          userName={userName}
-          userStatus={userStatus}
-          serverId={serverId}
-          serverName={serverName}
-        />
+        <Header user={user} userServer={server} />
         {/* Main Content */}
         <div className="content">{getMainContent()}</div>
       </div>
