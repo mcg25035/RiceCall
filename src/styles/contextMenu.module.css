@@ -115,6 +115,11 @@
   display: flex;
 }
 
+.contextMenu .option.disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
 .setting {
   min-width: auto !important;
 }
