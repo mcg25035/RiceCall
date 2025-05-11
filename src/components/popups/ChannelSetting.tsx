@@ -101,7 +101,7 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
         });
       };
       refresh();
-    }, [channelId]);
+    }, [channelId, serverId]);
 
     return (
       <div className={popup['popupContainer']}>
