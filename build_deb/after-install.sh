@@ -25,3 +25,6 @@ fi
 if hash update-desktop-database 2>/dev/null; then
     update-desktop-database /usr/share/applications || true
 fi
+
+# Close outdated ricecall processes
+killall ricecall || true
