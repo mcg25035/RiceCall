@@ -119,12 +119,7 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
       channelId: Channel['channelId'],
     ) => {
       if (!socket) return;
-      if (!canJoin) return;
-      if (needPassword) {
-        handleOpenChannelPassword(userId, serverId, channelId);
-      } else {
-        socket.send.connectChannel({ userId, channelId, serverId });
-      }
+      socket.send.connectChannel({ userId, channelId, serverId });
     };
 
     const handleDeleteChannel = (
@@ -247,7 +242,14 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
         <div
           key={categoryId}
           className={`${styles['channelTab']} `}
-          onDoubleClick={() => handleJoinChannel(userId, serverId, categoryId)}
+          onDoubleClick={() => {
+            if (!canJoin) return;
+            if (needPassword) {
+              handleOpenChannelPassword(userId, serverId, categoryId);
+            } else {
+              handleJoinChannel(userId, serverId, categoryId);
+            }
+          }}
           draggable={permissionLevel >= 5 && categoryMembers.length !== 0}
           onDragStart={(e) => handleDragStart(e, categoryUserIds, categoryId)}
           onDragOver={(e) => e.preventDefault()}
@@ -258,7 +260,14 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
                 id: 'joinChannel',
                 label: '進入此頻道',
                 show: canJoin,
-                onClick: () => handleJoinChannel(userId, serverId, categoryId),
+                onClick: () => {
+                  if (!canJoin) return;
+                  if (needPassword) {
+                    handleOpenChannelPassword(userId, serverId, categoryId);
+                  } else {
+                    handleJoinChannel(userId, serverId, categoryId);
+                  }
+                },
               },
               {
                 id: 'edit',
@@ -451,12 +460,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
       channelId: Channel['channelId'],
     ) => {
       if (!socket) return;
-      if (!canJoin) return;
-      if (needPassword) {
-        handleOpenChannelPassword(userId, serverId, channelId);
-      } else {
-        socket.send.connectChannel({ userId, channelId, serverId });
-      }
+      socket.send.connectChannel({ userId, channelId, serverId });
     };
 
     const handleDeleteChannel = (
@@ -579,7 +583,14 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
         <div
           key={channelId}
           className={`${styles['channelTab']} `}
-          onDoubleClick={() => handleJoinChannel(userId, serverId, channelId)}
+          onDoubleClick={() => {
+            if (!canJoin) return;
+            if (needPassword) {
+              handleOpenChannelPassword(userId, serverId, channelId);
+            } else {
+              handleJoinChannel(userId, serverId, channelId);
+            }
+          }}
           draggable={permissionLevel >= 5 && channelMembers.length !== 0}
           onDragStart={(e) => handleDragStart(e, channelUserIds, channelId)}
           onDragOver={(e) => e.preventDefault()}
@@ -590,7 +601,14 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
                 id: 'joinChannel',
                 label: '進入此頻道',
                 show: canJoin,
-                onClick: () => handleJoinChannel(userId, serverId, channelId),
+                onClick: () => {
+                  if (!canJoin) return;
+                  if (needPassword) {
+                    handleOpenChannelPassword(userId, serverId, channelId);
+                  } else {
+                    handleJoinChannel(userId, serverId, channelId);
+                  }
+                },
               },
               {
                 id: 'editChannel',
