@@ -169,7 +169,6 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
     badges: friendBadges,
     currentServerId: friendCurrentServerId,
   } = friend;
-  const friendGrade = Math.min(56, friendLevel); // 56 is max level
   const isCurrentUser = friendTargetId === friendUserId;
   const canManageFriend = !isCurrentUser;
 
@@ -299,7 +298,10 @@ const FriendCard: React.FC<FriendCardProps> = React.memo(({ friend }) => {
             )}
             <div className={styles['name']}>{friendName}</div>
             <div
-              className={`${grade['grade']} ${grade[`lv-${friendGrade}`]}`}
+              className={`
+                ${grade['grade']} 
+                ${grade[`lv-${Math.min(56, friendLevel)}`]}
+              `}
             />
             <BadgeListViewer badges={friendBadges} maxDisplay={5} />
           </div>

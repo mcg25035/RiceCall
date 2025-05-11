@@ -85,7 +85,6 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
       country: userCountry,
       badges: userBadges,
     } = user;
-    const userGrade = Math.min(56, userLevel);
     const isSelf = targetId === userId;
     const isFriend = !!friend.targetId;
     const isEditing = isSelf && selectedTabId === 'userSetting';
@@ -798,7 +797,10 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                 />
               )}
               <div
-                className={`${grade['grade']} ${grade[`lv-${userGrade}`]}`}
+                className={`
+                  ${grade['grade']} 
+                  ${grade[`lv-${Math.min(56, userLevel)}`]}
+                `}
                 title={
                   `${lang.tr.level}：${userLevel}，${lang.tr.xp}：${userXP}，${lang.tr.xpDifference}：${userRequiredXP}` /** LEVEL:{userLevel} EXP:{userXP} LEVEL UP REQUIRED:{userRequiredXP}**/
                 }

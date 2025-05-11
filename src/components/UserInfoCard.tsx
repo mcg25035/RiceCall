@@ -70,15 +70,15 @@ const UserInfoCard: React.FC<UserInfoCardProps> = React.memo(
       nickname: memberNickname,
       vip: memberVip,
     } = member;
-    const memberGrade = Math.min(56, memberLevel);
     const vipBoostMultiplier = Math.min(2, 1 + memberVip * 0.2);
 
     return (
       <div
         ref={cardRef}
-        className={`context-menu-container ${userInfoCard['userInfoCard']} ${
-          userInfoCard[`vip-${memberVip}`]
-        }`}
+        className={`context-menu-container 
+          ${userInfoCard['userInfoCard']} 
+          ${userInfoCard[`vip-${memberVip}`]}
+        `}
         style={{ top: cardY, left: cardX }}
         onClick={(e) => {
           e.stopPropagation();
@@ -103,13 +103,17 @@ const UserInfoCard: React.FC<UserInfoCardProps> = React.memo(
               >
                 <div className={userInfoCard['name']}>{memberName}</div>
                 <div
-                  className={`${grade['grade']} ${grade[`lv-${memberGrade}`]}`}
+                  className={`
+                    ${grade['grade']} 
+                    ${grade[`lv-${Math.min(56, memberLevel)}`]}
+                  `}
                 />
               </div>
               <div
-                className={`${vip['vipIconBig']} ${
-                  vip[`vip-big-${memberVip}`]
-                }`}
+                className={`
+                  ${vip['vipIconBig']} 
+                  ${vip[`vip-big-${memberVip}`]}
+                `}
               />
               {/* VIP Info Text */}
               {memberVip > 0 && (
@@ -123,7 +127,7 @@ const UserInfoCard: React.FC<UserInfoCardProps> = React.memo(
               {/* Xp Section */}
               <div className={userInfoCard['xpWrapper']}>
                 <div className={userInfoCard['levelText']}>
-                  {`${lang.tr.level} ${memberGrade} `}
+                  {`${lang.tr.level} ${memberLevel} `}
                 </div>
                 <div className={userInfoCard['xpBox']}>
                   <div

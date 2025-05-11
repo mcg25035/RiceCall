@@ -54,7 +54,6 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
       vip: userVip,
       badges: userBadges,
     } = user;
-    const userGrade = Math.min(56, userLevel); // 56 is max level
 
     // Handlers
     const handleChangeSignature = (
@@ -121,7 +120,9 @@ const FriendPageComponent: React.FC<FriendPageProps> = React.memo(
             <div className={friendPage['container']}>
               <div className={friendPage['levelIcon']} />
               <div
-                className={`${grade['grade']} ${grade[`lv-${userGrade}`]}`}
+                className={`${grade['grade']} ${
+                  grade[`lv-${Math.min(56, userLevel)}`]
+                }`}
               />
               <div className={friendPage['wealthIcon']} />
               <label className={friendPage['wealthValue']}>0</label>

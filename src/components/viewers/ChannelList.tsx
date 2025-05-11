@@ -705,7 +705,6 @@ const UserTab: React.FC<UserTabProps> = React.memo(
       permissionLevel: userPermission,
     } = currentServer;
     const { channelId: currentChannelId } = currentChannel;
-    const memberGrade = Math.min(56, memberLevel); // 56 is max leve
     const isCurrentUser = memberUserId === userId;
     const speakingStatus =
       webRTC.speakStatus?.[memberUserId] ||
@@ -1093,7 +1092,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
         <div
           className={`
             ${grade['grade']} 
-            ${grade[`lv-${memberGrade}`]}
+            ${grade[`lv-${Math.min(56, memberLevel)}`]}
           `}
         />
         <BadgeListViewer badges={memberBadges} maxDisplay={5} />
