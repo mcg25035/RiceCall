@@ -344,13 +344,8 @@
   color: #555;
 }
 
-.lobby,
-.isLobby {
+.channelTab .channelTabLable.isReceptionLobby {
   color: red;
-}
-
-.isVIP {
-  color: #dd1313 !important;
 }
 
 .userList {
@@ -386,6 +381,10 @@
 
 .userTab .userTabName.member {
   color: #6e849b;
+}
+
+.userTab .userTabName.isVIP {
+  color: #dd1313 !important;
 }
 
 .userState {

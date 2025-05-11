@@ -78,7 +78,7 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
         ? createDefault.channel({
             ...category,
             channelId: categoryId,
-            name: '頻道大廳',
+            name: lang.tr.lobby,
             type: 'channel',
             categoryId: categoryId,
             visibility: categoryVisibility,
@@ -99,20 +99,18 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
       (mb) => mb.currentChannelId === categoryId,
     );
     const userInChannel = currentChannelId === categoryId;
+    const needPassword =
+      categoryVisibility === 'private' && permissionLevel < 3;
     const canJoin =
       !userInChannel &&
       categoryVisibility !== 'readonly' &&
-      !(categoryVisibility === 'private' && permissionLevel < 3) &&
       !(categoryVisibility === 'member' && permissionLevel < 2) &&
       (channelUserLimit === 0 ||
         channelUserLimit > channelMembers.length ||
         permissionLevel > 4);
-    const canUsePassword =
-      !userInChannel &&
-      categoryVisibility === 'private' &&
-      permissionLevel < 3 &&
-      category.password;
     const canManageChannel = permissionLevel > 4;
+    const canMoveToChannel =
+      canManageChannel && !userInChannel && categoryUserIds.length !== 0;
 
     // Handlers
     const handleJoinChannel = (
@@ -245,10 +243,11 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
           key={categoryId}
           className={`${styles['channelTab']} `}
           onDoubleClick={() => {
-            if (canJoin) {
-              handleJoinChannel(userId, serverId, categoryId);
-            } else if (canUsePassword) {
+            if (!canJoin) return;
+            if (needPassword) {
               handleOpenChannelPassword(userId, serverId, categoryId);
+            } else {
+              handleJoinChannel(userId, serverId, categoryId);
             }
           }}
           draggable={permissionLevel >= 5 && categoryMembers.length !== 0}
@@ -258,20 +257,44 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
           onContextMenu={(e) => {
             contextMenu.showContextMenu(e.clientX, e.clientY, [
               {
+                id: 'joinChannel',
+                label: '進入此頻道',
+                show: canJoin,
+                onClick: () => {
+                  if (!canJoin) return;
+                  if (needPassword) {
+                    handleOpenChannelPassword(userId, serverId, categoryId);
+                  } else {
+                    handleJoinChannel(userId, serverId, categoryId);
+                  }
+                },
+              },
+              {
                 id: 'edit',
                 label: lang.tr.editChannel,
                 show: canManageChannel,
                 onClick: () => handleOpenChannelSetting(categoryId, serverId),
               },
               {
-                id: 'add',
+                id: 'separator',
+                label: '',
+                show: canManageChannel,
+              },
+              {
+                id: 'createChannel',
+                label: lang.tr.addChannel,
+                show: canManageChannel,
+                onClick: () => handleOpenCreateChannel(serverId, null, userId),
+              },
+              {
+                id: 'createSubChannel',
                 label: lang.tr.addChannel,
                 show: canManageChannel,
                 onClick: () =>
                   handleOpenCreateChannel(serverId, categoryId, userId),
               },
               {
-                id: 'delete',
+                id: 'deleteChannel',
                 label: lang.tr.deleteChannel,
                 show: canManageChannel,
                 onClick: () => {
@@ -283,6 +306,15 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
                 id: 'separator',
                 label: '',
                 show: canManageChannel,
+              },
+              {
+                id: 'moveAllUserToChannel',
+                label: '批量移動到我的房間',
+                show: canMoveToChannel,
+                onClick: () =>
+                  categoryUserIds.forEach((userId) =>
+                    handleJoinChannel(userId, serverId, currentChannelId),
+                  ),
               },
               {
                 id: 'changeChannelOrder',
@@ -318,9 +350,7 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
         {/* Expanded Sections */}
         <div
           className={styles['channelList']}
-          style={{
-            display: expanded[categoryId] ? 'block' : 'none',
-          }}
+          style={expanded[categoryId] ? {} : { display: 'none' }}
         >
           {[categoryLobby, ...categoryChannels]
             .filter((ch) => !!ch)
@@ -375,38 +405,55 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
     const {
       channelId,
       name: channelName,
-      isLobby: channelIsLobby,
       visibility: channelVisibility,
       userLimit: channelUserLimit,
       categoryId: channelCategoryId,
     } = channel;
-    const { userId, serverId, permissionLevel } = currentServer;
+    const {
+      userId,
+      serverId,
+      permissionLevel,
+      lobbyId: serverLobbyId,
+      receptionLobbyId: serverReceptionLobbyId,
+    } = currentServer;
     const { channelId: currentChannelId } = currentChannel;
     const channelMembers = serverMembers.filter(
       (mb) => mb.currentChannelId === channelId,
     );
     const channelUserIds = channelMembers.map((mb) => mb.userId);
     const userInChannel = currentChannelId === channelId;
+    const isReceptionLobby = serverReceptionLobbyId === channelId;
+    const isLobby = serverLobbyId === channelId;
+    const needPassword = channelVisibility === 'private' && permissionLevel < 3;
     const canJoin =
       !userInChannel &&
-      (channelVisibility === 'public' ||
-        (channelVisibility === 'private' && permissionLevel > 2) ||
-        (channelVisibility === 'member' && permissionLevel > 1)) &&
+      channelVisibility !== 'readonly' &&
+      !(channelVisibility === 'member' && permissionLevel < 2) &&
       (!channelUserLimit ||
         channelUserLimit > channelMembers.length ||
         permissionLevel > 4);
-    const canUsePassword =
-      !userInChannel &&
-      channelVisibility === 'private' &&
-      permissionLevel < 3 &&
-      channel.password;
     const canManageChannel = permissionLevel > 4;
-    const canCreate = canManageChannel && !channelIsLobby && !channelCategoryId;
-    const canDelete = canManageChannel && !channelIsLobby;
-    const canMoveToChannel =
+    const canCreate = canManageChannel;
+    const canCreateSub = canManageChannel && !isLobby && !channelCategoryId;
+    const canEdit = canManageChannel;
+    const canDelete = canManageChannel && !isLobby;
+    const canMoveAllUserToChannel =
       canManageChannel && !userInChannel && channelUserIds.length !== 0;
+    const canSetReceptionLobby =
+      canManageChannel &&
+      !isReceptionLobby &&
+      channelVisibility !== 'private' &&
+      channelVisibility !== 'readonly';
 
     // Handlers
+    const handleUpdateServer = (
+      server: Partial<Server>,
+      serverId: Server['serverId'],
+    ) => {
+      if (!socket) return;
+      socket.send.updateServer({ serverId, server });
+    };
+
     const handleJoinChannel = (
       userId: User['userId'],
       serverId: Server['serverId'],
@@ -537,10 +584,11 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
           key={channelId}
           className={`${styles['channelTab']} `}
           onDoubleClick={() => {
-            if (canJoin) {
-              handleJoinChannel(userId, serverId, channelId);
-            } else if (canUsePassword) {
+            if (!canJoin) return;
+            if (needPassword) {
               handleOpenChannelPassword(userId, serverId, channelId);
+            } else {
+              handleJoinChannel(userId, serverId, channelId);
             }
           }}
           draggable={permissionLevel >= 5 && channelMembers.length !== 0}
@@ -550,26 +598,47 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
           onContextMenu={(e) => {
             contextMenu.showContextMenu(e.clientX, e.clientY, [
               {
-                id: 'edit',
+                id: 'joinChannel',
+                label: '進入此頻道',
+                show: canJoin,
+                onClick: () => {
+                  if (!canJoin) return;
+                  if (needPassword) {
+                    handleOpenChannelPassword(userId, serverId, channelId);
+                  } else {
+                    handleJoinChannel(userId, serverId, channelId);
+                  }
+                },
+              },
+              {
+                id: 'editChannel',
                 label: lang.tr.editChannel,
-                show: canManageChannel,
+                show: canEdit,
                 onClick: () => handleOpenChannelSetting(channelId, serverId),
               },
               {
-                id: 'add',
+                id: 'separator',
+                label: '',
+                show: canManageChannel,
+              },
+              {
+                id: 'createChannel',
                 label: lang.tr.addChannel,
                 show: canCreate,
+                onClick: () => handleOpenCreateChannel(serverId, null, userId),
+              },
+              {
+                id: 'createSubChannel',
+                label: lang.tr.addChannel,
+                show: canCreateSub,
                 onClick: () =>
                   handleOpenCreateChannel(serverId, channelId, userId),
               },
               {
-                id: 'delete',
+                id: 'deleteChannel',
                 label: lang.tr.deleteChannel,
                 show: canDelete,
-                onClick: () => {
-                  if (!channelName) return;
-                  handleDeleteChannel(channelId, serverId);
-                },
+                onClick: () => handleDeleteChannel(channelId, serverId),
               },
               {
                 id: 'separator',
@@ -578,13 +647,12 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
               },
               {
                 id: 'moveAllUserToChannel',
-                label: '批量移動到我的房間',
-                show: canMoveToChannel,
-                onClick: () => {
-                  for (const userId of channelUserIds) {
-                    handleJoinChannel(userId, serverId, currentChannelId);
-                  }
-                },
+                label: lang.tr.moveAllUserToChannel,
+                show: canMoveAllUserToChannel,
+                onClick: () =>
+                  channelUserIds.forEach((userId) =>
+                    handleJoinChannel(userId, serverId, currentChannelId),
+                  ),
               },
               {
                 id: 'editChannelOrder',
@@ -595,15 +663,14 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
               {
                 id: 'separator',
                 label: '',
-                show: canManageChannel,
+                show: canSetReceptionLobby,
               },
               {
-                id: 'setDefaultChannel',
-                label: '設為接待頻道',
-                show: canManageChannel,
-                onClick: () => {
-                  /* handleSetDefaultChannel() */
-                },
+                id: 'setReceptionLobby',
+                label: lang.tr.setDefaultChannel,
+                show: canSetReceptionLobby,
+                onClick: () =>
+                  handleUpdateServer({ receptionLobbyId: channelId }, serverId),
               },
             ]);
           }}
@@ -612,7 +679,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
             className={`
               ${styles['tabIcon']} 
               ${expanded[channelId] ? styles['expanded'] : ''} 
-              ${channelIsLobby ? styles['lobby'] : styles[channelVisibility]} 
+              ${isLobby ? styles['lobby'] : styles[channelVisibility]} 
             `}
             onClick={() =>
               setExpanded((prev) => ({
@@ -622,9 +689,10 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
             }
           />
           <div
-            className={`${channelIsLobby ? styles['isLobby'] : ''} ${
-              styles['channelTabLable']
-            }`}
+            className={`
+              ${styles['channelTabLable']} 
+              ${isReceptionLobby ? styles['isReceptionLobby'] : ''} 
+            `}
           >
             {channelName}
           </div>
@@ -643,9 +711,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
         {/* Expanded Sections */}
         <div
           className={styles['userList']}
-          style={{
-            display: expanded[channelId] ? 'block' : 'none',
-          }}
+          style={expanded[channelId] ? {} : { display: 'none' }}
         >
           {channelMembers
             .filter((mb) => !!mb)
@@ -698,11 +764,10 @@ const UserTab: React.FC<UserTabProps> = React.memo(
     const {
       userId,
       serverId,
-      lobbyId,
       permissionLevel: userPermission,
+      lobbyId: serverLobbyId,
     } = currentServer;
     const { channelId: currentChannelId } = currentChannel;
-    const memberGrade = Math.min(56, memberLevel); // 56 is max leve
     const isCurrentUser = memberUserId === userId;
     const speakingStatus =
       webRTC.speakStatus?.[memberUserId] ||
@@ -741,7 +806,10 @@ const UserTab: React.FC<UserTabProps> = React.memo(
       memberPermission !== 5 &&
       memberPermission > 1 &&
       userPermission > 5;
-    const canKick = canManageMember && memberCurrentServerId === serverId;
+    const canKickServer = canManageMember && memberCurrentServerId === serverId;
+    const canKickChannel =
+      canManageMember && memberCurrentChannelId !== serverLobbyId;
+    const canBan = canManageMember;
     const canMoveToChannel =
       canManageMember && memberCurrentChannelId !== currentChannelId;
     const canMute = !isCurrentUser && !isMutedByUser;
@@ -930,40 +998,46 @@ const UserTab: React.FC<UserTabProps> = React.memo(
                 id: 'forbid-voice',
                 label: lang.tr.forbidVoice,
                 show: canManageMember,
+                disabled: true,
                 onClick: () => {},
               },
               {
                 id: 'forbid-text',
                 label: lang.tr.forbidText,
                 show: canManageMember,
+                disabled: true,
                 onClick: () => {},
               },
               {
                 id: 'kick-channel',
                 label: lang.tr.kickChannel,
-                show: canKick,
+                show: canKickChannel,
                 onClick: () => {
-                  handleKickChannel(memberUserId, lobbyId, serverId);
+                  handleKickChannel(memberUserId, serverLobbyId, serverId);
                 },
               },
               {
                 id: 'kick-server',
                 label: lang.tr.kickServer,
-                show: canKick,
+                show: canKickServer,
                 onClick: () => {
+                  handleUpdateMember(
+                    {
+                      isBlocked: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days TODO: user can set the time
+                    },
+                    memberUserId,
+                    serverId,
+                  );
                   handleKickServer(memberUserId, serverId);
                 },
               },
               {
                 id: 'ban',
                 label: lang.tr.ban,
-                show: canKick,
+                show: canBan,
                 onClick: () => {
                   handleUpdateMember(
-                    {
-                      permissionLevel: 1,
-                      isBlocked: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days TODO: user can set the time
-                    },
+                    { permissionLevel: 1, isBlocked: -1 },
                     memberUserId,
                     serverId,
                   );
@@ -977,8 +1051,9 @@ const UserTab: React.FC<UserTabProps> = React.memo(
               },
               {
                 id: 'send-member-application',
-                label: '邀請成為會員',
+                label: lang.tr.sendMemberApplication,
                 show: canManageMember && memberPermission === 1,
+                disabled: true,
                 onClick: () => {
                   /* sendMemberApplication() */
                 },
@@ -1086,7 +1161,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
         <div
           className={`
             ${grade['grade']} 
-            ${grade[`lv-${memberGrade}`]}
+            ${grade[`lv-${Math.min(56, memberLevel)}`]}
           `}
         />
         <BadgeListViewer badges={memberBadges} maxDisplay={5} />

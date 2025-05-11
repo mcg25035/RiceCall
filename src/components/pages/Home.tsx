@@ -152,9 +152,9 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
     };
 
     const handleServerSearch = (servers: UserServer[]) => {
-        setExactMatch(null);
-        setPersonalResults([]);
-        setRelatedResults([]);
+      setExactMatch(null);
+      setPersonalResults([]);
+      setRelatedResults([]);
 
       if (!servers.length) return;
 
@@ -193,6 +193,11 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
       setPersonalResults([]);
       setRelatedResults([]);
       setShowDropdown(false);
+    };
+
+    const handleDeepLink = (serverId: string) => {
+      if (!userId) return;
+      handleConnectServer(userId, serverId);
     };
 
     const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -237,6 +242,13 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
         localStorage.removeItem('trigger-handle-server-select');
       }
     }, [currentServer, isLoading, mainTab]);
+
+    useEffect(() => {
+      ipcService.deepLink.onDeepLink(handleDeepLink);
+      return () => {
+        ipcService.deepLink.offDeepLink();
+      };
+    }, [handleDeepLink]);
 
     useEffect(() => {
       if (!lang) return;
@@ -368,6 +380,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
               )}
             </div>
           </div>
+
           <div className={homePage['mid']}>
             <div
               className={`${homePage['navegateItem']} ${
@@ -397,6 +410,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
               {lang.tr.live}
             </div>
           </div>
+
           <div className={homePage['right']}>
             <div
               className={homePage['navegateItem']}
@@ -414,8 +428,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             </div>
           </div>
         </header>
-
-        {/* Main Content */}
 
         {/* Announcement */}
         <webview
@@ -460,7 +472,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
           className={homePage['homeContent']}
           style={section === 1 || section === 2 ? {} : { display: 'none' }}
         >
-          <div>{'Sorry, this page is not available yet'}</div>
+          <div>{'抱歉，此頁面尚未開放'}</div>
         </main>
 
         {/* Loading */}

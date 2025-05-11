@@ -67,7 +67,6 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
       badges: targetBadges,
     } = target;
     const { name: targetCurrentServerName } = targetCurrentServer;
-    const targetGrade = Math.min(56, targetLevel); // 56 is max level
 
     // Handlers
     const handleSendMessage = (
@@ -222,10 +221,11 @@ const DirectMessagePopup: React.FC<DirectMessagePopupProps> = React.memo(
               )}
               <div className={directMessage['userStateBox']}>
                 <div
-                  title={`${lang.tr.level}: ${targetGrade}`}
+                  title={`${lang.tr.level}: ${targetLevel}`}
                   className={`
                     ${grade['grade']}
-                    ${grade[`lv-${targetGrade}`]}`}
+                    ${grade[`lv-${Math.min(56, targetLevel)}`]}
+                  `}
                 />
                 {targetBadges.length > 0 ? (
                   <div className={directMessage['userFriendSplit']} />

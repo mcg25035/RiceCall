@@ -23,7 +23,6 @@ dotenv.config();
 
 let tray: Tray | null = null;
 let isLogin: boolean = false;
-const userId: string | null = null;
 
 // AutoUpdater
 const { autoUpdater } = ElectronUpdater;
@@ -591,7 +590,6 @@ function configureAutoUpdater() {
       type: 'info',
       title: '有新版本可用',
       message: `正在下載新版本 ${info.version} 發布於 ${info.releaseDate}，請不要關閉此視窗及進行其他操作...`,
-      buttons: [''],
     });
   });
 
@@ -755,6 +753,10 @@ app.on('ready', async () => {
     setTrayIcon(isLogin);
   });
 
+  ipcMain.on('exit', () => {
+    app.exit();
+  });
+
   ipcMain.on('get-socket-status', () => {
     return socketInstance && socketInstance.connected
       ? 'connected'
@@ -889,7 +891,7 @@ if (!app.requestSingleInstanceLock()) {
     app.quit();
   }
 } else {
-  app.on('second-instance', (event, argv) => {
+  app.on('second-instance', (_, argv) => {
     const url = argv.find((arg) => arg.startsWith('ricecall://'));
     if (url) {
       handleDeepLink(url);
@@ -904,7 +906,7 @@ app.on('open-url', (event, url) => {
   handleDeepLink(url);
 });
 
-// 集中處理 DeepLink
+// DeepLink Handler
 async function handleDeepLink(url: string) {
   if (!url) return;
   try {
@@ -924,29 +926,32 @@ async function handleDeepLink(url: string) {
       //   break;
       case 'join':
         const serverId = new URL(url).searchParams.get('serverId');
-        // 如果已經登入才能發進群請求
-        if (serverId && userId && socketInstance && socketInstance.connected) {
-          socketInstance.emit(SocketClientEvent.SEARCH_SERVER, {
-            query: serverId,
-          });
-          socketInstance.on(
-            SocketServerEvent.SERVER_SEARCH,
-            (serverInfoList) => {
-              // 對照DisplayId 如果找不到就不會進群也不會通知前端
-              const matchedServer = serverInfoList.find(
-                (server: any) => server.displayId === serverId,
-              );
-              if (matchedServer) {
-                mainWindow.show();
-                mainWindow.focus();
-                socketInstance?.emit(SocketClientEvent.CONNECT_SERVER, {
-                  userId,
-                  serverId: matchedServer.serverId,
-                });
-              }
-            },
-          );
-        }
+        BrowserWindow.getAllWindows().forEach((window) => {
+          window.webContents.send('deepLink', serverId);
+        });
+        // // 如果已經登入才能發進群請求
+        // if (serverId && userId && socketInstance && socketInstance.connected) {
+        //   socketInstance.emit(SocketClientEvent.SEARCH_SERVER, {
+        //     query: serverId,
+        //   });
+        //   socketInstance.on(
+        //     SocketServerEvent.SERVER_SEARCH,
+        //     (serverInfoList) => {
+        //       // 對照DisplayId 如果找不到就不會進群也不會通知前端
+        //       const matchedServer = serverInfoList.find(
+        //         (server: any) => server.displayId === serverId,
+        //       );
+        //       if (matchedServer) {
+        //         mainWindow.show();
+        //         mainWindow.focus();
+        //         socketInstance?.emit(SocketClientEvent.CONNECT_SERVER, {
+        //           userId,
+        //           serverId: matchedServer.serverId,
+        //         });
+        //       }
+        //     },
+        //   );
+        // }
         break;
     }
   } catch (error) {

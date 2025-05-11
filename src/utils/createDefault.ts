@@ -79,6 +79,7 @@ export const createDefault = {
     wealth: 0,
     displayId: '',
     lobbyId: '',
+    receptionLobbyId: '',
     ownerId: '',
     createdAt: 0,
     ...overrides,

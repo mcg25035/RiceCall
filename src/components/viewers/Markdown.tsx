@@ -16,6 +16,9 @@ import emojis from '@/components/emojis';
 import 'highlight.js/styles/github-dark.css';
 import markdown from '@/styles/viewers/markdown.module.css';
 
+// Providers
+import { useLanguage } from '@/providers/Language';
+
 interface PurifyConfig {
   ALLOWED_TAGS: string[];
   ALLOWED_ATTR: string[];
@@ -88,6 +91,11 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
       },
     );
     const sanitized = DOMPurify.sanitize(withEmojis, PURIFY_CONFIG);
+
+    // Hooks
+    const lang = useLanguage();
+
+    // States
     const [isCopied, setIsCopied] = useState(false);
 
     const components: Components = {
@@ -151,9 +159,9 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
             <button
               className={markdown.copyButton}
               onClick={handleCopy}
-              aria-label="複製程式碼"
+              aria-label={lang.tr.copyCode}
             >
-              {isCopied ? '已複製！' : '複製'}
+              {isCopied ? lang.tr.copied : lang.tr.copy}
             </button>
             <code
               className={`hljs ${langClass} ${markdown.codeWrapper}`}

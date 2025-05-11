@@ -81,9 +81,11 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
               className={`
                 ${contextMenu['option']} 
                 ${item.hasSubmenu ? contextMenu['hasSubmenu'] : ''}
+                ${item.disabled ? contextMenu['disabled'] : ''}
               `}
               data-type={item.icon || ''}
               onClick={() => {
+                if (item.disabled) return;
                 item.onClick?.();
                 onClose();
               }}
