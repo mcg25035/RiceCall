@@ -23,6 +23,12 @@ if (typeof window !== 'undefined' && window.require) {
 const isElectron = !!ipcRenderer;
 
 const ipcService = {
+  exit: () => {
+    if (isElectron) {
+      ipcRenderer.send('exit');
+    }
+  },
+
   // Socket event methods
   sendSocketEvent: (event: SocketClientEvent, ...args: any[]) => {
     if (isElectron) {
@@ -273,57 +279,6 @@ const ipcService = {
       },
     },
   },
-
-  // autoLaunch: {
-  //   set: (enable: boolean) => {
-  //     if (isElectron) {
-  //       ipcRenderer.send('set-auto-launch', enable);
-  //     }
-  //   },
-  //   get: (callback: (enabled: boolean) => void) => {
-  //     if (isElectron) {
-  //       ipcRenderer.send('get-auto-launch');
-  //       ipcRenderer.once('auto-launch-status', (_: any, enabled: boolean) => {
-  //         callback(enabled);
-  //       });
-  //     }
-  //   },
-  // },
-
-  // audio: {
-  //   set: (deviceId: string, type: 'input' | 'output') => {
-  //     if (isElectron) {
-  //       ipcRenderer.send('set-audio-device', deviceId, type);
-  //     }
-  //   },
-  //   get: (
-  //     type: 'input' | 'output',
-  //     callback: (deviceId: string | null) => void,
-  //   ) => {
-  //     if (isElectron) {
-  //       ipcRenderer.send('get-audio-device', type);
-  //       ipcRenderer.once(
-  //         'audio-device-status',
-  //         (_: any, _type: string, _deviceId: string | null) => {
-  //           if (_type === type) callback(_deviceId);
-  //         },
-  //       );
-  //     }
-  //   },
-  //   update: (
-  //     type: 'input' | 'output',
-  //     callback: (deviceId: string | null) => void,
-  //   ) => {
-  //     if (isElectron) {
-  //       ipcRenderer.on(
-  //         'audio-device-status',
-  //         (_: any, _type: string, _deviceId: string | null) => {
-  //           if (_type === type) callback(_deviceId);
-  //         },
-  //       );
-  //     }
-  //   },
-  // },
 };
 
 export default ipcService;

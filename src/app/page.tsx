@@ -112,6 +112,10 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
     authService.logout();
   };
 
+  const handleExit = () => {
+    ipcService.exit();
+  };
+
   const handleFullscreen = () => {
     if (isFullscreen) {
       ipcService.window.unmaximize();
@@ -293,7 +297,7 @@ const Header: React.FC<HeaderProps> = React.memo(({ user, userServer }) => {
                   id: 'exit',
                   label: lang.tr.exit,
                   icon: 'exit',
-                  onClick: () => handleClose(),
+                  onClick: () => handleExit(),
                 },
               ],
               e.currentTarget as HTMLElement,
