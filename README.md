@@ -5,18 +5,29 @@
   <div height="20px">　</div>
   <div>
     <img src="https://img.shields.io/badge/Join-Discord-blue?logo=discord&link=https%3A%2F%2Fdiscord.gg%2FadCWzv6wwS"/>
-    <img src="https://img.shields.io/badge/Latest-v0.1.6-green"/>
+    <img src="https://img.shields.io/badge/Latest-v0.1.7-green"/>
   </div>
 </div>
 
-## v0.1.6 更新日誌 (Change Log)
+## v0.1.7 更新日誌 (Change Log)
 
-- 新增個人檔案頁面
-- 新增網址進群
-- 新增錯誤彈窗時間戳記
-- 修復無法刪除頻道
-- 修復無法刪除好友
-- 修復無法私訊好友
+- 新增「主頁」，用以展示官網公告，並將原有的語音群列表轉移至「個人專屬」
+- 新增「踢出頻道」、「踢出群」、「封鎖」功能，封鎖功能暫時不能指定時間，固定為一個月
+- 新增「拖曳使用者」、「拖曳頻道」以切換頻道功能
+- 新增「批量移動至我的頻道」功能
+- 新增「頻道大廳」
+- 新增「接待大廳」
+- 新增切換音質選項
+- 新增公告區域調整功能
+- 新增搖動視窗功能
+- 修復無法開啟同時多個個人檔案問題
+- 修復無法多開問題
+- 修復自動調整麥克風音量問題
+- 修改訊息顯示邏輯，現在同語音群內訊息會延續
+- 修改 Markdown 樣式
+- 修改一些介面樣式
+- 修改一些輸入限制
+- 精簡 Error Dialog 內容
 
 ## 安裝方法
 
@@ -96,6 +107,7 @@ RiceCall
 ```bash
 yarn install
 ```
+
 2. 建立 .env 或複製 .env.example 後更名為 .env，以下為環境變數範例
 
 ```env
