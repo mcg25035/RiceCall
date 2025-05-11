@@ -85,7 +85,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
         field: 'name',
       },
       {
-        name: '解除日期',
+        name: lang.tr.unblockDate,
         field: 'isBlocked',
       },
     ];
@@ -572,7 +572,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                   </div>
                 </div>
                 <div className={`${popup['inputBox']} ${popup['col']}`}>
-                  <div className={popup['label']}>{'語音群連結'}</div>
+                  <div className={popup['label']}>{lang.tr.groupLink}</div>
                   <input
                     name="link"
                     type="text"
@@ -1179,7 +1179,7 @@ const ServerSettingPopup: React.FC<ServerSettingPopupProps> = React.memo(
                           <td>{memberNickname || memberName}</td>
                           <td>
                             {memberIsBlocked === -1
-                              ? '永久'
+                              ? lang.tr.permanent
                               : new Date(memberIsBlocked)
                                   .toISOString()
                                   .slice(0, 10)}

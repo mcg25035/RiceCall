@@ -78,7 +78,7 @@ const CategoryTab: React.FC<CategoryTabProps> = React.memo(
         ? createDefault.channel({
             ...category,
             channelId: categoryId,
-            name: '頻道大廳',
+            name: lang.tr.lobby,
             type: 'channel',
             categoryId: categoryId,
             visibility: categoryVisibility,
@@ -583,7 +583,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
               },
               {
                 id: 'moveAllUserToChannel',
-                label: '批量移動到我的房間',
+                label: lang.tr.moveAllUserToChannel,
                 show: canMoveToChannel,
                 onClick: () =>
                   channelUserIds.forEach((userId) =>
@@ -603,7 +603,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
               },
               {
                 id: 'setDefaultChannel',
-                label: '設為接待頻道',
+                label: lang.tr.setDefaultChannel,
                 show: canManageChannel,
                 onClick: () =>
                   handleUpdateServer({ receptionLobbyId: channelId }, serverId),
@@ -984,7 +984,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
               },
               {
                 id: 'send-member-application',
-                label: '邀請成為會員',
+                label: lang.tr.sendMemberApplication,
                 show: canManageMember && memberPermission === 1,
                 onClick: () => {
                   /* sendMemberApplication() */

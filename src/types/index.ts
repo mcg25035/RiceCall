@@ -407,6 +407,17 @@ export interface Translation {
   moveBottom: string;
   close: string;
   showTo: string;
+  soon: string;
+  unblockDate: string;
+  groupLink: string;
+  permanent: string;
+  lobby: string;
+  moveAllUserToChannel: string;
+  setDefaultChannel: string;
+  sendMemberApplication: string;
+  copyCode: string;
+  copied: string;
+  copy: string;
 }
 
 export type LanguageKey = 'tw' | 'cn' | 'en' | 'jp';

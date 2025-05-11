@@ -414,7 +414,7 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
             style={activeTabIndex === 3 ? {} : { display: 'none' }}
           >
             <div className={popup['col']}>
-              <label>{lang.tr.speakingPermissions + ' (暫未開放)'}</label>
+              <label>{lang.tr.speakingPermissions + ' ' + lang.tr.soon}</label>
               <div className={popup['inputGroup']}>
                 <div className={`${popup['inputBox']} ${popup['disabled']}`}>
                   <input

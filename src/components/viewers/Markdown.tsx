@@ -151,9 +151,9 @@ const Markdown: React.FC<MarkdownProps> = React.memo(
             <button
               className={markdown.copyButton}
               onClick={handleCopy}
-              aria-label="複製程式碼"
+              aria-label={lang.tr.copyCode}
             >
-              {isCopied ? '已複製！' : '複製'}
+              {isCopied ? lang.tr.copied : lang.tr.copy}
             </button>
             <code
               className={`hljs ${langClass} ${markdown.codeWrapper}`}
