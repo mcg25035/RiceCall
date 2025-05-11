@@ -384,7 +384,7 @@
 }
 
 .userTab .userTabName.isVIP {
-  color: #6e849b;
+  color: #dd1313 !important;
 }
 
 .userState {
