@@ -394,9 +394,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                                 }`}
                               />
                               <div className={setting['contributionBox']}>
-                                <div
-                                  className={setting['contributionIcon']}
-                                ></div>
+                                <div className={setting['contributionIcon']} />
                                 <div className={setting['contributionValue']}>
                                   {server.contribution}
                                 </div>
@@ -445,7 +443,7 @@ const UserSettingPopup: React.FC<UserSettingPopupProps> = React.memo(
                               }`}
                             />
                             <div className={setting['contributionBox']}>
-                              <div>{`${lang.tr.contribution}:`}</div>
+                              <div className={setting['contributionIcon']} />
                               <div className={setting['contributionValue']}>
                                 {server.contribution}
                               </div>
