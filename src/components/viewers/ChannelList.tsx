@@ -424,10 +424,17 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
         channelUserLimit > channelMembers.length ||
         permissionLevel > 4);
     const canManageChannel = permissionLevel > 4;
+    const canCreate = canManageChannel;
     const canCreateSub = canManageChannel && !isLobby && !channelCategoryId;
+    const canEdit = canManageChannel;
     const canDelete = canManageChannel && !isLobby;
-    const canMoveToChannel =
+    const canMoveAllUserToChannel =
       canManageChannel && !userInChannel && channelUserIds.length !== 0;
+    const canSetReceptionLobby =
+      canManageChannel &&
+      !isReceptionLobby &&
+      channelVisibility !== 'private' &&
+      channelVisibility !== 'readonly';
 
     // Handlers
     const handleUpdateServer = (
@@ -588,7 +595,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
               {
                 id: 'editChannel',
                 label: lang.tr.editChannel,
-                show: canManageChannel,
+                show: canEdit,
                 onClick: () => handleOpenChannelSetting(channelId, serverId),
               },
               {
@@ -599,7 +606,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
               {
                 id: 'createChannel',
                 label: lang.tr.addChannel,
-                show: canManageChannel,
+                show: canCreate,
                 onClick: () => handleOpenCreateChannel(serverId, null, userId),
               },
               {
@@ -623,7 +630,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
               {
                 id: 'moveAllUserToChannel',
                 label: lang.tr.moveAllUserToChannel,
-                show: canMoveToChannel,
+                show: canMoveAllUserToChannel,
                 onClick: () =>
                   channelUserIds.forEach((userId) =>
                     handleJoinChannel(userId, serverId, currentChannelId),
@@ -638,12 +645,12 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
               {
                 id: 'separator',
                 label: '',
-                show: canManageChannel,
+                show: canSetReceptionLobby,
               },
               {
-                id: 'setDefaultChannel',
+                id: 'setReceptionLobby',
                 label: lang.tr.setDefaultChannel,
-                show: canManageChannel,
+                show: canSetReceptionLobby,
                 onClick: () =>
                   handleUpdateServer({ receptionLobbyId: channelId }, serverId),
               },
@@ -739,8 +746,8 @@ const UserTab: React.FC<UserTabProps> = React.memo(
     const {
       userId,
       serverId,
-      lobbyId,
       permissionLevel: userPermission,
+      lobbyId: serverLobbyId,
     } = currentServer;
     const { channelId: currentChannelId } = currentChannel;
     const isCurrentUser = memberUserId === userId;
@@ -781,7 +788,10 @@ const UserTab: React.FC<UserTabProps> = React.memo(
       memberPermission !== 5 &&
       memberPermission > 1 &&
       userPermission > 5;
-    const canKick = canManageMember && memberCurrentServerId === serverId;
+    const canKickServer = canManageMember && memberCurrentServerId === serverId;
+    const canKickChannel =
+      canManageMember && memberCurrentChannelId !== serverLobbyId;
+    const canBan = canManageMember;
     const canMoveToChannel =
       canManageMember && memberCurrentChannelId !== currentChannelId;
     const canMute = !isCurrentUser && !isMutedByUser;
@@ -970,26 +980,28 @@ const UserTab: React.FC<UserTabProps> = React.memo(
                 id: 'forbid-voice',
                 label: lang.tr.forbidVoice,
                 show: canManageMember,
+                disabled: true,
                 onClick: () => {},
               },
               {
                 id: 'forbid-text',
                 label: lang.tr.forbidText,
                 show: canManageMember,
+                disabled: true,
                 onClick: () => {},
               },
               {
                 id: 'kick-channel',
                 label: lang.tr.kickChannel,
-                show: canKick,
+                show: canKickChannel,
                 onClick: () => {
-                  handleKickChannel(memberUserId, lobbyId, serverId);
+                  handleKickChannel(memberUserId, serverLobbyId, serverId);
                 },
               },
               {
                 id: 'kick-server',
                 label: lang.tr.kickServer,
-                show: canKick,
+                show: canKickServer,
                 onClick: () => {
                   handleUpdateMember(
                     {
@@ -1004,7 +1016,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
               {
                 id: 'ban',
                 label: lang.tr.ban,
-                show: canKick,
+                show: canBan,
                 onClick: () => {
                   handleUpdateMember(
                     { permissionLevel: 1, isBlocked: -1 },
@@ -1023,6 +1035,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
                 id: 'send-member-application',
                 label: lang.tr.sendMemberApplication,
                 show: canManageMember && memberPermission === 1,
+                disabled: true,
                 onClick: () => {
                   /* sendMemberApplication() */
                 },

@@ -40,9 +40,12 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
     const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
     const [showPreview, setShowPreview] = useState<boolean>(false);
     const [channel, setChannel] = useState<Channel>(createDefault.channel());
+    const [server, setServer] = useState<Server>(createDefault.server());
 
     // Variables
     const { channelId, serverId } = initialData;
+    const { lobbyId: serverLobbyId, receptionLobbyId: serverReceptionLobbyId } =
+      server;
     const {
       name: channelName,
       announcement: channelAnnouncement,
@@ -58,8 +61,9 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
       guestTextWaitTime: channelGuestTextWaitTime,
       guestTextGapTime: channelGuestTextGapTime,
       bitrate: channelBitrate,
-      isLobby: channelIsLobby,
     } = channel;
+    const isLobby = serverLobbyId === channelId;
+    const isReceptionLobby = serverReceptionLobbyId === channelId;
 
     // Handlers
     const handleUpdateChannel = (
@@ -84,9 +88,15 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
           refreshService.channel({
             channelId: channelId,
           }),
-        ]).then(([channel]) => {
+          refreshService.server({
+            serverId: serverId,
+          }),
+        ]).then(([channel, server]) => {
           if (channel) {
             setChannel(channel);
+          }
+          if (server) {
+            setServer(server);
           }
         });
       };
@@ -153,9 +163,7 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                     value={channelUserLimit}
                     min={0}
                     max={999}
-                    disabled={
-                      channelVisibility === 'readonly' || channelIsLobby
-                    }
+                    disabled={channelVisibility === 'readonly' || isLobby}
                     onChange={(e) =>
                       setChannel((prev) => ({
                         ...prev,
@@ -299,9 +307,10 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
               <label>{lang.tr.accessPermissions}</label>
               <div className={popup['inputGroup']}>
                 <div
-                  className={`${popup['inputBox']} ${
-                    channelIsLobby ? popup['disabled'] : ''
-                  }`}
+                  className={`
+                    ${popup['inputBox']} 
+                    ${isLobby ? popup['disabled'] : ''}
+                  `}
                 >
                   <input
                     type="radio"
@@ -322,9 +331,10 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                 </div>
 
                 <div
-                  className={`${popup['inputBox']} ${
-                    channelIsLobby ? popup['disabled'] : ''
-                  }`}
+                  className={`
+                    ${popup['inputBox']} 
+                    ${isLobby ? popup['disabled'] : ''}
+                  `}
                 >
                   <input
                     type="radio"
@@ -345,9 +355,10 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                 </div>
 
                 <div
-                  className={`${popup['inputBox']} ${
-                    channelIsLobby ? popup['disabled'] : ''
-                  }`}
+                  className={`
+                    ${popup['inputBox']} 
+                    ${isLobby || isReceptionLobby ? popup['disabled'] : ''}
+                  `}
                 >
                   <input
                     type="radio"
@@ -368,9 +379,10 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
                 </div>
 
                 <div
-                  className={`${popup['inputBox']} ${
-                    channelIsLobby ? popup['disabled'] : ''
-                  } ${popup['row']}`}
+                  className={`
+                    ${popup['inputBox']} 
+                    ${isLobby || isReceptionLobby ? popup['disabled'] : ''}
+                  `}
                 >
                   <input
                     type="radio"
@@ -414,7 +426,7 @@ const ChannelSettingPopup: React.FC<ChannelSettingPopupProps> = React.memo(
             style={activeTabIndex === 3 ? {} : { display: 'none' }}
           >
             <div className={popup['col']}>
-              <label>{lang.tr.speakingPermissions + ' ' + lang.tr.soon}</label>
+              <label>{lang.tr.speakingPermissions + lang.tr.soon}</label>
               <div className={popup['inputGroup']}>
                 <div className={`${popup['inputBox']} ${popup['disabled']}`}>
                   <input
