@@ -496,6 +496,7 @@ export type Server = {
   type: 'game' | 'entertainment' | 'other';
   visibility: 'public' | 'private' | 'invisible';
   lobbyId: string;
+  receptionLobbyId: string | null; // New: Reception Lobby ID
   ownerId: string;
   createdAt: number;
 };
@@ -779,7 +780,7 @@ export const PopupSize = {
   [PopupType.CHANNEL_PASSWORD]: { height: 220, width: 400 },
   [PopupType.SERVER_SETTING]: { height: 520, width: 600 },
   [PopupType.SYSTEM_SETTING]: { height: 520, width: 600 },
-  [PopupType.MEMBERAPPLY_SETTING]: { height: 320, width: 500 },
+  [PopupType.MEMBERAPPLY_SETTING]: { height: 220, width: 400 },
   [PopupType.CREATE_SERVER]: { height: 460, width: 520 },
   [PopupType.CREATE_CHANNEL]: { height: 220, width: 400 },
   [PopupType.CREATE_FRIENDGROUP]: { height: 220, width: 400 },

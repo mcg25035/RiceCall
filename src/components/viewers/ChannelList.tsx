@@ -407,6 +407,14 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
       canManageChannel && !userInChannel && channelUserIds.length !== 0;
 
     // Handlers
+    const handleUpdateServer = (
+      server: Partial<Server>,
+      serverId: Server['serverId'],
+    ) => {
+      if (!socket) return;
+      socket.send.updateServer({ serverId, server });
+    };
+
     const handleJoinChannel = (
       userId: User['userId'],
       serverId: Server['serverId'],
@@ -566,10 +574,7 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
                 id: 'delete',
                 label: lang.tr.deleteChannel,
                 show: canDelete,
-                onClick: () => {
-                  if (!channelName) return;
-                  handleDeleteChannel(channelId, serverId);
-                },
+                onClick: () => handleDeleteChannel(channelId, serverId),
               },
               {
                 id: 'separator',
@@ -580,11 +585,10 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
                 id: 'moveAllUserToChannel',
                 label: '批量移動到我的房間',
                 show: canMoveToChannel,
-                onClick: () => {
-                  for (const userId of channelUserIds) {
-                    handleJoinChannel(userId, serverId, currentChannelId);
-                  }
-                },
+                onClick: () =>
+                  channelUserIds.forEach((userId) =>
+                    handleJoinChannel(userId, serverId, currentChannelId),
+                  ),
               },
               {
                 id: 'editChannelOrder',
@@ -601,9 +605,8 @@ const ChannelTab: React.FC<ChannelTabProps> = React.memo(
                 id: 'setDefaultChannel',
                 label: '設為接待頻道',
                 show: canManageChannel,
-                onClick: () => {
-                  /* handleSetDefaultChannel() */
-                },
+                onClick: () =>
+                  handleUpdateServer({ receptionLobbyId: channelId }, serverId),
               },
             ]);
           }}
@@ -951,6 +954,13 @@ const UserTab: React.FC<UserTabProps> = React.memo(
                 label: lang.tr.kickServer,
                 show: canKick,
                 onClick: () => {
+                  handleUpdateMember(
+                    {
+                      isBlocked: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days TODO: user can set the time
+                    },
+                    memberUserId,
+                    serverId,
+                  );
                   handleKickServer(memberUserId, serverId);
                 },
               },
@@ -960,10 +970,7 @@ const UserTab: React.FC<UserTabProps> = React.memo(
                 show: canKick,
                 onClick: () => {
                   handleUpdateMember(
-                    {
-                      permissionLevel: 1,
-                      isBlocked: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days TODO: user can set the time
-                    },
+                    { permissionLevel: 1, isBlocked: -1 },
                     memberUserId,
                     serverId,
                   );
