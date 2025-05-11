@@ -150,7 +150,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
                 />
                 <div>
                   <div className={popup['label']}>
-                    {lang.tr.minimizeToTray} (Not implemented)
+                    {lang.tr.minimizeToTray + lang.tr.soon}
                   </div>
                   <div className={popup['hint']}>
                     {lang.tr.minimizeToTrayDescription}
@@ -168,7 +168,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
                 />
                 <div>
                   <div className={popup['label']}>
-                    {lang.tr.startMinimized} (Not implemented)
+                    {lang.tr.startMinimized + lang.tr.soon}
                   </div>
                   <div className={popup['hint']}>
                     {lang.tr.startMinimizedDescription}
@@ -187,7 +187,7 @@ const SystemSettingPopup: React.FC = React.memo(() => {
                 />
                 <div>
                   <div className={popup['label']}>
-                    {lang.tr.notificationSound} (Not implemented)
+                    {lang.tr.notificationSound + lang.tr.soon}
                   </div>
                   <div className={popup['hint']}>
                     {lang.tr.notificationSoundDescription}
