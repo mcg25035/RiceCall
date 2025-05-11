@@ -380,6 +380,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
               )}
             </div>
           </div>
+
           <div className={homePage['mid']}>
             <div
               className={`${homePage['navegateItem']} ${
@@ -409,6 +410,7 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
               {lang.tr.live}
             </div>
           </div>
+
           <div className={homePage['right']}>
             <div
               className={homePage['navegateItem']}
@@ -426,8 +428,6 @@ const HomePageComponent: React.FC<HomePageProps> = React.memo(
             </div>
           </div>
         </header>
-
-        {/* Main Content */}
 
         {/* Announcement */}
         <webview
